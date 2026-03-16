@@ -1,29 +1,29 @@
-import { CosmosClient, Database, Container } from '@azure/cosmos';
+import { CosmosClient, Container } from '@azure/cosmos';
 
 /**
- * Cosmos DB Client
+ * Cosmos DB Client — lazy initialization
  *
- * Initializes one CosmosClient instance for the entire backend.
- * All four Azure Functions import from here — never create a new client
- * inside a function. One connection, reused across warm invocations.
+ * Client is created on first use, not at import time.
+ * This prevents startup crashes if env vars aren't yet available.
  */
 
-const endpoint = process.env.COSMOS_DB_ENDPOINT;
-const key = process.env.COSMOS_DB_KEY;
-const databaseId = process.env.COSMOS_DB_DATABASE ?? 'languagebridge-prod';
+let _client: CosmosClient | null = null;
 
-if (!endpoint || !key) {
-  throw new Error('COSMOS_DB_ENDPOINT and COSMOS_DB_KEY must be set in environment variables');
+function getClient(): CosmosClient {
+  if (!_client) {
+    const endpoint = process.env.COSMOS_DB_ENDPOINT;
+    const key = process.env.COSMOS_DB_KEY;
+    if (!endpoint || !key) {
+      throw new Error('COSMOS_DB_ENDPOINT and COSMOS_DB_KEY must be set in environment variables');
+    }
+    _client = new CosmosClient({ endpoint, key });
+  }
+  return _client;
 }
 
-const client = new CosmosClient({ endpoint, key });
-
-// ============================================
-// DATABASE ACCESSOR
-// ============================================
-
-function getDatabase(): Database {
-  return client.database(databaseId);
+function getDatabase() {
+  const databaseId = process.env.COSMOS_DB_DATABASE ?? 'languagebridge-prod';
+  return getClient().database(databaseId);
 }
 
 // ============================================
@@ -53,5 +53,3 @@ export function getAdminUsersContainer(): Container {
 export function getAudioCacheMetadataContainer(): Container {
   return getDatabase().container('audio_cache_metadata');
 }
-
-export { client };
