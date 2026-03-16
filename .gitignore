@@ -1,3 +1,6 @@
+# Documentation (planning docs, not part of the codebase)
+docs/
+
 # Environment & Secrets
 .env
 .env.local
