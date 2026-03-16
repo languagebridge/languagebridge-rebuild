@@ -1,0 +1,55 @@
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+.env.production
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+
+# Build artifacts
+dist/
+build/
+.next/
+out/
+.cache/
+.serverless/
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+
+# ML Models & Large Files (NEVER commit these)
+ml-pipeline/models/**/*
+!ml-pipeline/models/.gitkeep
+ml-pipeline/data/**/*
+!ml-pipeline/data/.gitkeep
+
+# Temporary
+tmp/
+temp/
+*.tmp
+logs/
+*.log
+
+# Azure Functions local settings (contains secrets)
+local.settings.json
+.funcignore

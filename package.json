@@ -1,0 +1,35 @@
+{
+  "name": "languagebridge-rebuild",
+  "version": "2.0.0",
+  "description": "LanguageBridge Phase 2: Complete backend rebuild with Azure Functions, Cosmos DB, and Kokoro ML pipeline",
+  "private": true,
+  "author": "Justin Bernard <justin@languagebridge.app> & Prentice Howard <prentice@languagebridge.app>",
+  "license": "PROPRIETARY",
+  "workspaces": [
+    "backend",
+    "extension",
+    "pwa",
+    "ml-pipeline"
+  ],
+  "scripts": {
+    "install-all": "npm install --workspaces",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:pwa": "npm run dev --workspace=pwa",
+    "build": "npm run build --workspaces",
+    "build:backend": "npm run build --workspace=backend",
+    "build:pwa": "npm run build --workspace=pwa",
+    "test": "npm test --workspaces",
+    "test:backend": "npm test --workspace=backend",
+    "lint": "npm run lint --workspaces",
+    "lint:backend": "npm run lint --workspace=backend",
+    "type-check": "npx tsc --noEmit",
+    "type-check:backend": "npx tsc --noEmit --project tsconfig.backend.json"
+  },
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.57.0",
+    "@typescript-eslint/parser": "^8.57.0",
+    "eslint": "^8.56.0",
+    "prettier": "^3.1.1",
+    "typescript": "^5.3.3"
+  }
+}
