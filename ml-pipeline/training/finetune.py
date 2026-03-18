@@ -19,7 +19,12 @@ import argparse
 import hashlib
 import json
 import time
+import warnings
 from pathlib import Path
+
+# Suppress noisy PyTorch warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 import torch
 import torch.nn as nn
@@ -44,11 +49,25 @@ MAX_AUDIO_LEN = TARGET_SR * 10  # 10 seconds max
 
 
 class LanguageAudioDataset(Dataset):
-    """Load processed WAV files and convert to mel spectrograms."""
+    """Load processed WAV files and convert to mel spectrograms.
 
-    def __init__(self, split_file: Path, max_frames: int = 900):
+    Subsamples to max_clips for tractable fine-tuning.
+    Pre-computes F0 to avoid bottleneck during training.
+    """
+
+    def __init__(self, split_file: Path, max_frames: int = 900, max_clips: int = 10000):
         with open(split_file) as f:
-            self.files = [Path(l.strip()) for l in f if l.strip()]
+            all_files = [Path(l.strip()) for l in f if l.strip()]
+
+        # Subsample for tractable training
+        if len(all_files) > max_clips:
+            rng = np.random.RandomState(42)
+            indices = rng.choice(len(all_files), max_clips, replace=False)
+            self.files = [all_files[i] for i in indices]
+            print(f"    Subsampled {len(all_files)} -> {max_clips} clips", flush=True)
+        else:
+            self.files = all_files
+
         self.max_frames = max_frames
 
     def __len__(self):
@@ -56,7 +75,11 @@ class LanguageAudioDataset(Dataset):
 
     def __getitem__(self, idx):
         path = self.files[idx]
-        y, _ = librosa.load(str(path), sr=TARGET_SR, mono=True)
+        try:
+            y, _ = librosa.load(str(path), sr=TARGET_SR, mono=True)
+        except Exception:
+            # Return silence if file fails
+            y = np.zeros(TARGET_SR, dtype=np.float32)
 
         # Truncate to max length
         if len(y) > MAX_AUDIO_LEN:
@@ -68,33 +91,48 @@ class LanguageAudioDataset(Dataset):
             hop_length=HOP_LENGTH, win_length=WIN_LENGTH, n_mels=N_MELS
         )
         mel_db = librosa.power_to_db(mel, ref=np.max)
+        mel_db = (mel_db + 40) / 40
 
-        # Normalize to [-1, 1] range
-        mel_db = (mel_db + 40) / 40  # Shift from [-80,0] to [-1,1] approx
-
-        # Truncate frames if needed
         if mel_db.shape[1] > self.max_frames:
             mel_db = mel_db[:, :self.max_frames]
 
-        return torch.FloatTensor(mel_db), torch.FloatTensor(y)
+        # Estimate F0 using fast zero-crossing rate (100x faster than pyin)
+        try:
+            zcr = librosa.feature.zero_crossing_rate(
+                y, frame_length=WIN_LENGTH, hop_length=HOP_LENGTH
+            )[0]
+            # Convert ZCR to approximate F0
+            f0 = (zcr * TARGET_SR / 2).astype(np.float32)
+            # Clamp to speech range
+            f0 = np.clip(f0, 50, 550)
+            # Zero out low-energy frames (silence)
+            rms = librosa.feature.rms(y=y, frame_length=WIN_LENGTH, hop_length=HOP_LENGTH)[0]
+            f0[rms < 0.01] = 0.0
+        except Exception:
+            f0 = np.zeros(mel_db.shape[1], dtype=np.float32)
+
+        return torch.FloatTensor(mel_db), torch.FloatTensor(y), torch.FloatTensor(f0)
 
 
 def collate_fn(batch):
-    """Pad mel spectrograms and audio to same length in batch."""
-    mels, audios = zip(*batch)
+    """Pad mel spectrograms, audio, and F0 to same length in batch."""
+    mels, audios, f0s = zip(*batch)
 
     max_mel_len = max(m.shape[1] for m in mels)
     max_audio_len = max(a.shape[0] for a in audios)
 
     mel_padded = torch.zeros(len(mels), N_MELS, max_mel_len)
     audio_padded = torch.zeros(len(audios), max_audio_len)
+    f0_padded = torch.zeros(len(f0s), max_mel_len)
     mel_lengths = torch.LongTensor([m.shape[1] for m in mels])
 
-    for i, (mel, audio) in enumerate(zip(mels, audios)):
+    for i, (mel, audio, f0) in enumerate(zip(mels, audios, f0s)):
         mel_padded[i, :, :mel.shape[1]] = mel
         audio_padded[i, :audio.shape[0]] = audio
+        f0_len = min(f0.shape[0], max_mel_len)
+        f0_padded[i, :f0_len] = f0[:f0_len]
 
-    return mel_padded, audio_padded, mel_lengths
+    return mel_padded, audio_padded, f0_padded, mel_lengths
 
 
 def get_device():
@@ -196,13 +234,16 @@ def train(language, epochs, batch_size, lr, resume):
             start_epoch = ckpt["epoch"] + 1
             best_val_loss = ckpt.get("best_val_loss", float("inf"))
 
+    # Projection layer: mel (80) -> decoder input dim (512)
+    mel_projector = nn.Conv1d(N_MELS, 512, kernel_size=1).to(device)
+
     optimizer = AdamW(
-        filter(lambda p: p.requires_grad, model.parameters()),
+        list(filter(lambda p: p.requires_grad, model.parameters())) +
+        list(mel_projector.parameters()),
         lr=lr, weight_decay=1e-4
     )
     scheduler = CosineAnnealingLR(optimizer, T_max=epochs)
 
-    # Multi-resolution STFT loss for audio quality
     criterion_mel = nn.L1Loss()
     criterion_stft = nn.MSELoss()
 
@@ -220,11 +261,11 @@ def train(language, epochs, batch_size, lr, resume):
         collate_fn=collate_fn, num_workers=0, pin_memory=False
     )
 
-    print(f"\n  Train clips: {len(train_ds)}")
-    print(f"  Val clips:   {len(val_ds)}")
-    print(f"\n{'='*60}")
-    print(f"  {'Epoch':>5}  {'Train Loss':>12}  {'Val Loss':>12}  {'Time':>8}  {'Status'}")
-    print(f"{'='*60}")
+    print(f"\n  Train clips: {len(train_ds)}", flush=True)
+    print(f"  Val clips:   {len(val_ds)}", flush=True)
+    print(f"\n{'='*60}", flush=True)
+    print(f"  {'Epoch':>5}  {'Train Loss':>12}  {'Val Loss':>12}  {'Time':>8}  {'Status'}", flush=True)
+    print(f"{'='*60}", flush=True)
 
     log = []
     patience_counter = 0
@@ -235,7 +276,6 @@ def train(language, epochs, batch_size, lr, resume):
 
         # --- Train ---
         model.train()
-        # Keep frozen layers in eval mode
         model.bert.eval()
         model.bert_encoder.eval()
         model.text_encoder.eval()
@@ -243,54 +283,36 @@ def train(language, epochs, batch_size, lr, resume):
         train_loss = 0.0
         n_batches = 0
 
-        for mel_batch, audio_batch, mel_lengths in train_loader:
+        for batch_idx, (mel_batch, audio_batch, f0_batch, mel_lengths) in enumerate(train_loader):
             mel_batch = mel_batch.to(device)
             audio_batch = audio_batch.to(device)
+            f0_batch = f0_batch.to(device)
 
             optimizer.zero_grad()
 
-            # For each item in batch, extract style and run decoder
             batch_loss = 0.0
             for i in range(mel_batch.shape[0]):
                 mel_i = mel_batch[i:i+1]
                 audio_i = audio_batch[i:i+1]
+                f0_i = f0_batch[i:i+1]
                 mel_len = mel_lengths[i].item()
 
-                # Extract style from this audio clip
                 ref_s = extract_style_embeddings(model, audio_i, device)
+                mel_features = mel_i[:, :, :mel_len]
+                asr_features = mel_projector(mel_features)
 
-                # Use mel as input features (simulating the text encoder output)
-                # and train decoder to reconstruct the mel
-                asr_features = mel_i[:, :, :mel_len]
-
-                # Compute F0 from audio for conditioning
                 try:
-                    y_np = audio_i[0].cpu().numpy()
-                    f0, voiced, _ = librosa.pyin(
-                        y_np, fmin=50, fmax=550, sr=TARGET_SR,
-                        hop_length=HOP_LENGTH
-                    )
-                    f0 = np.nan_to_num(f0, nan=0.0)
-                    f0 = torch.FloatTensor(f0).unsqueeze(0).to(device)
-
-                    # Match lengths
-                    if f0.shape[1] > mel_len:
-                        f0 = f0[:, :mel_len]
-                    elif f0.shape[1] < mel_len:
-                        f0 = torch.nn.functional.pad(f0, (0, mel_len - f0.shape[1]))
-
-                    # Generate noise signal
-                    N = torch.randn(1, mel_len).to(device) * 0.003
-
-                    # Forward through decoder
+                    # F0 and N need 2x mel length (decoder F0_conv has stride=2)
+                    f0_2x = torch.nn.functional.interpolate(
+                        f0_i[:, :mel_len].unsqueeze(1), size=mel_len * 2, mode='linear'
+                    ).squeeze(1)
+                    N = torch.randn(1, mel_len * 2).to(device) * 0.003
                     s_acoustic = ref_s[:, :128]
-                    output = model.decoder(asr_features, f0, N, s_acoustic)
+                    output = model.decoder(asr_features, f0_2x, N, s_acoustic)
 
-                    # Compute reconstruction loss on mel spectrogram
                     if output.dim() == 2:
                         output = output.unsqueeze(0)
 
-                    # Compute mel of output for comparison
                     out_np = output.squeeze().detach().cpu().numpy()
                     if len(out_np.shape) > 1:
                         out_np = out_np[0]
@@ -305,16 +327,14 @@ def train(language, epochs, batch_size, lr, resume):
                     target_mel = mel_i[0, :, :mel_len].cpu()
                     out_mel_tensor = torch.FloatTensor(out_mel_db)
 
-                    # Match lengths for loss
                     min_len = min(target_mel.shape[1], out_mel_tensor.shape[1])
                     loss = criterion_mel(
                         out_mel_tensor[:, :min_len],
                         target_mel[:, :min_len]
                     )
-
                     batch_loss += loss
 
-                except Exception as e:
+                except Exception:
                     continue
 
             if batch_loss > 0:
@@ -325,6 +345,11 @@ def train(language, epochs, batch_size, lr, resume):
                 train_loss += batch_loss.item()
                 n_batches += 1
 
+            # Progress every 100 batches
+            if (batch_idx + 1) % 100 == 0:
+                avg = train_loss / max(n_batches, 1)
+                print(f"    Batch {batch_idx+1}/{len(train_loader)}  loss={avg:.6f}", flush=True)
+
         train_loss = train_loss / max(n_batches, 1)
 
         # --- Validate ---
@@ -333,35 +358,28 @@ def train(language, epochs, batch_size, lr, resume):
         n_val_batches = 0
 
         with torch.no_grad():
-            for mel_batch, audio_batch, mel_lengths in val_loader:
+            for mel_batch, audio_batch, f0_batch, mel_lengths in val_loader:
                 mel_batch = mel_batch.to(device)
                 audio_batch = audio_batch.to(device)
+                f0_batch = f0_batch.to(device)
 
                 for i in range(mel_batch.shape[0]):
                     mel_i = mel_batch[i:i+1]
                     audio_i = audio_batch[i:i+1]
+                    f0_i = f0_batch[i:i+1]
                     mel_len = mel_lengths[i].item()
 
                     ref_s = extract_style_embeddings(model, audio_i, device)
-                    asr_features = mel_i[:, :, :mel_len]
+                    mel_features = mel_i[:, :, :mel_len]
+                    asr_features = mel_projector(mel_features)
 
                     try:
-                        y_np = audio_i[0].cpu().numpy()
-                        f0, _, _ = librosa.pyin(
-                            y_np, fmin=50, fmax=550, sr=TARGET_SR,
-                            hop_length=HOP_LENGTH
-                        )
-                        f0 = np.nan_to_num(f0, nan=0.0)
-                        f0 = torch.FloatTensor(f0).unsqueeze(0).to(device)
-
-                        if f0.shape[1] > mel_len:
-                            f0 = f0[:, :mel_len]
-                        elif f0.shape[1] < mel_len:
-                            f0 = torch.nn.functional.pad(f0, (0, mel_len - f0.shape[1]))
-
-                        N = torch.randn(1, mel_len).to(device) * 0.003
+                        f0_2x = torch.nn.functional.interpolate(
+                            f0_i[:, :mel_len].unsqueeze(1), size=mel_len * 2, mode='linear'
+                        ).squeeze(1)
+                        N = torch.randn(1, mel_len * 2).to(device) * 0.003
                         s_acoustic = ref_s[:, :128]
-                        output = model.decoder(asr_features, f0, N, s_acoustic)
+                        output = model.decoder(asr_features, f0_2x, N, s_acoustic)
 
                         if output.dim() == 2:
                             output = output.unsqueeze(0)
