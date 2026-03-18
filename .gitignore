@@ -46,6 +46,14 @@ ml-pipeline/models/**/*
 ml-pipeline/data/**/*
 !ml-pipeline/data/.gitkeep
 
+# ML Python virtual environment
+ml-pipeline/venv/
+
+# ML checkpoints and outputs (too large for git)
+ml-pipeline/checkpoints/
+ml-pipeline/outputs/
+ml-pipeline/logs/
+
 # Temporary
 tmp/
 temp/

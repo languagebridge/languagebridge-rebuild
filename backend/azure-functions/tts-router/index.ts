@@ -106,8 +106,17 @@ export async function ttsRouter(
       }
     );
     audioBuffer = Buffer.from(ttsResponse.data);
-  } catch (err) {
-    context.log('Azure TTS failed:', err);
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err)) {
+      const status = err.response?.status;
+      const body = err.response?.data
+        ? Buffer.from(err.response.data).toString('utf8')
+        : '(empty)';
+      context.log(`Azure TTS failed — status: ${status}, body: ${body}`);
+      context.log(`SSML sent: ${buildSSML(text, language)}`);
+    } else {
+      context.log('Azure TTS failed:', err);
+    }
     return error(502, 'AZURE_SERVICE_ERROR', 'Failed to generate audio from Azure TTS');
   }
 
