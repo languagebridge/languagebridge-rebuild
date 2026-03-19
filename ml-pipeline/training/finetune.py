@@ -132,9 +132,17 @@ class CachedMelDataset(Dataset):
     def __len__(self):
         return len(self.cache_paths)
 
+    MAX_FRAMES = 200  # Cap at ~2s of audio — keeps decoder output tractable
+
     def __getitem__(self, idx):
         data = torch.load(self.cache_paths[idx], weights_only=True)
-        return data["mel"], data["f0"], data["style"]
+        mel = data["mel"]
+        f0 = data["f0"]
+        # Truncate long clips to keep decoder output + backward fast
+        if mel.shape[1] > self.MAX_FRAMES:
+            mel = mel[:, :self.MAX_FRAMES]
+            f0 = f0[:self.MAX_FRAMES]
+        return mel, f0, data["style"]
 
 
 def collate_fn(batch):
@@ -307,6 +315,8 @@ def train(language, epochs, batch_size, lr, resume, max_clips):
 
         train_loss = 0.0
         n_batches = 0
+        n_nan = 0
+        n_err = 0
 
         for batch_idx, (mel_batch, f0_batch, style_batch, mel_lengths) in enumerate(
             train_loader
@@ -340,6 +350,11 @@ def train(language, epochs, batch_size, lr, resume, max_clips):
 
                 output_audio = output.squeeze(1)  # (B, audio_T)
 
+                # Truncate to expected audio length (decoder overproduces ~2.3x)
+                expected_audio_len = max_mel_t * HOP_LENGTH
+                if output_audio.shape[1] > expected_audio_len:
+                    output_audio = output_audio[:, :expected_audio_len]
+
                 # Differentiable mel on decoder output (stays on MPS)
                 output_mel = mel_spec(output_audio)  # (B, 80, frames)
 
@@ -368,6 +383,7 @@ def train(language, epochs, batch_size, lr, resume, max_clips):
 
                 # Skip NaN/Inf losses
                 if torch.isnan(loss) or torch.isinf(loss):
+                    n_nan += 1
                     if batch_idx < 5:
                         print(f"    Batch {batch_idx}: NaN/Inf loss, skipping", flush=True)
                     continue
@@ -380,19 +396,20 @@ def train(language, epochs, batch_size, lr, resume, max_clips):
                 n_batches += 1
 
             except Exception as e:
-                if batch_idx == 0:
-                    print(f"    Batch 0 error: {e}", flush=True)
+                n_err += 1
+                if batch_idx < 3:
+                    print(f"    Batch {batch_idx} error: {e}", flush=True)
                 continue
             finally:
                 # Free MPS memory after each batch
                 if device.type == "mps":
                     torch.mps.empty_cache()
 
-            # Progress every 50 batches
-            if (batch_idx + 1) % 50 == 0:
+            # Progress every 10 batches
+            if (batch_idx + 1) % 10 == 0:
                 avg = train_loss / max(n_batches, 1)
                 print(
-                    f"    Batch {batch_idx+1}/{len(train_loader)}  loss={avg:.6f}",
+                    f"    Batch {batch_idx+1}/{len(train_loader)}  loss={avg:.6f}  ok={n_batches} nan={n_nan} err={n_err}",
                     flush=True,
                 )
 
