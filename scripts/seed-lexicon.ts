@@ -101,7 +101,7 @@ async function upsertBatch(
   }));
 
   try {
-    const response = await container.items.bulk(operations);
+    const response = await container.items.bulk(operations as any);
 
     for (let i = 0; i < response.length; i++) {
       const result = response[i];
