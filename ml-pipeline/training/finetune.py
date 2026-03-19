@@ -84,9 +84,14 @@ class TorchMelSpec(nn.Module):
 
         Uses identical normalization as precompute_mels.py:
           AmplitudeToDB(power, top_db=80) → (x + 40) / 40
+
+        Note: Decoder output can be [-20000, +20000] early in training.
+        We normalize by peak amplitude to preserve gradients (hard clamp
+        would zero all gradients since every value is outside [-1, 1]).
         """
-        # Clamp audio to prevent extreme values from untrained decoder
-        waveform = waveform.clamp(-1.0, 1.0)
+        # Normalize to [-1, 1] by peak — preserves gradients unlike clamp
+        peak = waveform.abs().max(dim=-1, keepdim=True).values.clamp(min=1e-4)
+        waveform = waveform / peak
         mel = self.mel_spec(waveform)  # (B, 80, frames)
         mel_db = self.amp_to_db(mel)   # (B, 80, frames) in dB
         mel_db = (mel_db + 40.0) / 40.0
