@@ -100,26 +100,22 @@ class CachedMelDataset(Dataset):
         with open(split_file) as f:
             all_files = [line.strip() for line in f if line.strip()]
 
-        # Subsample
-        if max_clips > 0 and len(all_files) > max_clips:
-            rng = np.random.RandomState(42)
-            indices = rng.choice(len(all_files), max_clips, replace=False)
-            all_files = [all_files[i] for i in indices]
-            print(f"    Subsampled to {max_clips} clips", flush=True)
-
-        # Map WAV paths to cached .pt files
+        # Filter to cached files first, then subsample
         self.cache_paths = []
-        missing = 0
         for wav_path in all_files:
             stem = Path(wav_path).stem
             pt_path = cache_dir / f"{stem}.pt"
             if pt_path.exists():
                 self.cache_paths.append(pt_path)
-            else:
-                missing += 1
 
-        if missing > 0:
-            print(f"    Warning: {missing} clips not in cache (run precompute_mels.py)", flush=True)
+        print(f"    Found {len(self.cache_paths)}/{len(all_files)} clips in cache", flush=True)
+
+        # Subsample from available cached clips
+        if max_clips > 0 and len(self.cache_paths) > max_clips:
+            rng = np.random.RandomState(42)
+            indices = rng.choice(len(self.cache_paths), max_clips, replace=False)
+            self.cache_paths = [self.cache_paths[i] for i in indices]
+            print(f"    Subsampled to {max_clips} clips", flush=True)
 
     def __len__(self):
         return len(self.cache_paths)
