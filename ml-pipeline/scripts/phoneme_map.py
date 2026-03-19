@@ -25,6 +25,7 @@ Status as of March 2026 — ALL 19 LANGUAGES SUPPORTED:
 ESPEAK_LANG_MAP: dict[str, str | None] = {
     # Pilot languages — espeak
     "dari": "fa",
+    "dari_afghan": "fa",  # Afghan Dari — same phonemizer, distinct training data
     "pashto": "fa",       # Approximation: Farsi phonemizer for Pashto script
     "persian": "fa",
     "arabic": "ar",

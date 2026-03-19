@@ -551,7 +551,7 @@ def train(language, epochs, batch_size, lr, resume, max_clips):
 
 
 ALL_LANGUAGES = [
-    "dari", "pashto", "arabic", "ukrainian", "urdu", "uzbek",
+    "dari", "dari_afghan", "pashto", "arabic", "ukrainian", "urdu", "uzbek",
     "persian", "french", "portuguese", "swahili", "somali",
     "tagalog", "vietnamese", "burmese", "amharic", "nepali", "twi",
     "kinyarwanda", "tigrinya",
