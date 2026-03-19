@@ -75,18 +75,22 @@ class TorchMelSpec(nn.Module):
             n_mels=N_MELS,
             power=2.0,
         ).to(device)
+        self.amp_to_db = torchaudio.transforms.AmplitudeToDB(
+            stype="power", top_db=80.0
+        ).to(device)
 
     def forward(self, waveform):
-        """waveform: (B, T) on device → (B, 80, frames) on device."""
+        """waveform: (B, T) on device → (B, 80, frames) on device.
+
+        Uses identical normalization as precompute_mels.py:
+          AmplitudeToDB(power, top_db=80) → (x + 40) / 40
+        """
         # Clamp audio to prevent extreme values from untrained decoder
         waveform = waveform.clamp(-1.0, 1.0)
         mel = self.mel_spec(waveform)  # (B, 80, frames)
-        # Log-mel with generous floor to prevent -inf
-        log_mel = torch.log10(mel.clamp(min=1e-7))
-        # Normalize: log10 of power mel is roughly [-7, 0], map to [0, 1]
-        log_mel = (log_mel + 7.0) / 7.0
-        log_mel = log_mel.clamp(0.0, 2.0)  # safety clamp
-        return log_mel
+        mel_db = self.amp_to_db(mel)   # (B, 80, frames) in dB
+        mel_db = (mel_db + 40.0) / 40.0
+        return mel_db
 
 
 # ─────────────────────────────────────────────────────────────────────
