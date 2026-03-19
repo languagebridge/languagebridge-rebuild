@@ -17,6 +17,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from pathlib import Path
 
 import numpy as np
+import soundfile as sf
 import torch
 import torchaudio
 
@@ -36,11 +37,14 @@ MAX_AUDIO_LEN = TARGET_SR * 10  # 10 seconds
 def process_clip(wav_path: str, cache_path: str) -> dict:
     """Process a single WAV clip → mel + f0 + style tensors."""
     try:
-        waveform, sr = torchaudio.load(wav_path)
+        # Use soundfile (torchaudio.load requires torchcodec on newer versions)
+        data, sr = sf.read(wav_path, dtype="float32")
 
         # Mono
-        if waveform.shape[0] > 1:
-            waveform = waveform.mean(dim=0, keepdim=True)
+        if data.ndim > 1:
+            data = data.mean(axis=1)
+
+        waveform = torch.FloatTensor(data).unsqueeze(0)  # (1, T)
 
         # Resample if needed
         if sr != TARGET_SR:
