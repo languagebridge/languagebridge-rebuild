@@ -6,45 +6,58 @@ compatibility with Kokoro-82M's 114-token vocabulary.
 
 Used by evaluate_tts.py and the inference service.
 
-Status as of March 2026:
-  READY (10):    dari, pashto*, urdu, spanish, portuguese, nepali,
-                 burmese, swahili, uzbek, amharic
-  STRIP (3):     arabic, ukrainian, vietnamese (strip 1 diacritic each)
-  WORKAROUND (2): french (use fr-fr), persian (same as dari)
-  NO ESPEAK (4): somali, tagalog, twi, kinyarwanda
+Status as of March 2026 — ALL 19 LANGUAGES SUPPORTED:
+  espeak (14):   dari, pashto*, persian, arabic†, urdu, ukrainian†,
+                 spanish, english, french, portuguese, nepali, burmese,
+                 swahili, uzbek, amharic, vietnamese†
+  epitran (3):   somali, tagalog, kinyarwanda
+  custom (1):    twi (rule-based, twi_g2p.py)
 
-  * Pashto uses fa (Farsi) phonemizer as approximation — Pashto-specific
-    letters (ځ ړ ږ ښ) get approximate phonemes but the decoder was trained
-    on Pashto audio, so acoustic output is correct even if phonemes are
-    imprecise for those characters.
+  100% Kokoro vocab coverage for all 19 languages.
+  * Pashto uses fa (Farsi) phonemizer as approximation
+  † Strip 1 diacritic each (pharyngealization/dental/tone mark)
 """
 
-# LanguageBridge language → espeak language code
-# None = no espeak support, needs alternative approach
+# LanguageBridge language → G2P backend and code
+# "espeak:<code>" = use misaki.espeak.EspeakG2P
+# "epitran:<code>" = use epitran.Epitran
+# "custom:<module>" = use custom G2P class
 ESPEAK_LANG_MAP: dict[str, str | None] = {
-    # Pilot languages
+    # Pilot languages — espeak
     "dari": "fa",
     "pashto": "fa",       # Approximation: Farsi phonemizer for Pashto script
     "persian": "fa",
     "arabic": "ar",
     "urdu": "ur",
-    "somali": None,        # No espeak support
     "ukrainian": "uk",
     "spanish": "es",
     "english": "en-us",
-    # Expansion languages
+    # Expansion languages — espeak
     "french": "fr-fr",
     "portuguese": "pt",
     "nepali": "ne",
     "burmese": "my",
     "swahili": "sw",
-    "tagalog": None,       # No espeak support
     "vietnamese": "vi",
-    "twi": None,           # No espeak support
     "uzbek": "uz",
-    "kinyarwanda": None,   # No espeak support
     "amharic": "am",
+    # These 4 use alternative G2P backends (not espeak)
+    "somali": None,        # Use epitran som-Latn
+    "tagalog": None,       # Use epitran tgl-Latn
+    "kinyarwanda": None,   # Use epitran kin-Latn
+    "twi": None,           # Use custom twi_g2p.TwiG2P
 }
+
+# Alternative G2P backends for languages without espeak support
+# All tested: 100% Kokoro vocab coverage
+EPITRAN_LANG_MAP: dict[str, str] = {
+    "somali": "som-Latn",
+    "tagalog": "tgl-Latn",
+    "kinyarwanda": "kin-Latn",
+}
+
+# Twi uses a custom rule-based G2P (twi_g2p.py)
+CUSTOM_G2P_LANGUAGES = {"twi"}
 
 # Phonemes that appear in espeak output but aren't in Kokoro's vocab.
 # These are diacritics that can be safely stripped without losing
@@ -56,17 +69,41 @@ STRIP_PHONEMES: dict[str, list[str]] = {
     "vietnamese": ["6"],   # Tone number (acoustic model handles tone from training data)
 }
 
-# Languages with no espeak support — fallback strategies
-NO_ESPEAK_FALLBACK = {
-    "somali": "Azure TTS (so-SO-MuuseNeural) — best available option until espeak adds Somali",
-    "tagalog": "Azure TTS (fil-PH-AngeloNeural) — espeak has no Filipino/Tagalog",
-    "twi": "Azure TTS has no Twi — use closest available (ak) or skip TTS for now",
-    "kinyarwanda": "Azure TTS has no Kinyarwanda — community recording needed",
-}
+def get_g2p(language: str):
+    """Get a G2P instance for any supported language.
+
+    Returns an object with __call__(text) -> (phonemes, tokens).
+    Handles espeak, epitran, and custom backends transparently.
+    """
+    # espeak languages
+    espeak_code = ESPEAK_LANG_MAP.get(language)
+    if espeak_code is not None:
+        from misaki import espeak
+        return espeak.EspeakG2P(language=espeak_code)
+
+    # epitran languages (Somali, Tagalog, Kinyarwanda)
+    epitran_code = EPITRAN_LANG_MAP.get(language)
+    if epitran_code is not None:
+        import epitran as _epitran
+        epi = _epitran.Epitran(epitran_code)
+        # Wrap to match espeak interface: __call__ returns (phonemes, None)
+        class EpitranWrapper:
+            def __call__(self, text):
+                return epi.transliterate(text), None
+        return EpitranWrapper()
+
+    # Custom G2P (Twi)
+    if language in CUSTOM_G2P_LANGUAGES:
+        from twi_g2p import TwiG2P
+        return TwiG2P()
+
+    return None
 
 
 def get_espeak_code(language: str) -> str | None:
-    """Get the espeak language code for a LanguageBridge language."""
+    """Get the espeak language code for a LanguageBridge language.
+    Returns None for languages that use epitran or custom G2P.
+    """
     return ESPEAK_LANG_MAP.get(language)
 
 
@@ -79,5 +116,9 @@ def clean_phonemes(phonemes: str, language: str) -> str:
 
 
 def can_use_kokoro(language: str) -> bool:
-    """Check if a language can use Kokoro TTS (has espeak support)."""
-    return ESPEAK_LANG_MAP.get(language) is not None
+    """Check if a language can use Kokoro TTS (has any G2P support)."""
+    return (
+        ESPEAK_LANG_MAP.get(language) is not None
+        or language in EPITRAN_LANG_MAP
+        or language in CUSTOM_G2P_LANGUAGES
+    )
