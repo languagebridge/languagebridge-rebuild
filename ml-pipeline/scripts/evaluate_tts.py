@@ -66,11 +66,16 @@ def evaluate(language: str, output_dir: str):
         print(f"No test sentences for language: {language}")
         return
 
-    # Setup G2P
-    lang_map = {"dari": "fa", "pashto": "ps", "arabic": "ar", "urdu": "ur",
-                "somali": "so", "ukrainian": "uk", "spanish": "es"}
-    espeak_lang = lang_map.get(language, language)
+    # Setup G2P using phoneme map
+    from phoneme_map import get_espeak_code, clean_phonemes, can_use_kokoro, NO_ESPEAK_FALLBACK
 
+    if not can_use_kokoro(language):
+        fallback = NO_ESPEAK_FALLBACK.get(language, "No fallback available")
+        print(f"Cannot use Kokoro for {language} — no espeak support.")
+        print(f"Fallback: {fallback}")
+        return
+
+    espeak_lang = get_espeak_code(language)
     print(f"Setting up G2P with espeak language: {espeak_lang}")
     g2p = espeak.EspeakG2P(language=espeak_lang)
 
@@ -105,6 +110,9 @@ def evaluate(language: str, output_dir: str):
         if not phonemes:
             print(f"{name:30s} FAILED — no phonemes generated")
             continue
+
+        # Strip unmapped diacritics for partial-support languages
+        phonemes = clean_phonemes(phonemes, language)
 
         # Trim phonemes if too long
         if len(phonemes) > 510:
