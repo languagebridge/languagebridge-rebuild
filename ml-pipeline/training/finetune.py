@@ -251,24 +251,23 @@ def train(language, epochs, batch_size, lr, resume, max_clips):
     train_ds = CachedMelDataset(split_dir / "train.txt", cache_dir, max_clips=max_clips)
     val_ds = CachedMelDataset(split_dir / "val.txt", cache_dir, max_clips=max_clips)
 
-    num_workers = 4 if device.type == "mps" else 0
+    # num_workers=0 on MPS to avoid memory pressure from forked processes
+    # Data is cached .pt files on SSD — single-worker load is fast enough
     train_loader = DataLoader(
         train_ds,
         batch_size=batch_size,
         shuffle=True,
         collate_fn=collate_fn,
-        num_workers=num_workers,
-        pin_memory=True,
-        persistent_workers=num_workers > 0,
+        num_workers=0,
+        pin_memory=False,
     )
     val_loader = DataLoader(
         val_ds,
         batch_size=batch_size,
         shuffle=False,
         collate_fn=collate_fn,
-        num_workers=num_workers,
-        pin_memory=True,
-        persistent_workers=num_workers > 0,
+        num_workers=0,
+        pin_memory=False,
     )
 
     print(f"\n  Train clips: {len(train_ds)}", flush=True)
@@ -364,6 +363,10 @@ def train(language, epochs, batch_size, lr, resume, max_clips):
                 if batch_idx == 0:
                     print(f"    Batch 0 error: {e}", flush=True)
                 continue
+            finally:
+                # Free MPS memory after each batch
+                if device.type == "mps":
+                    torch.mps.empty_cache()
 
             # Progress every 50 batches
             if (batch_idx + 1) % 50 == 0:
@@ -524,7 +527,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--language", required=True, choices=ALL_LANGUAGES)
     parser.add_argument("--epochs", type=int, default=20)
-    parser.add_argument("--batch-size", type=int, default=8)
+    parser.add_argument("--batch-size", type=int, default=2)
     parser.add_argument("--lr", type=float, default=0.0001)
     parser.add_argument("--max-clips", type=int, default=10000, help="0 = all cached clips")
     parser.add_argument("--resume", action="store_true")
