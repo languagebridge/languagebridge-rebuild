@@ -53,3 +53,11 @@ export function getAdminUsersContainer(): Container {
 export function getAudioCacheMetadataContainer(): Container {
   return getDatabase().container('audio_cache_metadata');
 }
+
+export function getLexiconContainer(): Container {
+  return getDatabase().container('lexicon');
+}
+
+export function getAnalyticsContainer(): Container {
+  return getDatabase().container('analytics');
+}

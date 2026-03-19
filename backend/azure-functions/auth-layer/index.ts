@@ -1,5 +1,5 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { AuthResponse, AuthErrorResponse } from '../../shared/types';
 import { getAdminUsersContainer } from '../../shared/cosmos-client';
 
@@ -18,8 +18,20 @@ app.http('auth-layer', {
   handler: authLayer,
 });
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Lazy-init Supabase client — created once, reused across invocations
+let _supabaseClient: SupabaseClient | null = null;
+
+function getSupabaseClient(): SupabaseClient | null {
+  if (!_supabaseClient) {
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) return null;
+    _supabaseClient = createClient(url, key, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+  }
+  return _supabaseClient;
+}
 
 export async function authLayer(
   request: HttpRequest,
@@ -39,16 +51,13 @@ export async function authLayer(
   }
 
   // ── 2. Validate Supabase credentials are configured ────────────
-  if (!supabaseUrl || !supabaseServiceRoleKey) {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
     context.log('Supabase environment variables not configured');
     return error(500, 'INTERNAL_ERROR', 'Auth service not configured');
   }
 
   // ── 3. Verify token with Supabase ─────────────────────────────
-  const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-
   let userId: string;
   let email: string;
 

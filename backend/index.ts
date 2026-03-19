@@ -9,3 +9,4 @@ import './azure-functions/tts-router/index';
 import './azure-functions/analytics-writer/index';
 import './azure-functions/flag-handler/index';
 import './azure-functions/auth-layer/index';
+import './azure-functions/lexicon-lookup/index';

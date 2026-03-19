@@ -65,6 +65,15 @@ export type FlagEventRequest = {
   audioUrl?: string;      // URL of the audio that was flagged (optional)
 };
 
+export type LexiconLookupRequest = {
+  term: string;              // Word or phrase to look up
+  language: SupportedLanguage;
+  domain?: 'k12_academic' | 'school_navigation' | 'medical' | 'legal_immigration' | 'social_services';
+  context?: string;          // Subject context for disambiguation (e.g. "science", "social_studies")
+  pilotId: string;
+  sessionToken: string;
+};
+
 // auth-layer reads the Authorization header directly — no request body type needed
 
 // ============================================
@@ -127,6 +136,23 @@ export type AuthResponse = {
 
 export type AuthErrorResponse = {
   error: 'INVALID_TOKEN' | 'EXPIRED_TOKEN' | 'MISSING_TOKEN' | 'INTERNAL_ERROR';
+  details: string;
+};
+
+export type LexiconLookupResponse = {
+  term: string;
+  language: SupportedLanguage;
+  type: 'bridge' | 'cognate';
+  cognate: string | null;
+  bridge_definition: string | null;
+  bridge_definition_en: string | null;
+  audio_url: string | null;
+  audio_source: 'proprietary' | 'azure' | null;
+  source: 'lexicon' | 'translator_fallback';
+};
+
+export type LexiconLookupErrorResponse = {
+  error: 'MISSING_FIELDS' | 'INVALID_LANGUAGE' | 'TRANSLATOR_ERROR' | 'INTERNAL_ERROR';
   details: string;
 };
 
@@ -205,6 +231,29 @@ export type AudioCacheMetadataDoc = {
 // ============================================
 // FLAG ESCALATION THRESHOLDS
 // ============================================
+
+export type LexiconDoc = {
+  id: string;               // e.g. "photosynthesis_dari_v1"
+  term: string;
+  language: SupportedLanguage;
+  domain: 'k12_academic' | 'school_navigation' | 'medical' | 'legal_immigration' | 'social_services';
+  subject?: string;         // For disambiguation: "science", "social_studies", etc.
+  grade_band?: string;      // "K-2", "3-5", "6-8", "9-12"
+  ohio_standard?: string;   // e.g. "SCI.5.LS.1"
+  cognate: string | null;
+  bridge_definition: string | null;
+  bridge_definition_en: string | null;
+  audio_blob_path: string | null;
+  audio_source: 'proprietary' | 'azure' | null;
+  audio_model?: string;     // e.g. "dari_tts_v1"
+  status: 'auto_generated' | 'pending_review' | 'approved' | 'deprecated';
+  version: number;
+  usage_count: number;
+  flag_count: number;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+};
 
 export const FLAG_THRESHOLDS = {
   REVIEW: 3,        // Flag goes to review queue

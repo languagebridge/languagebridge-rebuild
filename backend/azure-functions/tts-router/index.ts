@@ -202,11 +202,9 @@ function buildSSML(text: string, language: string): string {
 async function incrementCacheHit(textHash: string): Promise<void> {
   try {
     const container = getAudioCacheMetadataContainer();
-    const { resource } = await container.item(textHash, textHash).read();
-    if (resource) {
-      resource.hitCount = (resource.hitCount ?? 0) + 1;
-      await container.item(textHash, textHash).replace(resource);
-    }
+    await container.item(textHash, textHash).patch([
+      { op: 'incr', path: '/hitCount', value: 1 },
+    ]);
   } catch {
     // Non-fatal: cache hit count is a nice-to-have metric
   }
