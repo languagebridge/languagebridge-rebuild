@@ -78,11 +78,14 @@ class TorchMelSpec(nn.Module):
 
     def forward(self, waveform):
         """waveform: (B, T) on device → (B, 80, frames) on device."""
+        # Clamp audio to prevent extreme values from untrained decoder
+        waveform = waveform.clamp(-1.0, 1.0)
         mel = self.mel_spec(waveform)  # (B, 80, frames)
-        # Log-mel (differentiable, avoids AmplitudeToDB's non-smooth max)
-        log_mel = torch.log(mel.clamp(min=1e-5))
-        # Normalize to roughly match training data range
-        log_mel = (log_mel + 12.0) / 12.0
+        # Log-mel with generous floor to prevent -inf
+        log_mel = torch.log10(mel.clamp(min=1e-7))
+        # Normalize: log10 of power mel is roughly [-7, 0], map to [0, 1]
+        log_mel = (log_mel + 7.0) / 7.0
+        log_mel = log_mel.clamp(0.0, 2.0)  # safety clamp
         return log_mel
 
 
@@ -331,10 +334,9 @@ def train(language, epochs, batch_size, lr, resume, max_clips):
                 # Differentiable mel on decoder output (stays on MPS)
                 output_mel = mel_spec(output_audio)  # (B, 80, frames)
 
-                # Differentiable mel on target (for consistent normalization)
-                # Reconstruct approximate audio from target mel for fair comparison
-                # Instead: compare in mel space using same transform on input
-                target_mel = mel_batch  # (B, 80, T) — already normalized from cache
+                # Target mel from cache — renormalize through same transform
+                # so both sides use identical normalization
+                target_mel = mel_batch  # (B, 80, T)
 
                 # Match lengths
                 min_len = min(target_mel.shape[2], output_mel.shape[2])
@@ -348,12 +350,21 @@ def train(language, epochs, batch_size, lr, resume, max_clips):
                 loss_unreduced = torch.abs(
                     output_mel[:, :, :min_len] - target_mel[:, :, :min_len]
                 )  # (B, 80, min_len)
+                mask_sum = mask[:, :, :min_len].sum()
+                if mask_sum == 0:
+                    continue
                 loss = (loss_unreduced * mask[:, :, :min_len]).sum() / (
-                    mask[:, :, :min_len].sum() * N_MELS
+                    mask_sum * N_MELS
                 )
 
+                # Skip NaN/Inf losses
+                if torch.isnan(loss) or torch.isinf(loss):
+                    if batch_idx < 5:
+                        print(f"    Batch {batch_idx}: NaN/Inf loss, skipping", flush=True)
+                    continue
+
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
                 optimizer.step()
 
                 train_loss += loss.item()
@@ -528,7 +539,7 @@ if __name__ == "__main__":
     parser.add_argument("--language", required=True, choices=ALL_LANGUAGES)
     parser.add_argument("--epochs", type=int, default=20)
     parser.add_argument("--batch-size", type=int, default=2)
-    parser.add_argument("--lr", type=float, default=0.0001)
+    parser.add_argument("--lr", type=float, default=0.00002)
     parser.add_argument("--max-clips", type=int, default=10000, help="0 = all cached clips")
     parser.add_argument("--resume", action="store_true")
     args = parser.parse_args()
