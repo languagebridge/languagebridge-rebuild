@@ -27,20 +27,20 @@ export const SUPPORTED_LANGUAGES = [
   'spanish',
   'persian',
   'english',
-  // Tier 1.5 — Piper TTS (beta voices)
+  // Tier 1.5 — Piper TTS (beta, using related language model)
   'nepali',
   'swahili',
-  // Tier 2 — Kokoro fine-tuned + custom voice packs
-  'dari',
-  'pashto',
-  'urdu',
+  'dari',       // uses Persian Piper
+  'pashto',     // uses Persian Piper
+  'urdu',       // uses Arabic Piper
+  'somali',     // uses Swahili Piper
+  'kinyarwanda', // uses Swahili Piper
+  'twi',        // uses Swahili Piper
+  // Tier 2 — Azure TTS only (no local model yet)
   'burmese',
   'uzbek',
   'amharic',
-  'somali',
   'tagalog',
-  'kinyarwanda',
-  'twi',
   'tigrinya',
 ] as const;
 
@@ -95,7 +95,7 @@ export type LexiconLookupRequest = {
 export type TTSResponse = {
   audioUrl: string;       // URL to play the audio
   source: 'proprietary' | 'azure_cache' | 'azure_live';
-  backend?: 'piper' | 'kokoro' | 'azure';  // Which TTS engine produced this audio
+  backend?: 'piper' | 'azure';  // Which TTS engine produced this audio
   quality?: 'production' | 'beta' | 'experimental'; // Voice quality tier
   durationMs: number;
   cached: boolean;
@@ -104,6 +104,7 @@ export type TTSResponse = {
 
 export type TTSErrorResponse = {
   error:
+    | 'UNAUTHORIZED'
     | 'MISSING_FIELDS'
     | 'INVALID_LANGUAGE'
     | 'TEXT_TOO_LONG'
@@ -122,7 +123,7 @@ export type AnalyticsWriterResponse = {
 };
 
 export type AnalyticsWriterErrorResponse = {
-  error: 'PII_VIOLATION' | 'INVALID_EVENT_TYPE' | 'MISSING_FIELDS' | 'INTERNAL_ERROR';
+  error: 'UNAUTHORIZED' | 'RATE_LIMITED' | 'PII_VIOLATION' | 'INVALID_EVENT_TYPE' | 'MISSING_FIELDS' | 'INTERNAL_ERROR';
   details: string;
   prohibitedFields?: string[]; // which fields triggered the PII check
 };
@@ -136,7 +137,7 @@ export type FlagHandlerResponse = {
 };
 
 export type FlagHandlerErrorResponse = {
-  error: 'MISSING_FIELDS' | 'INVALID_LANGUAGE' | 'INTERNAL_ERROR';
+  error: 'UNAUTHORIZED' | 'RATE_LIMITED' | 'MISSING_FIELDS' | 'INVALID_LANGUAGE' | 'INTERNAL_ERROR';
   details: string;
 };
 
@@ -175,7 +176,7 @@ export type LexiconLookupResponse = {
   // Audio
   audio_url: string | null;
   audio_source: 'proprietary' | 'azure' | null;
-  tts_backend?: 'piper' | 'kokoro';
+  tts_backend?: 'piper' | 'azure';
 
   // Metadata for UI hints
   subject?: string;
@@ -185,7 +186,7 @@ export type LexiconLookupResponse = {
 };
 
 export type LexiconLookupErrorResponse = {
-  error: 'MISSING_FIELDS' | 'INVALID_LANGUAGE' | 'TRANSLATOR_ERROR' | 'INTERNAL_ERROR';
+  error: 'UNAUTHORIZED' | 'RATE_LIMITED' | 'MISSING_FIELDS' | 'INVALID_LANGUAGE' | 'TRANSLATOR_ERROR' | 'INTERNAL_ERROR';
   details: string;
 };
 
@@ -215,17 +216,6 @@ export type FlagDoc = {
   createdAt: string;
   lastFlaggedAt: string;
   requiresReview: boolean;
-};
-
-export type ModelRegistryDoc = {
-  id: string;             // Language code: 'dari', 'pashto', etc.
-  language: SupportedLanguage;
-  modelName: string;      // e.g. 'Kokoro-82M'
-  modelVersion: string;
-  blobPath: string;       // Path in Azure Blob Storage
-  sha256Hash: string;     // Integrity check
-  isActive: boolean;
-  uploadedAt: string;
 };
 
 export type PilotDoc = {
@@ -301,8 +291,7 @@ export type LexiconDoc = {
   audio_blob_path: string | null;
   audio_source: 'proprietary' | 'azure' | null;
   audio_model?: string;     // e.g. "dari_tts_v1"
-  tts_backend?: 'piper' | 'kokoro';  // Which TTS system generated audio
-  voice_pack?: string;               // e.g. "dari" (voice pack name)
+  tts_backend?: 'piper' | 'azure';  // Which TTS system generated audio
 
   // Quality + lifecycle
   status: 'auto_generated' | 'pending_review' | 'approved' | 'deprecated';

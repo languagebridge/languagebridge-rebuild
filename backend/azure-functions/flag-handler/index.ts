@@ -8,7 +8,7 @@ import {
   FLAG_THRESHOLDS,
 } from '../../shared/types';
 import { getFlagsContainer } from '../../shared/cosmos-client';
-import { requireFields, isValidLanguage } from '../../shared/validators';
+import { requireFields, isValidLanguage, validateApiKey } from '../../shared/validators';
 
 /**
  * flag-handler
@@ -31,6 +31,12 @@ export async function flagHandler(
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   context.log('flag-handler invoked');
+
+  // ── 0. Auth ──────────────────────────────────────────────────
+  const keyCheck = validateApiKey(request);
+  if (!keyCheck.valid) {
+    return error(401, 'UNAUTHORIZED', keyCheck.error);
+  }
 
   // ── 1. Parse body ──────────────────────────────────────────────
   let body: Record<string, unknown>;

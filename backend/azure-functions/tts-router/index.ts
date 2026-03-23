@@ -4,7 +4,7 @@ import axios from 'axios';
 import { TTSRequest, TTSResponse, TTSErrorResponse, AudioCacheMetadataDoc } from '../../shared/types';
 import { getAudioCacheContainer } from '../../shared/blob-client';
 import { getAudioCacheMetadataContainer } from '../../shared/cosmos-client';
-import { requireFields, isValidLanguage, validateTTSText } from '../../shared/validators';
+import { requireFields, isValidLanguage, validateTTSText, validateApiKey, checkRateLimit } from '../../shared/validators';
 
 /**
  * tts-router
@@ -25,6 +25,12 @@ export async function ttsRouter(
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   context.log('tts-router invoked');
+
+  // ── 0. Auth + Rate Limit ─────────────────────────────────────
+  const keyCheck = validateApiKey(request);
+  if (!keyCheck.valid) {
+    return error(401, 'UNAUTHORIZED', keyCheck.error);
+  }
 
   // ── 1. Parse body ──────────────────────────────────────────────
   let body: Record<string, unknown>;
@@ -224,6 +230,19 @@ function buildSSML(text: string, language: string): string {
     ukrainian: 'uk-UA-OstapNeural',
     spanish: 'es-US-AlonsoNeural',
     english: 'en-US-AndrewNeural',
+    french: 'fr-FR-HenriNeural',
+    portuguese: 'pt-BR-AntonioNeural',
+    vietnamese: 'vi-VN-NamMinhNeural',
+    nepali: 'ne-NP-SagarNeural',
+    swahili: 'sw-KE-RafikiNeural',
+    burmese: 'my-MM-ThihaNeural',
+    amharic: 'am-ET-AmehaNeural',
+    tagalog: 'fil-PH-AngeloNeural',
+    kinyarwanda: 'rw-RW-YvanNeural',
+    // No Azure Neural voice available — fall back to English
+    uzbek: 'en-US-AndrewNeural',
+    twi: 'en-US-AndrewNeural',
+    tigrinya: 'en-US-AndrewNeural',
   };
 
   const voice = voiceMap[language] ?? 'en-US-AndrewNeural';

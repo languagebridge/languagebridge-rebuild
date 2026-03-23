@@ -15,12 +15,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY inference/app.py .
 COPY scripts/voice_router.py scripts/phoneme_map.py scripts/twi_g2p.py ./scripts/
 
-# Copy voice files (Piper ONNX models + Kokoro voice packs)
-COPY voices/ ./voices/
+# Copy Piper voice files (ONNX models ~100MB each)
+COPY voices/piper/ ./voices/piper/
 
-# Copy trained model weights (only languages with fine-tuned models)
-# In production, mount these from Azure Blob Storage instead of baking in
-COPY models/ ./models/
+# Copy Kokoro voice packs (style vectors ~500KB each)
+COPY voices/*.pt ./voices/
+
+# Model weights are NOT baked in — mount from Azure Blob Storage at runtime
+# Mount path: /app/models/<language>/<language>_tts_v1.pth
 
 EXPOSE 8000
 

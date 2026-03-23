@@ -9,7 +9,7 @@ import {
   SUPPORTED_LANGUAGES,
 } from '../../shared/types';
 import { getLexiconContainer, getAnalyticsContainer } from '../../shared/cosmos-client';
-import { requireFields, isValidLanguage } from '../../shared/validators';
+import { requireFields, isValidLanguage, validateApiKey } from '../../shared/validators';
 
 /**
  * lexicon-lookup
@@ -36,7 +36,7 @@ const TRANSLATOR_API_VERSION = '3.0';
 
 // Language code mapping: our codes → Azure Translator codes
 const LANGUAGE_TO_TRANSLATOR: Record<string, string> = {
-  dari: 'fa',       // Azure Translator uses 'fa' for Persian/Dari
+  dari: 'fa',
   pashto: 'ps',
   persian: 'fa',
   arabic: 'ar',
@@ -45,6 +45,18 @@ const LANGUAGE_TO_TRANSLATOR: Record<string, string> = {
   ukrainian: 'uk',
   spanish: 'es',
   english: 'en',
+  french: 'fr',
+  portuguese: 'pt',
+  vietnamese: 'vi',
+  nepali: 'ne',
+  swahili: 'sw',
+  burmese: 'my',
+  uzbek: 'uz',
+  amharic: 'am',
+  tagalog: 'fil',
+  kinyarwanda: 'rw',
+  twi: 'ak',       // Akan (closest Azure Translator code)
+  tigrinya: 'ti',
 };
 
 export async function lexiconLookup(
@@ -52,6 +64,12 @@ export async function lexiconLookup(
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   context.log('lexicon-lookup invoked');
+
+  // ── 0. Auth ──────────────────────────────────────────────────
+  const keyCheck = validateApiKey(request);
+  if (!keyCheck.valid) {
+    return jsonResponse(401, { error: 'UNAUTHORIZED', details: keyCheck.error } as LexiconLookupErrorResponse);
+  }
 
   // ── 1. Parse body ──────────────────────────────────────────────
   let body: Record<string, unknown>;

@@ -7,7 +7,7 @@ import {
   SessionUsageDoc,
 } from '../../shared/types';
 import { getSessionsContainer } from '../../shared/cosmos-client';
-import { checkForPII, requireFields, isValidLanguage } from '../../shared/validators';
+import { checkForPII, requireFields, isValidLanguage, validateApiKey } from '../../shared/validators';
 
 /**
  * analytics-writer
@@ -37,6 +37,12 @@ export async function analyticsWriter(
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   context.log('analytics-writer invoked');
+
+  // ── 0. Auth ──────────────────────────────────────────────────
+  const keyCheck = validateApiKey(request);
+  if (!keyCheck.valid) {
+    return error(401, 'UNAUTHORIZED', keyCheck.error);
+  }
 
   // ── 1. Parse body ──────────────────────────────────────────────
   let body: Record<string, unknown>;
