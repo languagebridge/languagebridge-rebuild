@@ -14,8 +14,8 @@ from pathlib import Path
 import librosa
 import soundfile as sf
 
-# Kokoro target sample rate
-TARGET_SR = 22050
+# Kokoro target sample rate (24000 Hz matches finetune.py and precompute_mels.py)
+TARGET_SR = 24000
 
 # All languages: language name -> Common Voice / FLEURS language code
 LANGUAGES = {

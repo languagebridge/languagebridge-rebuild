@@ -44,6 +44,7 @@ TIER2=(
     "uzbek"         # 169K clips
     "persian"       # 282K clips (same data as dari)
     "nepali"        # 84K clips
+    "kinyarwanda"   # 47K clips
 )
 
 TIER3=(
@@ -57,8 +58,6 @@ TIER3=(
 )
 
 TIER4=(
-    # These have <400 clips — may not train well
-    # Download supplementary data first for better results
     "pashto"        # 335 clips (975 hrs available via CV v19)
     "somali"        # 304 clips (FLEURS available)
     "twi"           # 258 clips (BibleTTS 160 hrs available)

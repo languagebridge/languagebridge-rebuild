@@ -1,0 +1,52 @@
+# Azure Container App deployment for LanguageBridge TTS Inference Service
+# Deploy: az containerapp create --resource-group lb-prod --yaml deploy/container-app.yaml
+#
+# Prerequisites:
+#   1. Build + push image: docker build -t lbacr.azurecr.io/lb-tts:latest . && docker push lbacr.azurecr.io/lb-tts:latest
+#   2. Container App Environment must exist: lb-tts-env
+#   3. Azure Container Registry: lbacr.azurecr.io
+
+type: Microsoft.App/containerApps
+name: lb-tts-inference
+location: eastus
+
+properties:
+  managedEnvironmentId: /subscriptions/${SUBSCRIPTION_ID}/resourceGroups/lb-prod/providers/Microsoft.App/managedEnvironments/lb-tts-env
+
+  configuration:
+    activeRevisionsMode: Single
+    ingress:
+      external: true
+      targetPort: 8000
+      transport: http
+      allowInsecure: false
+      traffic:
+        - latestRevision: true
+          weight: 100
+    registries:
+      - server: lbacr.azurecr.io
+        username: lbacr
+        passwordSecretRef: acr-password
+    secrets:
+      - name: acr-password
+        value: ${ACR_PASSWORD}
+
+  template:
+    containers:
+      - name: lb-tts
+        image: lbacr.azurecr.io/lb-tts:latest
+        resources:
+          cpu: 2.0
+          memory: 4Gi
+        env:
+          - name: PORT
+            value: "8000"
+
+    scale:
+      minReplicas: 0    # Scale to zero when no traffic (nights/weekends)
+      maxReplicas: 3    # Max 3 during peak school hours
+      rules:
+        - name: http-scaling
+          http:
+            metadata:
+              concurrentRequests: "20"

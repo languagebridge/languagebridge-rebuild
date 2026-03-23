@@ -84,8 +84,15 @@ def evaluate(language: str, output_dir: str):
     base_model = KModel(repo_id="hexgrad/Kokoro-82M")
 
     # Load voice pack for style
-    pipeline = KPipeline(lang_code="a", model=False)
-    voice_pack = pipeline.load_voice(DEFAULT_VOICE)
+    # Check for a language-specific voice pack first
+    custom_voice_path = MODELS_DIR.parent / "voices" / f"{language}.pt"
+    if custom_voice_path.exists():
+        print(f"Using native voice pack: {custom_voice_path}")
+        voice_pack = torch.load(custom_voice_path, map_location="cpu")
+    else:
+        print(f"No native voice pack found. Using default: {DEFAULT_VOICE}")
+        pipeline = KPipeline(lang_code="a", model=False)
+        voice_pack = pipeline.load_voice(DEFAULT_VOICE)
 
     # Check for fine-tuned weights
     finetuned_path = MODELS_DIR / language / f"{language}_tts_v1.pth"
@@ -155,5 +162,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate fine-tuned TTS model")
     parser.add_argument("--language", "-l", default="dari")
     parser.add_argument("--output-dir", "-o", default="/tmp/tts_eval")
+    parser.add_argument("--voice", "-v", default=None,
+                        help="Voice pack name (e.g., 'dari' to use voices/dari.pt) or Kokoro voice (e.g., 'af_heart')")
     args = parser.parse_args()
     evaluate(args.language, args.output_dir)

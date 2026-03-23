@@ -81,52 +81,89 @@ export async function ttsRouter(
     context.log('Cache check failed, proceeding to generate:', err);
   }
 
-  // ── 7. Generate audio via Azure TTS ───────────────────────────
-  const ttsKey = process.env.AZURE_TTS_KEY;
-  const ttsRegion = process.env.AZURE_TTS_REGION ?? 'eastus';
+  // ── 7. Try proprietary TTS service first ──────────────────────
+  const proprietaryUrl = process.env.LB_TTS_SERVICE_URL; // e.g. https://lb-tts.azurecontainerapps.io
+  let audioBuffer: Buffer | undefined;
+  let ttsSource: TTSResponse['source'] = 'azure_live';
 
-  if (!ttsKey) {
-    return error(500, 'INTERNAL_ERROR', 'TTS service not configured');
-  }
-
-  let audioBuffer: Buffer;
-  try {
-    const ssml = buildSSML(text, language);
-    const ttsResponse = await axios.post(
-      `https://${ttsRegion}.tts.speech.microsoft.com/cognitiveservices/v1`,
-      ssml,
-      {
-        headers: {
-          'Ocp-Apim-Subscription-Key': ttsKey,
-          'Content-Type': 'application/ssml+xml',
-          'X-Microsoft-OutputFormat': 'audio-16khz-128kbitrate-mono-mp3',
-        },
-        responseType: 'arraybuffer',
-        timeout: 10000,
+  if (proprietaryUrl) {
+    try {
+      const propResponse = await axios.post(
+        `${proprietaryUrl}/synthesize`,
+        { text, language },
+        {
+          headers: { 'Content-Type': 'application/json' },
+          responseType: 'arraybuffer',
+          timeout: 15000,
+        }
+      );
+      audioBuffer = Buffer.from(propResponse.data);
+      ttsSource = 'proprietary';
+      const backend = propResponse.headers['x-lb-backend'] ?? 'unknown';
+      const quality = propResponse.headers['x-lb-quality'] ?? 'unknown';
+      context.log(`Proprietary TTS OK — backend: ${backend}, quality: ${quality}`);
+    } catch (err: unknown) {
+      // Proprietary service unavailable or failed — fall through to Azure
+      if (axios.isAxiosError(err)) {
+        context.log(`Proprietary TTS failed (${err.response?.status ?? 'no response'}), falling back to Azure`);
+      } else {
+        context.log('Proprietary TTS failed, falling back to Azure:', err);
       }
-    );
-    audioBuffer = Buffer.from(ttsResponse.data);
-  } catch (err: unknown) {
-    if (axios.isAxiosError(err)) {
-      const status = err.response?.status;
-      const body = err.response?.data
-        ? Buffer.from(err.response.data).toString('utf8')
-        : '(empty)';
-      context.log(`Azure TTS failed — status: ${status}, body: ${body}`);
-      context.log(`SSML sent: ${buildSSML(text, language)}`);
-    } else {
-      context.log('Azure TTS failed:', err);
     }
-    return error(502, 'AZURE_SERVICE_ERROR', 'Failed to generate audio from Azure TTS');
   }
 
-  // ── 8. Upload to Blob Storage ──────────────────────────────────
+  // ── 8. Fall back to Azure TTS if proprietary didn't produce audio ─
+  if (!audioBuffer) {
+    const ttsKey = process.env.AZURE_TTS_KEY;
+    const ttsRegion = process.env.AZURE_TTS_REGION ?? 'eastus';
+
+    if (!ttsKey) {
+      return error(500, 'INTERNAL_ERROR', 'TTS service not configured');
+    }
+
+    try {
+      const ssml = buildSSML(text, language);
+      const ttsResponse = await axios.post(
+        `https://${ttsRegion}.tts.speech.microsoft.com/cognitiveservices/v1`,
+        ssml,
+        {
+          headers: {
+            'Ocp-Apim-Subscription-Key': ttsKey,
+            'Content-Type': 'application/ssml+xml',
+            'X-Microsoft-OutputFormat': 'audio-16khz-128kbitrate-mono-mp3',
+          },
+          responseType: 'arraybuffer',
+          timeout: 10000,
+        }
+      );
+      audioBuffer = Buffer.from(ttsResponse.data);
+      ttsSource = 'azure_live';
+    } catch (err: unknown) {
+      if (axios.isAxiosError(err)) {
+        const status = err.response?.status;
+        const body = err.response?.data
+          ? Buffer.from(err.response.data).toString('utf8')
+          : '(empty)';
+        context.log(`Azure TTS failed — status: ${status}, body: ${body}`);
+        context.log(`SSML sent: ${buildSSML(text, language)}`);
+      } else {
+        context.log('Azure TTS failed:', err);
+      }
+      return error(502, 'AZURE_SERVICE_ERROR', 'Failed to generate audio');
+    }
+  }
+
+  // ── 9. Upload to Blob Storage ──────────────────────────────────
+  const contentType = ttsSource === 'proprietary' ? 'audio/wav' : 'audio/mpeg';
+  const blobExt = ttsSource === 'proprietary' ? 'wav' : 'mp3';
+  const finalBlobName = `${language}/${textHash}.${blobExt}`;
+
   let audioUrl: string;
   try {
     const audioContainer = getAudioCacheContainer();
-    const blockBlobClient = audioContainer.getBlockBlobClient(blobName);
+    const blockBlobClient = audioContainer.getBlockBlobClient(finalBlobName);
     await blockBlobClient.upload(audioBuffer, audioBuffer.length, {
-      blobHTTPHeaders: { blobContentType: 'audio/mpeg' },
+      blobHTTPHeaders: { blobContentType: contentType },
     });
     audioUrl = blockBlobClient.url;
   } catch (err) {
@@ -134,7 +171,7 @@ export async function ttsRouter(
     return error(500, 'INTERNAL_ERROR', 'Failed to cache audio');
   }
 
-  // ── 9. Write cache metadata to Cosmos DB ──────────────────────
+  // ── 10. Write cache metadata to Cosmos DB ─────────────────────
   try {
     const metadataContainer = getAudioCacheMetadataContainer();
     const doc: AudioCacheMetadataDoc = {
@@ -142,8 +179,8 @@ export async function ttsRouter(
       textHash,
       language,
       audioUrl,
-      blobName,
-      source: 'azure_live',
+      blobName: finalBlobName,
+      source: ttsSource,
       durationMs: 0,
       cachedAt: new Date().toISOString(),
       hitCount: 0,
@@ -155,7 +192,7 @@ export async function ttsRouter(
 
   const response: TTSResponse = {
     audioUrl,
-    source: 'azure_live',
+    source: ttsSource,
     durationMs: 0,
     cached: false,
     textHash,

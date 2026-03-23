@@ -14,6 +14,7 @@ LANGUAGES = [
     "dari", "pashto", "arabic", "ukrainian", "urdu", "uzbek",
     "persian", "french", "portuguese", "swahili", "somali",
     "tagalog", "vietnamese", "burmese", "amharic", "nepali", "twi",
+    "kinyarwanda", "tigrinya", "uyghur",
     "spanish_colombian", "spanish_mexican", "spanish_peruvian",
     "spanish_puerto_rico", "spanish_venezuelan",
 ]

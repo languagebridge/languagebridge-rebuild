@@ -60,6 +60,14 @@ EPITRAN_LANG_MAP: dict[str, str] = {
 # Twi uses a custom rule-based G2P (twi_g2p.py)
 CUSTOM_G2P_LANGUAGES = {"twi"}
 
+# Fallback notes for languages that can't use Kokoro directly
+NO_ESPEAK_FALLBACK: dict[str, str] = {
+    "somali": "Use epitran (som-Latn) backend instead of espeak",
+    "tagalog": "Use epitran (tgl-Latn) backend instead of espeak",
+    "kinyarwanda": "Use epitran (kin-Latn) backend instead of espeak",
+    "twi": "Use custom twi_g2p.py backend instead of espeak",
+}
+
 # Phonemes that appear in espeak output but aren't in Kokoro's vocab.
 # These are diacritics that can be safely stripped without losing
 # intelligibility — they mark secondary articulation features that
