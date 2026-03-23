@@ -68,7 +68,7 @@ export async function lexiconLookup(
   // ── 0. Auth ──────────────────────────────────────────────────
   const keyCheck = validateApiKey(request);
   if (!keyCheck.valid) {
-    return jsonResponse(401, { error: 'UNAUTHORIZED', details: keyCheck.error } as LexiconLookupErrorResponse);
+    return respond(401, { error: 'UNAUTHORIZED', details: keyCheck.error } as LexiconLookupErrorResponse);
   }
 
   // ── 1. Parse body ──────────────────────────────────────────────
@@ -76,7 +76,7 @@ export async function lexiconLookup(
   try {
     body = (await request.json()) as Record<string, unknown>;
   } catch {
-    return jsonResponse(400, {
+    return respond(400, {
       error: 'MISSING_FIELDS',
       details: 'Request body must be valid JSON',
     } as LexiconLookupErrorResponse);
@@ -85,7 +85,7 @@ export async function lexiconLookup(
   // ── 2. Validate required fields ────────────────────────────────
   const fieldCheck = requireFields(body, ['term', 'language', 'pilotId', 'sessionToken']);
   if (!fieldCheck.valid) {
-    return jsonResponse(400, {
+    return respond(400, {
       error: 'MISSING_FIELDS',
       details: `Missing required fields: ${fieldCheck.missing.join(', ')}`,
     } as LexiconLookupErrorResponse);
@@ -95,7 +95,7 @@ export async function lexiconLookup(
     body as unknown as LexiconLookupRequest;
 
   if (!isValidLanguage(language)) {
-    return jsonResponse(400, {
+    return respond(400, {
       error: 'INVALID_LANGUAGE',
       details: `Language '${language}' is not supported. Supported: ${SUPPORTED_LANGUAGES.join(', ')}`,
     } as LexiconLookupErrorResponse);
@@ -148,15 +148,22 @@ export async function lexiconLookup(
         ? `https://${process.env.AZURE_STORAGE_ACCOUNT ?? 'lb-storage'}.blob.core.windows.net/${entry.audio_blob_path}`
         : null;
 
-      return jsonResponse(200, {
+      return respond(200, {
         term: entry.term,
         language: entry.language,
         type: 'bridge',
         cognate: entry.cognate,
+        bridge_anchor: entry.bridge_anchor ?? null,
+        bridge_scaffold: entry.bridge_scaffold ?? null,
         bridge_definition: entry.bridge_definition,
         bridge_definition_en: entry.bridge_definition_en,
+        grammatical_forms: entry.grammatical_forms ?? null,
         audio_url: audioUrl,
         audio_source: entry.audio_source,
+        tts_backend: entry.tts_backend ?? null,
+        subject: entry.subject ?? null,
+        grade_band: entry.grade_band ?? null,
+        transliteration_difficulty: entry.transliteration_difficulty ?? null,
         source: 'lexicon',
       } as LexiconLookupResponse);
     }
@@ -196,7 +203,7 @@ export async function lexiconLookup(
       sessionHash: hashSession(sessionToken),
     });
 
-    return jsonResponse(200, {
+    return respond(200, {
       term,
       language,
       type: 'cognate',
@@ -210,7 +217,7 @@ export async function lexiconLookup(
 
   } catch (err) {
     context.error('lexicon-lookup error:', err);
-    return jsonResponse(500, {
+    return respond(500, {
       error: 'INTERNAL_ERROR',
       details: 'An unexpected error occurred',
     } as LexiconLookupErrorResponse);
@@ -278,10 +285,6 @@ function logAnalytics(
   }
 }
 
-function jsonResponse(status: number, body: unknown): HttpResponseInit {
-  return {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  };
+function respond(status: number, body: unknown): HttpResponseInit {
+  return { status, jsonBody: body };
 }
