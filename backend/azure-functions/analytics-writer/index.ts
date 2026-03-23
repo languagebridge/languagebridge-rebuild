@@ -7,7 +7,7 @@ import {
   SessionUsageDoc,
 } from '../../shared/types';
 import { getSessionsContainer } from '../../shared/cosmos-client';
-import { checkForPII, requireFields, isValidLanguage, validateApiKey } from '../../shared/validators';
+import { checkForPII, requireFields, isValidLanguage, validateApiKey, errorResponse } from '../../shared/validators';
 
 /**
  * analytics-writer
@@ -126,11 +126,4 @@ export async function analyticsWriter(
 // HELPERS
 // ============================================
 
-function error(
-  status: number,
-  code: AnalyticsWriterErrorResponse['error'],
-  details: string
-): HttpResponseInit {
-  const body: AnalyticsWriterErrorResponse = { error: code, details };
-  return { status, jsonBody: body };
-}
+const error = errorResponse;

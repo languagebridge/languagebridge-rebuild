@@ -8,7 +8,7 @@ import {
   FLAG_THRESHOLDS,
 } from '../../shared/types';
 import { getFlagsContainer } from '../../shared/cosmos-client';
-import { requireFields, isValidLanguage, validateApiKey } from '../../shared/validators';
+import { requireFields, isValidLanguage, validateApiKey, errorResponse } from '../../shared/validators';
 
 /**
  * flag-handler
@@ -136,11 +136,4 @@ function escalationStatus(count: number): FlagDoc['status'] {
   return 'logged';
 }
 
-function error(
-  status: number,
-  code: FlagHandlerErrorResponse['error'],
-  details: string
-): HttpResponseInit {
-  const body: FlagHandlerErrorResponse = { error: code, details };
-  return { status, jsonBody: body };
-}
+const error = errorResponse;

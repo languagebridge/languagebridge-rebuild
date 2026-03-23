@@ -154,3 +154,11 @@ export function checkRateLimit(key: string): { allowed: boolean; remaining: numb
   valid.push(now);
   return { allowed: true, remaining: RATE_LIMIT_MAX - valid.length };
 }
+
+// ============================================
+// ERROR RESPONSE FACTORY
+// ============================================
+
+export function errorResponse(status: number, error: string, details: string): { status: number; jsonBody: { error: string; details: string } } {
+  return { status, jsonBody: { error, details } };
+}

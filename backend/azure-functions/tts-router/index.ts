@@ -1,10 +1,11 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { createHash } from 'crypto';
 import axios from 'axios';
-import { TTSRequest, TTSResponse, TTSErrorResponse, AudioCacheMetadataDoc } from '../../shared/types';
+import { TTSRequest, TTSResponse, AudioCacheMetadataDoc } from '../../shared/types';
 import { getAudioCacheContainer } from '../../shared/blob-client';
 import { getAudioCacheMetadataContainer } from '../../shared/cosmos-client';
-import { requireFields, isValidLanguage, validateTTSText, validateApiKey, checkRateLimit } from '../../shared/validators';
+import { requireFields, isValidLanguage, validateTTSText, validateApiKey, checkRateLimit, errorResponse } from '../../shared/validators';
+import voiceConfig from '../../shared/voice-config.json';
 
 /**
  * tts-router
@@ -26,7 +27,7 @@ export async function ttsRouter(
 ): Promise<HttpResponseInit> {
   context.log('tts-router invoked');
 
-  // ── 0. Auth + Rate Limit ─────────────────────────────────────
+  // ── 0. Auth ──────────────────────────────────────────────────
   const keyCheck = validateApiKey(request);
   if (!keyCheck.valid) {
     return error(401, 'UNAUTHORIZED', keyCheck.error);
@@ -48,6 +49,12 @@ export async function ttsRouter(
 
   const { text, language, pilotId, sessionToken } = body as TTSRequest;
   context.log(`tts-router request — pilot: ${pilotId}, session: ${sessionToken}`);
+
+  // ── 2b. Rate limit (per pilot, most expensive endpoint) ──────
+  const rateCheck = checkRateLimit(`tts:${pilotId}`);
+  if (!rateCheck.allowed) {
+    return error(429, 'RATE_LIMITED', `Rate limit exceeded. Retry after ${rateCheck.retryAfterMs}ms`);
+  }
 
   // ── 3. Validate text ───────────────────────────────────────────
   const textCheck = validateTTSText(text);
@@ -210,42 +217,11 @@ export async function ttsRouter(
 // HELPERS
 // ============================================
 
-function error(
-  status: number,
-  code: TTSErrorResponse['error'],
-  details: string
-): HttpResponseInit {
-  const body: TTSErrorResponse = { error: code, details };
-  return { status, jsonBody: body };
-}
+const error = errorResponse;
 
 function buildSSML(text: string, language: string): string {
-  const voiceMap: Record<string, string> = {
-    dari: 'fa-AF-HasanNeural',
-    pashto: 'ps-AF-GulNawazNeural',
-    persian: 'fa-IR-DilaraNeural',
-    arabic: 'ar-SA-HamedNeural',
-    urdu: 'ur-PK-AsadNeural',
-    somali: 'so-SO-MuuseNeural',
-    ukrainian: 'uk-UA-OstapNeural',
-    spanish: 'es-US-AlonsoNeural',
-    english: 'en-US-AndrewNeural',
-    french: 'fr-FR-HenriNeural',
-    portuguese: 'pt-BR-AntonioNeural',
-    vietnamese: 'vi-VN-NamMinhNeural',
-    nepali: 'ne-NP-SagarNeural',
-    swahili: 'sw-KE-RafikiNeural',
-    burmese: 'my-MM-ThihaNeural',
-    amharic: 'am-ET-AmehaNeural',
-    tagalog: 'fil-PH-AngeloNeural',
-    kinyarwanda: 'rw-RW-YvanNeural',
-    // No Azure Neural voice available — fall back to English
-    uzbek: 'en-US-AndrewNeural',
-    twi: 'en-US-AndrewNeural',
-    tigrinya: 'en-US-AndrewNeural',
-  };
-
-  const voice = voiceMap[language] ?? 'en-US-AndrewNeural';
+  const langConfig = (voiceConfig as Record<string, { azure_voice: string }>)[language];
+  const voice = langConfig?.azure_voice ?? 'en-US-AndrewNeural';
   const langCode = voice.split('-').slice(0, 2).join('-');
 
   return `<speak version='1.0' xml:lang='${langCode}'>
@@ -261,7 +237,7 @@ async function incrementCacheHit(textHash: string): Promise<void> {
     await container.item(textHash, textHash).patch([
       { op: 'incr', path: '/hitCount', value: 1 },
     ]);
-  } catch {
-    // Non-fatal: cache hit count is a nice-to-have metric
+  } catch (err) {
+    console.warn('Cache hit increment failed (non-fatal):', err);
   }
 }

@@ -132,7 +132,7 @@ export async function lexiconLookup(
       // Increment usage_count (fire-and-forget — don't block response)
       container.item(entry.id, entry.language).patch([
         { op: 'incr', path: '/usage_count', value: 1 },
-      ]).catch(() => { /* non-critical */ });
+      ]).catch((err: unknown) => { context.warn('Non-critical write failed:', err); });
 
       // Log analytics (anonymized)
       logAnalytics(context, {
@@ -184,7 +184,7 @@ export async function lexiconLookup(
       created_by: 'system',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-    } as LexiconDoc).catch(() => { /* non-critical */ });
+    } as LexiconDoc).catch((err: unknown) => { context.warn('Non-critical write failed:', err); });
 
     // Log as missing bridge for future curation
     logAnalytics(context, {
@@ -272,7 +272,7 @@ function logAnalytics(
         .digest('hex'),
       ...event,
       timestamp: new Date().toISOString(),
-    }).catch(() => { /* non-critical */ });
+    }).catch((err: unknown) => { context.warn('Non-critical write failed:', err); });
   } catch {
     context.warn('Analytics write failed — non-critical');
   }

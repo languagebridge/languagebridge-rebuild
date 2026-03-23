@@ -2,6 +2,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/fu
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { AuthResponse, AuthErrorResponse } from '../../shared/types';
 import { getAdminUsersContainer } from '../../shared/cosmos-client';
+import { errorResponse } from '../../shared/validators';
 
 /**
  * auth-layer
@@ -122,11 +123,4 @@ export async function authLayer(
 // HELPERS
 // ============================================
 
-function error(
-  status: number,
-  code: AuthErrorResponse['error'],
-  details: string
-): HttpResponseInit {
-  const body: AuthErrorResponse = { error: code, details };
-  return { status, jsonBody: body };
-}
+const error = errorResponse;
