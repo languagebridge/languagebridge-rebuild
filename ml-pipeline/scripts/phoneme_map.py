@@ -1,21 +1,11 @@
 """
 phoneme_map.py
 
-Maps LanguageBridge language codes to espeak G2P codes and documents
-compatibility with Kokoro-82M's 114-token vocabulary.
+Maps LanguageBridge language codes to G2P (grapheme-to-phoneme) backends.
+Supports espeak, epitran, and custom G2P for 22 languages.
 
-Used by evaluate_tts.py and the inference service.
-
-Status as of March 2026 — ALL 19 LANGUAGES SUPPORTED:
-  espeak (14):   dari, pashto*, persian, arabic†, urdu, ukrainian†,
-                 spanish, english, french, portuguese, nepali, burmese,
-                 swahili, uzbek, amharic, vietnamese†
-  epitran (3):   somali, tagalog, kinyarwanda
-  custom (1):    twi (rule-based, twi_g2p.py)
-
-  100% Kokoro vocab coverage for all 19 languages.
-  * Pashto uses fa (Farsi) phonemizer as approximation
-  † Strip 1 diacritic each (pharyngealization/dental/tone mark)
+Currently used as reference for future custom voice training.
+The Piper inference service handles its own G2P internally.
 """
 
 # LanguageBridge language → G2P backend and code
@@ -50,7 +40,7 @@ ESPEAK_LANG_MAP: dict[str, str | None] = {
 }
 
 # Alternative G2P backends for languages without espeak support
-# All tested: 100% Kokoro vocab coverage
+# Alternative G2P backends for languages without espeak
 EPITRAN_LANG_MAP: dict[str, str] = {
     "somali": "som-Latn",
     "tagalog": "tgl-Latn",
@@ -124,8 +114,8 @@ def clean_phonemes(phonemes: str, language: str) -> str:
     return phonemes
 
 
-def can_use_kokoro(language: str) -> bool:
-    """Check if a language can use Kokoro TTS (has any G2P support)."""
+def has_g2p_support(language: str) -> bool:
+    """Check if a language has any G2P backend available."""
     return (
         ESPEAK_LANG_MAP.get(language) is not None
         or language in EPITRAN_LANG_MAP
