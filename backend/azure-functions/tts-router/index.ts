@@ -168,8 +168,7 @@ export async function ttsRouter(
 
   // ── 9. Upload to Blob Storage ──────────────────────────────────
   const contentType = ttsSource === 'proprietary' ? 'audio/wav' : 'audio/mpeg';
-  const blobExt = ttsSource === 'proprietary' ? 'wav' : 'mp3';
-  const finalBlobName = `${language}/${textHash}.${blobExt}`;
+  const finalBlobName = `${language}/${textHash}.mp3`;
 
   let audioUrl: string;
   try {
@@ -219,6 +218,15 @@ export async function ttsRouter(
 
 const error = errorResponse;
 
+function escapeXml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/'/g, '&apos;')
+    .replace(/"/g, '&quot;');
+}
+
 function buildSSML(text: string, language: string): string {
   const langConfig = (voiceConfig as Record<string, { azure_voice: string }>)[language];
   const voice = langConfig?.azure_voice ?? 'en-US-AndrewNeural';
@@ -226,7 +234,7 @@ function buildSSML(text: string, language: string): string {
 
   return `<speak version='1.0' xml:lang='${langCode}'>
     <voice xml:lang='${langCode}' name='${voice}'>
-      ${text}
+      ${escapeXml(text)}
     </voice>
   </speak>`;
 }

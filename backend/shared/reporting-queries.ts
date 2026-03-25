@@ -2,9 +2,11 @@
  * Reporting Queries
  *
  * Cosmos DB SQL queries that power the teacher/admin dashboard.
- * All queries are scoped by schoolCode + gradeBand (which maps to a teacher).
- * No student names are ever stored or returned.
- * Teachers see studentCode (e.g. "LB-7K2M") and nickname them locally.
+ * All queries scoped by schoolCode + gradeBand (maps to a teacher).
+ * No student names stored or returned.
+ *
+ * Note: Cosmos DB does not support COUNT(DISTINCT) or ORDER BY aggregate.
+ * Distinct counting and sorting are done in application code.
  */
 
 // ─── Question 1: "Is it being used?" ─────────────────────────────
@@ -23,26 +25,23 @@ export const USAGE_BY_WEEK = `
   GROUP BY SUBSTRING(c.timestamp, 0, 10), c.eventType, c.language
 `;
 
-export const ACTIVE_STUDENTS = `
-  SELECT
-    SUBSTRING(c.timestamp, 0, 10) AS day,
-    COUNT(DISTINCT c.studentCode) AS active_students
+export const ACTIVE_STUDENTS_RAW = `
+  SELECT DISTINCT c.studentCode, SUBSTRING(c.timestamp, 0, 10) AS day
   FROM c
   WHERE c.schoolCode = @schoolCode
     AND c.gradeBand = @gradeBand
     AND c.timestamp >= @startDate
     AND c.timestamp <= @endDate
-  GROUP BY SUBSTRING(c.timestamp, 0, 10)
 `;
 
 // ─── Question 2: "Are students learning?" ────────────────────────
 
-export const TERM_RETENTION = `
+export const TERM_RETENTION_RAW = `
   SELECT
     c.term,
     c.subject,
     c.difficulty,
-    COUNT(DISTINCT c.studentCode) AS unique_students,
+    c.studentCode,
     SUBSTRING(c.timestamp, 0, 7) AS month
   FROM c
   WHERE c.schoolCode = @schoolCode
@@ -50,22 +49,19 @@ export const TERM_RETENTION = `
     AND c.eventType = 'term_lookup'
     AND c.timestamp >= @startDate
     AND c.timestamp <= @endDate
-  GROUP BY c.term, c.subject, c.difficulty, SUBSTRING(c.timestamp, 0, 7)
 `;
 
 export const STUDENT_PROGRESS = `
   SELECT
     c.studentCode,
     SUBSTRING(c.timestamp, 0, 7) AS month,
-    COUNT(1) AS total_lookups,
-    COUNT(DISTINCT c.term) AS unique_terms
+    c.term
   FROM c
   WHERE c.schoolCode = @schoolCode
     AND c.gradeBand = @gradeBand
     AND c.eventType = 'term_lookup'
     AND c.timestamp >= @startDate
     AND c.timestamp <= @endDate
-  GROUP BY c.studentCode, SUBSTRING(c.timestamp, 0, 7)
 `;
 
 export const SCAFFOLD_ENGAGEMENT = `
@@ -129,31 +125,24 @@ export const BRIDGE_VS_FALLBACK = `
   GROUP BY c.source, c.language
 `;
 
-export const VOCABULARY_BREADTH = `
-  SELECT
-    SUBSTRING(c.timestamp, 0, 10) AS day,
-    c.language,
-    COUNT(DISTINCT c.term) AS unique_terms
+export const VOCABULARY_BREADTH_RAW = `
+  SELECT DISTINCT c.term, SUBSTRING(c.timestamp, 0, 10) AS day, c.language
   FROM c
   WHERE c.schoolCode = @schoolCode
     AND c.gradeBand = @gradeBand
     AND c.eventType = 'term_lookup'
     AND c.timestamp >= @startDate
     AND c.timestamp <= @endDate
-  GROUP BY SUBSTRING(c.timestamp, 0, 10), c.language
 `;
 
-export const TOP_FLAGGED = `
+export const TOP_FLAGGED_RAW = `
   SELECT
     c.term,
-    c.language,
-    COUNT(1) AS flag_count
+    c.language
   FROM c
   WHERE c.schoolCode = @schoolCode
     AND c.gradeBand = @gradeBand
     AND c.eventType = 'flag_event'
     AND c.timestamp >= @startDate
     AND c.timestamp <= @endDate
-  GROUP BY c.term, c.language
-  ORDER BY COUNT(1) DESC
 `;

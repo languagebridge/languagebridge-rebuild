@@ -37,7 +37,7 @@ app.http('onboarding-enroll', {
 
 function generateStudentCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/O/0/1 to avoid confusion
-  const bytes = randomBytes(4);
+  const bytes = randomBytes(6); // 32^6 = ~1 billion possible codes
   const code = Array.from(bytes).map(b => chars[b % chars.length]).join('');
   return `LB-${code}`;
 }
@@ -100,23 +100,49 @@ export async function enroll(
     return error(400, 'INVALID_LANGUAGE', `Language '${req.language}' is not supported`);
   }
 
-  const studentCode = generateStudentCode();
+  const VALID_GRADE_BANDS = ['K-2', '3-5', '6-8', '9-12'];
+  if (!VALID_GRADE_BANDS.includes(req.gradeBand)) {
+    return error(400, 'INVALID_GRADE_BAND', `Grade band '${req.gradeBand}' is not valid`);
+  }
 
-  const doc: EnrollmentDoc = {
-    id: studentCode,
-    schoolCode: req.schoolCode,
-    gradeBand: req.gradeBand as GradeBand,
-    language: req.language,
-    createdAt: new Date().toISOString(),
-  };
-
+  // Verify school exists
   try {
-    const container = getEnrollmentsContainer();
-    await container.items.create(doc);
-    context.log(`Enrolled ${studentCode} at ${req.schoolCode} (${req.gradeBand})`);
+    const pilots = getPilotsContainer();
+    const { resources } = await pilots.items
+      .query({ query: 'SELECT c.id FROM c WHERE c.schoolCode = @sc', parameters: [{ name: '@sc', value: req.schoolCode }] })
+      .fetchAll();
+    if (resources.length === 0) {
+      return error(400, 'INVALID_SCHOOL', `School '${req.schoolCode}' not found`);
+    }
   } catch (err) {
-    context.warn('Enrollment write failed:', err);
-    return error(500, 'INTERNAL_ERROR', 'Failed to create enrollment');
+    context.warn('School validation failed:', err);
+  }
+
+  // Generate code with collision retry
+  const container = getEnrollmentsContainer();
+  let studentCode = '';
+  for (let attempt = 0; attempt < 3; attempt++) {
+    studentCode = generateStudentCode();
+    const doc: EnrollmentDoc = {
+      id: studentCode,
+      schoolCode: req.schoolCode,
+      gradeBand: req.gradeBand as GradeBand,
+      language: req.language,
+      createdAt: new Date().toISOString(),
+    };
+    try {
+      await container.items.create(doc);
+      context.log(`Enrolled ${studentCode} at ${req.schoolCode} (${req.gradeBand})`);
+      break;
+    } catch (err: unknown) {
+      const status = (err as { code?: number })?.code;
+      if (status === 409 && attempt < 2) {
+        context.warn(`Code collision on ${studentCode}, retrying`);
+        continue;
+      }
+      context.warn('Enrollment write failed:', err);
+      return error(500, 'INTERNAL_ERROR', 'Failed to create enrollment');
+    }
   }
 
   const response: OnboardingEnrollResponse = {

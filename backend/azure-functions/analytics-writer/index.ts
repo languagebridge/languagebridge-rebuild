@@ -8,7 +8,7 @@ import {
   EnrollmentDoc,
 } from '../../shared/types';
 import { getSessionsContainer, getEnrollmentsContainer } from '../../shared/cosmos-client';
-import { checkForPII, requireFields, isValidLanguage, validateApiKey, errorResponse } from '../../shared/validators';
+import { checkForPII, requireFields, isValidLanguage, validateApiKey, errorResponse, checkRateLimit } from '../../shared/validators';
 
 /**
  * analytics-writer
@@ -89,6 +89,12 @@ export async function analyticsWriter(
   // ── 5. Validate event type ─────────────────────────────────────
   if (!VALID_EVENT_TYPES.includes(req.eventType as typeof VALID_EVENT_TYPES[number])) {
     return error(400, 'INVALID_EVENT_TYPE', `Event type '${req.eventType}' is not valid`);
+  }
+
+  // ── 5b. Rate limit ──────────────────────────────────────────────
+  const rateCheck = checkRateLimit(`analytics:${req.studentCode}`);
+  if (!rateCheck.allowed) {
+    return error(429, 'RATE_LIMITED', `Rate limit exceeded. Retry after ${rateCheck.retryAfterMs}ms`);
   }
 
   // ── 6. Look up enrollment to resolve school + grade band ───────

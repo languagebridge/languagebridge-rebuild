@@ -9,7 +9,7 @@ import {
   SUPPORTED_LANGUAGES,
 } from '../../shared/types';
 import { getLexiconContainer, getAnalyticsContainer } from '../../shared/cosmos-client';
-import { requireFields, isValidLanguage, validateApiKey } from '../../shared/validators';
+import { requireFields, isValidLanguage, validateApiKey, checkRateLimit, errorResponse } from '../../shared/validators';
 
 /**
  * lexicon-lookup
@@ -98,6 +98,14 @@ export async function lexiconLookup(
     return respond(400, {
       error: 'INVALID_LANGUAGE',
       details: `Language '${language}' is not supported. Supported: ${SUPPORTED_LANGUAGES.join(', ')}`,
+    } as LexiconLookupErrorResponse);
+  }
+
+  const rateCheck = checkRateLimit(`lexicon:${studentCode}`);
+  if (!rateCheck.allowed) {
+    return respond(429, {
+      error: 'RATE_LIMITED',
+      details: `Rate limit exceeded. Retry after ${rateCheck.retryAfterMs}ms`,
     } as LexiconLookupErrorResponse);
   }
 

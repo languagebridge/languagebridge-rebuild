@@ -1,4 +1,4 @@
-import { checkForPII, isValidLanguage, requireFields, validateTTSText, isValidSessionToken } from '../../shared/validators';
+import { checkForPII, isValidLanguage, requireFields, validateTTSText, isValidStudentCode } from '../../shared/validators';
 
 describe('checkForPII', () => {
   it('returns hasPII: false for clean payloads', () => {
@@ -111,27 +111,28 @@ describe('validateTTSText', () => {
   });
 });
 
-describe('isValidSessionToken', () => {
-  it('accepts valid tokens', () => {
-    expect(isValidSessionToken('abcdef12')).toBe(true);
-    expect(isValidSessionToken('a1b2c3d4-e5f6-7890')).toBe(true);
+describe('isValidStudentCode', () => {
+  it('accepts valid codes', () => {
+    expect(isValidStudentCode('LB-7K2M')).toBe(true);
+    expect(isValidStudentCode('LB-ABCD')).toBe(true);
+    expect(isValidStudentCode('LB-3P9X2W')).toBe(true);
   });
 
-  it('rejects tokens that are too short', () => {
-    expect(isValidSessionToken('abc')).toBe(false);
+  it('rejects codes without LB- prefix', () => {
+    expect(isValidStudentCode('XX-7K2M')).toBe(false);
+    expect(isValidStudentCode('7K2M')).toBe(false);
   });
 
-  it('rejects tokens that are too long', () => {
-    expect(isValidSessionToken('a'.repeat(65))).toBe(false);
+  it('rejects codes that are too short', () => {
+    expect(isValidStudentCode('LB-AB')).toBe(false);
   });
 
-  it('rejects tokens with invalid characters', () => {
-    expect(isValidSessionToken('abc def12')).toBe(false); // space
-    expect(isValidSessionToken('abc!def12')).toBe(false); // special char
+  it('rejects codes with confusing characters (I, O, 0, 1)', () => {
+    expect(isValidStudentCode('LB-IO01')).toBe(false);
   });
 
   it('rejects non-string input', () => {
-    expect(isValidSessionToken(123)).toBe(false);
-    expect(isValidSessionToken(null)).toBe(false);
+    expect(isValidStudentCode(123)).toBe(false);
+    expect(isValidStudentCode(null)).toBe(false);
   });
 });

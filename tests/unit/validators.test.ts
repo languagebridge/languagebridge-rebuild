@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   requireFields,
   isValidLanguage,
-  isValidSessionToken,
+  isValidStudentCode,
   validateApiKey,
   checkRateLimit,
   checkForPII,
@@ -52,20 +52,21 @@ describe('isValidLanguage', () => {
   });
 });
 
-// ── isValidSessionToken ───────────────────────────────────
+// ── isValidStudentCode ───────────────────────────────────
 
-describe('isValidSessionToken', () => {
-  it('accepts valid UUIDs', () => {
-    expect(isValidSessionToken('550e8400-e29b-41d4-a716-446655440000')).toBe(true);
-    expect(isValidSessionToken('abcdef12')).toBe(true);
+describe('isValidStudentCode', () => {
+  it('accepts valid codes', () => {
+    expect(isValidStudentCode('LB-7K2M')).toBe(true);
+    expect(isValidStudentCode('LB-ABCD')).toBe(true);
+    expect(isValidStudentCode('LB-3P9X2W')).toBe(true);
   });
 
-  it('rejects invalid tokens', () => {
-    expect(isValidSessionToken('short')).toBe(false);
-    expect(isValidSessionToken('')).toBe(false);
-    expect(isValidSessionToken('has spaces in it')).toBe(false);
-    expect(isValidSessionToken(null)).toBe(false);
-    expect(isValidSessionToken(12345678)).toBe(false);
+  it('rejects invalid codes', () => {
+    expect(isValidStudentCode('XX-7K2M')).toBe(false);
+    expect(isValidStudentCode('')).toBe(false);
+    expect(isValidStudentCode('LB-AB')).toBe(false);
+    expect(isValidStudentCode(null)).toBe(false);
+    expect(isValidStudentCode(12345678)).toBe(false);
   });
 });
 
@@ -76,9 +77,18 @@ describe('validateApiKey', () => {
     headers: { get: (name: string) => key },
   });
 
-  it('allows all requests when no key configured', () => {
+  it('allows requests in dev mode when no key configured', () => {
     delete process.env.LB_API_KEY;
+    process.env.NODE_ENV = 'development';
     expect(validateApiKey(makeRequest(null)).valid).toBe(true);
+    delete process.env.NODE_ENV;
+  });
+
+  it('rejects requests in production when no key configured', () => {
+    delete process.env.LB_API_KEY;
+    process.env.NODE_ENV = 'production';
+    expect(validateApiKey(makeRequest(null)).valid).toBe(false);
+    delete process.env.NODE_ENV;
   });
 
   it('rejects missing key when configured', () => {

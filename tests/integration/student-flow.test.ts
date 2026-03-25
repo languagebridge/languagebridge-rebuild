@@ -45,7 +45,13 @@ vi.mock('../../backend/shared/cosmos-client', () => ({
     items: { upsert: () => Promise.resolve() },
   }),
   getSessionsContainer: () => ({
-    items: { upsert: () => Promise.resolve() },
+    items: { create: () => Promise.resolve(), upsert: () => Promise.resolve() },
+  }),
+  getEnrollmentsContainer: () => ({
+    items: { create: () => Promise.resolve() },
+    item: () => ({
+      read: () => Promise.resolve({ resource: { id: 'LB-TEST1', schoolCode: 'greenbriar', gradeBand: '7-8', language: 'dari' } }),
+    }),
   }),
   getAudioCacheMetadataContainer: () => ({
     items: {
@@ -57,13 +63,10 @@ vi.mock('../../backend/shared/cosmos-client', () => ({
   getFlagsContainer: () => ({
     items: {
       query: () => ({ fetchAll: () => Promise.resolve({ resources: [] }) }),
-      upsert: () => Promise.resolve({ resource: { id: 'test', flagCount: 1, status: 'logged', requiresReview: false } }),
       create: () => Promise.resolve({ resource: { id: 'test', word: 'photosynthesis', language: 'dari', flagCount: 1, status: 'logged', requiresReview: false, schoolCodes: [] } }),
     },
     item: () => ({
-      read: () => Promise.resolve({ resource: null }),
-      replace: () => Promise.resolve({ resource: null }),
-      patch: () => Promise.resolve(),
+      patch: () => Promise.reject(new Error('not found')),
     }),
   }),
 }));
@@ -87,6 +90,9 @@ vi.mock('axios', () => ({
     }),
   },
 }));
+
+// Set dev environment so auth passes without a key
+process.env.NODE_ENV = 'development';
 
 // Import handlers after mocks are set up
 const { lexiconLookup } = await import('../../backend/azure-functions/lexicon-lookup/index');

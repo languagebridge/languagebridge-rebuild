@@ -38,9 +38,6 @@ export function getFlagsContainer(): Container {
   return getDatabase().container('flags');
 }
 
-export function getModelRegistryContainer(): Container {
-  return getDatabase().container('model_registry');
-}
 
 export function getPilotsContainer(): Container {
   return getDatabase().container('pilots');

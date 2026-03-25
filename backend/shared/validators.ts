@@ -58,7 +58,7 @@ export function requireFields(
   body: Record<string, unknown>,
   fields: string[]
 ): { valid: true } | { valid: false; missing: string[] } {
-  const missing = fields.filter((f) => !body[f]);
+  const missing = fields.filter((f) => body[f] === undefined || body[f] === null || body[f] === '');
   if (missing.length > 0) {
     return { valid: false, missing };
   }
@@ -85,10 +85,10 @@ export function validateTTSText(text: unknown): { valid: true } | { valid: false
 // SESSION TOKEN VALIDATION
 // ============================================
 
-const SESSION_TOKEN_REGEX = /^[a-zA-Z0-9\-]{8,64}$/;
+const STUDENT_CODE_REGEX = /^LB-[A-HJ-NP-Z2-9]{4,8}$/;
 
-export function isValidSessionToken(token: unknown): boolean {
-  return typeof token === 'string' && SESSION_TOKEN_REGEX.test(token);
+export function isValidStudentCode(code: unknown): boolean {
+  return typeof code === 'string' && STUDENT_CODE_REGEX.test(code);
 }
 
 // ============================================
@@ -100,9 +100,11 @@ const API_KEY_HEADER = 'x-lb-api-key';
 export function validateApiKey(request: { headers: { get(name: string): string | null } }): { valid: true } | { valid: false; status: number; error: string } {
   const expectedKey = process.env.LB_API_KEY;
 
-  // If no key configured, allow (dev mode)
   if (!expectedKey) {
-    return { valid: true };
+    if (process.env.NODE_ENV === 'development') {
+      return { valid: true };
+    }
+    return { valid: false, status: 500, error: 'API key not configured on server' };
   }
 
   const apiKey = request.headers.get(API_KEY_HEADER);

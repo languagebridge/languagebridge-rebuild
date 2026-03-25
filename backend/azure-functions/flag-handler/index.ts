@@ -67,29 +67,28 @@ export async function flagHandler(
 
   context.log(`Flag received — word: "${word}", language: ${language}, student: ${studentCode}`);
 
-  // ── 5. Upsert flag document ────────────────────────────────────
+  // ── 5. Upsert flag document (atomic increment to avoid race conditions) ─
   const container = getFlagsContainer();
-  let doc: FlagDoc;
+  let flagCount: number;
+  let status: FlagDoc['status'];
 
   try {
-    const { resource: existing } = await container.item(flagId, language).read<FlagDoc>();
+    // Try atomic patch first (existing document)
+    const { resource: patched } = await container.item(flagId, language).patch<FlagDoc>([
+      { op: 'incr', path: '/flagCount', value: 1 },
+      { op: 'set', path: '/lastFlaggedAt', value: timestamp },
+    ]);
+    flagCount = patched!.flagCount;
+    status = escalationStatus(flagCount);
 
-    if (existing) {
-      // Update existing flag
-      existing.flagCount += 1;
-      existing.lastFlaggedAt = timestamp;
-      existing.status = escalationStatus(existing.flagCount);
-      existing.requiresReview = existing.flagCount >= FLAG_THRESHOLDS.REVIEW;
-
-      // schoolCode resolved later when dashboard queries run
-      if (audioUrl && !existing.audioUrl) {
-        existing.audioUrl = audioUrl;
-      }
-
-      const { resource: updated } = await container.item(flagId, language).replace(existing);
-      doc = updated!;
-    } else {
-      // Create new flag document
+    // Update status + requiresReview based on new count
+    await container.item(flagId, language).patch([
+      { op: 'set', path: '/status', value: status },
+      { op: 'set', path: '/requiresReview', value: flagCount >= FLAG_THRESHOLDS.REVIEW },
+    ]);
+  } catch {
+    // Document doesn't exist — create it
+    try {
       const newDoc: FlagDoc = {
         id: flagId,
         word: word.toLowerCase().trim(),
@@ -102,23 +101,23 @@ export async function flagHandler(
         lastFlaggedAt: timestamp,
         requiresReview: false,
       };
-
-      const { resource: created } = await container.items.create(newDoc);
-      doc = created!;
+      await container.items.create(newDoc);
+      flagCount = 1;
+      status = 'logged';
+    } catch (err) {
+      context.warn('Flag upsert failed:', err);
+      return error(500, 'INTERNAL_ERROR', 'Failed to process flag');
     }
-  } catch (err) {
-    context.log('Cosmos flag upsert failed:', err);
-    return error(500, 'INTERNAL_ERROR', 'Failed to process flag');
   }
 
-  context.log(`Flag ${flagId} — count: ${doc.flagCount}, status: ${doc.status}`);
+  context.log(`Flag ${flagId} — count: ${flagCount}, status: ${status}`);
 
   // ── 6. Return response ─────────────────────────────────────────
   const response: FlagHandlerResponse = {
     flagId,
-    flagCount: doc.flagCount,
-    status: doc.status,
-    requiresReview: doc.requiresReview,
+    flagCount,
+    status,
+    requiresReview: flagCount >= FLAG_THRESHOLDS.REVIEW,
   };
   return { status: 200, jsonBody: response };
 }
