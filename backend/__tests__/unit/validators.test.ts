@@ -2,12 +2,12 @@ import { checkForPII, isValidLanguage, requireFields, validateTTSText, isValidSe
 
 describe('checkForPII', () => {
   it('returns hasPII: false for clean payloads', () => {
-    const result = checkForPII({ sessionToken: 'abc', pilotId: 'PCSD-2026', language: 'dari' });
+    const result = checkForPII({ studentCode: "LB-TEST1",  language: 'dari' });
     expect(result.hasPII).toBe(false);
   });
 
   it('detects email field', () => {
-    const result = checkForPII({ email: 'student@school.edu', sessionToken: 'abc' });
+    const result = checkForPII({ email: 'student@school.edu', studentCode: "LB-TEST1" });
     expect(result.hasPII).toBe(true);
     if (result.hasPII) {
       expect(result.prohibitedFields).toContain('email');

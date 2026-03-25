@@ -42,16 +42,16 @@ export async function ttsRouter(
   }
 
   // ── 2. Validate required fields ────────────────────────────────
-  const fieldCheck = requireFields(body, ['text', 'language', 'pilotId', 'sessionToken']);
+  const fieldCheck = requireFields(body, ['text', 'language', 'studentCode']);
   if (!fieldCheck.valid) {
     return error(400, 'MISSING_FIELDS', `Missing required fields: ${fieldCheck.missing.join(', ')}`);
   }
 
-  const { text, language, pilotId, sessionToken } = body as TTSRequest;
-  context.log(`tts-router request — pilot: ${pilotId}, session: ${sessionToken}`);
+  const { text, language, studentCode } = body as TTSRequest;
+  context.log(`tts-router request — student: ${studentCode}`);
 
-  // ── 2b. Rate limit (per pilot, most expensive endpoint) ──────
-  const rateCheck = checkRateLimit(`tts:${pilotId}`);
+  // ── 2b. Rate limit (per student, most expensive endpoint) ────
+  const rateCheck = checkRateLimit(`tts:${studentCode}`);
   if (!rateCheck.allowed) {
     return error(429, 'RATE_LIMITED', `Rate limit exceeded. Retry after ${rateCheck.retryAfterMs}ms`);
   }

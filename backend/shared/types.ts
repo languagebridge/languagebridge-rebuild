@@ -47,32 +47,88 @@ export const SUPPORTED_LANGUAGES = [
 export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
 
 // ============================================
+// PILOT CONFIGURATION
+// School admin provides this. We store it as config, not user data.
+// ============================================
+
+export type GradeBand = 'K-2' | '3-5' | '6-8' | '9-12';
+
+export type PilotSchool = {
+  schoolCode: string;       // e.g. "greenbriar"
+  schoolName: string;       // e.g. "Greenbriar Middle School"
+  pilotId: string;          // e.g. "PCSD-2026"
+  gradeBands: GradeBand[];  // which grade bands this school covers
+};
+
+export type TeacherRouting = {
+  pilotId: string;
+  schoolCode: string;
+  teacherId: string;        // Supabase UUID
+  gradeBands: GradeBand[];  // teacher handles these grade bands
+};
+
+// ============================================
+// ONBOARDING (first install only)
+// ============================================
+
+export type OnboardingSchoolsResponse = {
+  schools: Array<{
+    schoolCode: string;
+    schoolName: string;
+    gradeBands: GradeBand[];
+  }>;
+};
+
+export type OnboardingEnrollRequest = {
+  schoolCode: string;
+  gradeBand: GradeBand;
+  language: SupportedLanguage;
+};
+
+export type OnboardingEnrollResponse = {
+  studentCode: string;      // e.g. "LB-7K2M" — show once, accessible in help menu
+  schoolCode: string;
+  gradeBand: GradeBand;
+  language: SupportedLanguage;
+};
+
+// ============================================
 // REQUEST TYPES (what clients send to backend)
 // ============================================
 
 export type TTSRequest = {
   text: string;           // Text to convert to audio (max 500 chars)
   language: SupportedLanguage;
-  pilotId: string;        // e.g. 'PCSD-2026'
-  sessionToken: string;   // Anonymous device UUID
-  extensionVersion?: string; // e.g. '2.0.0' (optional, for debugging)
+  studentCode: string;    // Pseudonymous code from onboarding (e.g. "LB-7K2M")
+  extensionVersion?: string;
 };
 
+export type AnalyticsEventType =
+  | 'session_start'
+  | 'session_end'
+  | 'term_lookup'       // student highlighted a word
+  | 'scaffold_view'     // student tapped "More"
+  | 'tts_play'          // student played audio
+  | 'flag_event'
+  | 'glossary_view';
+
 export type AnalyticsWriterRequest = {
-  sessionToken: string;   // Anonymous device UUID
-  pilotId: string;
+  studentCode: string;    // Pseudonymous code from onboarding
   language: SupportedLanguage;
-  eventType: 'session_start' | 'tts_request' | 'flag_event' | 'session_end' | 'glossary_view';
+  eventType: AnalyticsEventType;
   timestamp: string;      // ISO 8601: "2026-03-15T14:30:00Z"
   extensionVersion: string;
+  term?: string;          // which word (sent with term_lookup, scaffold_view, tts_play)
+  subject?: string;       // "science", "math", "ela", "social_studies"
+  source?: 'lexicon' | 'translator_fallback';
+  difficulty?: 'high' | 'medium' | 'low';
   // NEVER ADD: email, name, studentId, schoolId, or any PII
 };
 
 export type FlagEventRequest = {
   word: string;           // The word that was flagged
   language: SupportedLanguage;
-  sessionToken: string;
-  pilotId: string;
+  studentCode: string;
   timestamp: string;      // ISO 8601
   audioUrl?: string;      // URL of the audio that was flagged (optional)
 };
@@ -82,8 +138,7 @@ export type LexiconLookupRequest = {
   language: SupportedLanguage;
   domain?: 'k12_academic' | 'school_navigation' | 'medical' | 'legal_immigration' | 'social_services';
   context?: string;          // Subject context for disambiguation (e.g. "science", "social_studies")
-  pilotId: string;
-  sessionToken: string;
+  studentCode: string;
 };
 
 // auth-layer reads the Authorization header directly — no request body type needed
@@ -196,13 +251,28 @@ export type LexiconLookupErrorResponse = {
 
 export type SessionUsageDoc = {
   id: string;             // UUID
-  sessionToken: string;   // Anonymous session UUID
-  pilotId: string;
+  studentCode: string;    // Pseudonymous code (e.g. "LB-7K2M")
+  schoolCode: string;     // Resolved from studentCode at write time
+  gradeBand: GradeBand;   // Resolved from studentCode at write time
   language: SupportedLanguage;
-  eventType: string;
+  eventType: AnalyticsEventType;
   timestamp: string;
   extensionVersion: string;
+  term?: string;
+  subject?: string;
+  source?: 'lexicon' | 'translator_fallback';
+  difficulty?: 'high' | 'medium' | 'low';
   // Never include: student name, email, or any identifying info
+};
+
+export type EnrollmentDoc = {
+  id: string;             // The student code itself (e.g. "LB-7K2M")
+  schoolCode: string;
+  gradeBand: GradeBand;
+  language: SupportedLanguage;
+  createdAt: string;
+  // Teacher sees this code and nicknames it on their side
+  // We never store the nickname or the student's real name
 };
 
 export type FlagDoc = {
@@ -211,7 +281,7 @@ export type FlagDoc = {
   language: SupportedLanguage;
   flagCount: number;
   status: 'logged' | 'review' | 'bounty' | 'high_priority';
-  pilotIds: string[];
+  schoolCodes: string[];
   audioUrl?: string;
   createdAt: string;
   lastFlaggedAt: string;

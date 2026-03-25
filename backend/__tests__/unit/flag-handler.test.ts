@@ -51,8 +51,8 @@ describe('flag-handler', () => {
   const validBody = {
     word: 'photosynthesis',
     language: 'dari',
-    sessionToken: 'test-session-123',
-    pilotId: 'PCSD-2026',
+    studentCode: "LB-TEST1",
+    
     timestamp: '2026-03-18T12:00:00Z',
   };
 
@@ -66,7 +66,7 @@ describe('flag-handler', () => {
         flagCount: 1,
         status: 'logged',
         requiresReview: false,
-        pilotIds: ['PCSD-2026'],
+        schoolCodes: [],
         createdAt: '2026-03-18T12:00:00Z',
         lastFlaggedAt: '2026-03-18T12:00:00Z',
       },
@@ -91,7 +91,7 @@ describe('flag-handler', () => {
         flagCount: 2, // Will become 3 → review threshold
         status: 'logged',
         requiresReview: false,
-        pilotIds: ['PCSD-2026'],
+        schoolCodes: [],
         audioUrl: undefined,
         createdAt: '2026-03-18T10:00:00Z',
         lastFlaggedAt: '2026-03-18T11:00:00Z',
@@ -105,7 +105,7 @@ describe('flag-handler', () => {
         flagCount: 3,
         status: 'review',
         requiresReview: true,
-        pilotIds: ['PCSD-2026'],
+        schoolCodes: [],
         createdAt: '2026-03-18T10:00:00Z',
         lastFlaggedAt: '2026-03-18T12:00:00Z',
       },
@@ -129,7 +129,7 @@ describe('flag-handler', () => {
         flagCount: FLAG_THRESHOLDS.HIGH_PRIORITY - 1,
         status: 'bounty',
         requiresReview: true,
-        pilotIds: ['PCSD-2026'],
+        schoolCodes: [],
         audioUrl: undefined,
         createdAt: '2026-03-18T10:00:00Z',
         lastFlaggedAt: '2026-03-18T11:00:00Z',
@@ -143,7 +143,7 @@ describe('flag-handler', () => {
         flagCount: FLAG_THRESHOLDS.HIGH_PRIORITY,
         status: 'high_priority',
         requiresReview: true,
-        pilotIds: ['PCSD-2026'],
+        schoolCodes: [],
         createdAt: '2026-03-18T10:00:00Z',
         lastFlaggedAt: '2026-03-18T12:00:00Z',
       },
@@ -156,7 +156,7 @@ describe('flag-handler', () => {
 
   it('rejects missing required fields', async () => {
     const response = await flagHandler(
-      makeRequest({ word: 'test' }), // missing language, sessionToken, etc.
+      makeRequest({ word: 'test' }), // missing language, studentCode, etc.
       makeContext()
     );
     expect(response.status).toBe(400);

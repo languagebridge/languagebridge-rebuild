@@ -83,7 +83,7 @@ export async function lexiconLookup(
   }
 
   // ── 2. Validate required fields ────────────────────────────────
-  const fieldCheck = requireFields(body, ['term', 'language', 'pilotId', 'sessionToken']);
+  const fieldCheck = requireFields(body, ['term', 'language', 'studentCode']);
   if (!fieldCheck.valid) {
     return respond(400, {
       error: 'MISSING_FIELDS',
@@ -91,7 +91,7 @@ export async function lexiconLookup(
     } as LexiconLookupErrorResponse);
   }
 
-  const { term, language, domain, context: subjectContext, pilotId, sessionToken } =
+  const { term, language, domain, context: subjectContext, studentCode } =
     body as unknown as LexiconLookupRequest;
 
   if (!isValidLanguage(language)) {
@@ -140,8 +140,7 @@ export async function lexiconLookup(
         term: normalizedTerm,
         language,
         source: 'lexicon',
-        pilotId,
-        sessionHash: hashSession(sessionToken),
+        studentCode,
       });
 
       const audioUrl = entry.audio_blob_path
@@ -199,8 +198,7 @@ export async function lexiconLookup(
       term: normalizedTerm,
       language,
       source: 'translator_fallback',
-      pilotId,
-      sessionHash: hashSession(sessionToken),
+      studentCode,
     });
 
     return respond(200, {
@@ -262,9 +260,6 @@ async function translateWithAzure(
   }
 }
 
-function hashSession(sessionToken: string): string {
-  return createHash('sha256').update(sessionToken).digest('hex').slice(0, 16);
-}
 
 function logAnalytics(
   context: InvocationContext,

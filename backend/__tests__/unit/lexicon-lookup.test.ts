@@ -57,8 +57,8 @@ describe('lexicon-lookup', () => {
   const validBody = {
     term: 'photosynthesis',
     language: 'dari',
-    pilotId: 'PCSD-2026',
-    sessionToken: 'test-session-123',
+    
+    studentCode: "LB-TEST1",
   };
 
   it('returns bridge definition when lexicon entry exists', async () => {

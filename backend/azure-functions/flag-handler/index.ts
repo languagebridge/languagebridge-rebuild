@@ -47,12 +47,12 @@ export async function flagHandler(
   }
 
   // ── 2. Validate required fields ────────────────────────────────
-  const fieldCheck = requireFields(body, ['word', 'language', 'sessionToken', 'pilotId', 'timestamp']);
+  const fieldCheck = requireFields(body, ['word', 'language', 'studentCode', 'timestamp']);
   if (!fieldCheck.valid) {
     return error(400, 'MISSING_FIELDS', `Missing required fields: ${fieldCheck.missing.join(', ')}`);
   }
 
-  const { word, language, sessionToken, pilotId, audioUrl, timestamp } = body as FlagEventRequest;
+  const { word, language, studentCode, audioUrl, timestamp } = body as FlagEventRequest;
 
   // ── 3. Validate language ───────────────────────────────────────
   if (!isValidLanguage(language)) {
@@ -65,7 +65,7 @@ export async function flagHandler(
     .update(`${word.toLowerCase().trim()}::${language}`)
     .digest('hex');
 
-  context.log(`Flag received — word: "${word}", language: ${language}, pilot: ${pilotId}`);
+  context.log(`Flag received — word: "${word}", language: ${language}, student: ${studentCode}`);
 
   // ── 5. Upsert flag document ────────────────────────────────────
   const container = getFlagsContainer();
@@ -81,9 +81,7 @@ export async function flagHandler(
       existing.status = escalationStatus(existing.flagCount);
       existing.requiresReview = existing.flagCount >= FLAG_THRESHOLDS.REVIEW;
 
-      if (!existing.pilotIds.includes(pilotId)) {
-        existing.pilotIds.push(pilotId);
-      }
+      // schoolCode resolved later when dashboard queries run
       if (audioUrl && !existing.audioUrl) {
         existing.audioUrl = audioUrl;
       }
@@ -98,7 +96,7 @@ export async function flagHandler(
         language,
         flagCount: 1,
         status: 'logged',
-        pilotIds: [pilotId],
+        schoolCodes: [],
         audioUrl,
         createdAt: timestamp,
         lastFlaggedAt: timestamp,

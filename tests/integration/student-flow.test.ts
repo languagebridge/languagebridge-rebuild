@@ -58,7 +58,7 @@ vi.mock('../../backend/shared/cosmos-client', () => ({
     items: {
       query: () => ({ fetchAll: () => Promise.resolve({ resources: [] }) }),
       upsert: () => Promise.resolve({ resource: { id: 'test', flagCount: 1, status: 'logged', requiresReview: false } }),
-      create: () => Promise.resolve({ resource: { id: 'test', word: 'photosynthesis', language: 'dari', flagCount: 1, status: 'logged', requiresReview: false, pilotIds: ['TEST-2026'] } }),
+      create: () => Promise.resolve({ resource: { id: 'test', word: 'photosynthesis', language: 'dari', flagCount: 1, status: 'logged', requiresReview: false, schoolCodes: [] } }),
     },
     item: () => ({
       read: () => Promise.resolve({ resource: null }),
@@ -113,8 +113,8 @@ describe('Student flow: highlight → lookup → bridge phrase', () => {
     const req = mockRequest({
       term: 'photosynthesis',
       language: 'dari',
-      pilotId: 'TEST-2026',
-      sessionToken: 'test-session-abc123',
+      
+      studentCode: 'LB-TEST1',
     });
 
     const res = await lexiconLookup(req, mockContext());
@@ -132,8 +132,8 @@ describe('Student flow: highlight → lookup → bridge phrase', () => {
     const req = mockRequest({
       term: 'photosynthesis',
       language: 'dari',
-      pilotId: 'TEST-2026',
-      sessionToken: 'test-session-abc123',
+      
+      studentCode: 'LB-TEST1',
     });
 
     const res = await lexiconLookup(req, mockContext());
@@ -148,8 +148,8 @@ describe('Student flow: highlight → lookup → bridge phrase', () => {
     const req = mockRequest({
       term: 'photosynthesis',
       language: 'dari',
-      pilotId: 'TEST-2026',
-      sessionToken: 'test-session-abc123',
+      
+      studentCode: 'LB-TEST1',
     });
 
     const res = await lexiconLookup(req, mockContext());
@@ -162,7 +162,7 @@ describe('Student flow: highlight → lookup → bridge phrase', () => {
 
 describe('Student flow: validation guards', () => {
   it('rejects missing required fields', async () => {
-    const req = mockRequest({ term: 'hello' }); // missing language, pilotId, sessionToken
+    const req = mockRequest({ term: 'hello' }); // missing language, studentCode
     const res = await lexiconLookup(req, mockContext());
     expect(res.status).toBe(400);
   });
@@ -171,8 +171,8 @@ describe('Student flow: validation guards', () => {
     const req = mockRequest({
       term: 'hello',
       language: 'klingon',
-      pilotId: 'TEST-2026',
-      sessionToken: 'test-session-abc123',
+      
+      studentCode: 'LB-TEST1',
     });
     const res = await lexiconLookup(req, mockContext());
     expect(res.status).toBe(400);
@@ -180,8 +180,8 @@ describe('Student flow: validation guards', () => {
 
   it('rejects request with PII in analytics', async () => {
     const req = mockRequest({
-      sessionToken: 'test-session-abc123',
-      pilotId: 'TEST-2026',
+      studentCode: 'LB-TEST1',
+      
       language: 'dari',
       eventType: 'session_start',
       timestamp: new Date().toISOString(),
@@ -199,8 +199,8 @@ describe('Student flow: flag bad audio', () => {
     const req = mockRequest({
       word: 'photosynthesis',
       language: 'dari',
-      sessionToken: 'test-session-abc123',
-      pilotId: 'TEST-2026',
+      studentCode: 'LB-TEST1',
+      
       timestamp: new Date().toISOString(),
     });
     const res = await flagHandler(req, mockContext());

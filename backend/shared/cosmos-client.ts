@@ -58,6 +58,10 @@ export function getLexiconContainer(): Container {
   return getDatabase().container('lexicon');
 }
 
+export function getEnrollmentsContainer(): Container {
+  return getDatabase().container('enrollments');
+}
+
 export function getAnalyticsContainer(): Container {
   return getDatabase().container('analytics');
 }

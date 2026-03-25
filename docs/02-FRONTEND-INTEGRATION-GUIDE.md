@@ -274,21 +274,29 @@ Log events for the teacher dashboard. Call this on key user actions.
   "sessionToken": "anonymous-uuid",
   "pilotId": "PCSD-2026",
   "language": "dari",
-  "eventType": "tts_request",
+  "eventType": "term_lookup",
   "timestamp": "2026-03-19T14:30:00Z",
-  "extensionVersion": "2.0.0"
+  "extensionVersion": "2.0.0",
+  "term": "photosynthesis",
+  "subject": "science",
+  "source": "lexicon",
+  "difficulty": "high"
 }
 ```
 
 **Event types you should send:**
 
-| Event | When to Send |
-|-------|-------------|
-| `session_start` | Extension opens / student starts using it |
-| `tts_request` | Student plays audio |
-| `flag_event` | Student flags a pronunciation |
-| `session_end` | Extension closes |
-| `glossary_view` | Student opens the glossary/dictionary view |
+| Event | When to Send | Include `term`? |
+|-------|-------------|-----------------|
+| `session_start` | Extension opens | No |
+| `session_end` | Extension closes | No |
+| `term_lookup` | Student highlights a word and gets a result | Yes — also send `subject`, `source`, `difficulty` from the lexicon response |
+| `scaffold_view` | Student taps "More" to see expanded definition | Yes |
+| `tts_play` | Student plays audio | Yes |
+| `flag_event` | Student flags bad audio | Yes |
+| `glossary_view` | Student opens the glossary/dictionary view | No |
+
+**Why this matters:** These events power the school dashboard. `term_lookup` + `scaffold_view` together tell us if students are engaging with definitions or just glancing. A term looked up in September but not October means the student learned it. This is how we prove ROI to schools without tracking any individual student.
 
 ### PII Protection
 

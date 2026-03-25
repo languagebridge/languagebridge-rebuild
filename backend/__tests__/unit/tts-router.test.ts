@@ -64,8 +64,8 @@ describe('tts-router', () => {
   const validBody = {
     text: 'photosynthesis',
     language: 'dari',
-    pilotId: 'PCSD-2026',
-    sessionToken: 'test-session-123',
+    
+    studentCode: "LB-TEST1",
   };
 
   it('returns cached audio on blob hit', async () => {

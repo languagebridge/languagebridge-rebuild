@@ -41,8 +41,8 @@ beforeEach(() => {
 
 describe('analytics-writer', () => {
   const validBody = {
-    sessionToken: 'test-session-123',
-    pilotId: 'PCSD-2026',
+    studentCode: "LB-TEST1",
+    
     language: 'dari',
     eventType: 'session_start',
     timestamp: '2026-03-18T12:00:00Z',
@@ -109,7 +109,7 @@ describe('analytics-writer', () => {
 
   it('rejects missing required fields', async () => {
     const response = await analyticsWriter(
-      makeRequest({ sessionToken: 'abc' }),
+      makeRequest({ studentCode: "LB-TEST1" }),
       makeContext()
     );
     expect(response.status).toBe(400);
