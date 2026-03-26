@@ -1,4 +1,10 @@
-import { BlobServiceClient, ContainerClient } from '@azure/storage-blob';
+import {
+  BlobServiceClient,
+  ContainerClient,
+  StorageSharedKeyCredential,
+  generateBlobSASQueryParameters,
+  BlobSASPermissions,
+} from '@azure/storage-blob';
 
 /**
  * Azure Blob Storage Client — lazy initialization
@@ -18,6 +24,35 @@ function getBlobServiceClient(): BlobServiceClient {
     _blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
   }
   return _blobServiceClient;
+}
+
+/**
+ * Generate a read-only SAS URL for a blob with 1-hour expiry.
+ */
+export function generateSasUrl(containerName: string, blobName: string): string {
+  const account = process.env.AZURE_STORAGE_ACCOUNT;
+  const key = process.env.AZURE_STORAGE_KEY;
+  if (!account || !key) {
+    // Fall back to unsigned URL if credentials not available
+    return getBlobServiceClient()
+      .getContainerClient(containerName)
+      .getBlobClient(blobName).url;
+  }
+
+  const credential = new StorageSharedKeyCredential(account, key);
+  const expiresOn = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+  const sas = generateBlobSASQueryParameters(
+    {
+      containerName,
+      blobName,
+      permissions: BlobSASPermissions.parse('r'),
+      expiresOn,
+    },
+    credential
+  ).toString();
+
+  return `https://${account}.blob.core.windows.net/${containerName}/${blobName}?${sas}`;
 }
 
 // ============================================

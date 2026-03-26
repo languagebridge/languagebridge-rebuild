@@ -1,9 +1,10 @@
+import { timingSafeEqual } from 'crypto';
 import { SUPPORTED_LANGUAGES, SupportedLanguage } from './types';
 
 /**
  * Input Validators
  *
- * Centralized validation for all four Azure Functions.
+ * Centralized validation for all Azure Functions.
  * PII protection is enforced here — never in the functions themselves.
  */
 
@@ -35,11 +36,24 @@ export type PIICheckResult =
   | { hasPII: true; prohibitedFields: string[] };
 
 export function checkForPII(payload: Record<string, unknown>): PIICheckResult {
-  const found = PROHIBITED_PII_FIELDS.filter((field) => field in payload);
-  if (found.length > 0) {
-    return { hasPII: true, prohibitedFields: found };
+  const found = new Set<string>();
+  scanForPII(payload, found);
+  if (found.size > 0) {
+    return { hasPII: true, prohibitedFields: Array.from(found) };
   }
   return { hasPII: false };
+}
+
+function scanForPII(obj: unknown, found: Set<string>, depth = 0): void {
+  if (depth > 5 || obj === null || obj === undefined || typeof obj !== 'object') return;
+  for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    if (PROHIBITED_PII_FIELDS.includes(key as typeof PROHIBITED_PII_FIELDS[number])) {
+      found.add(key);
+    }
+    if (typeof value === 'object' && value !== null) {
+      scanForPII(value, found, depth + 1);
+    }
+  }
 }
 
 // ============================================
@@ -108,7 +122,14 @@ export function validateApiKey(request: { headers: { get(name: string): string |
   }
 
   const apiKey = request.headers.get(API_KEY_HEADER);
-  if (!apiKey || apiKey !== expectedKey) {
+  if (!apiKey) {
+    return { valid: false, status: 401, error: 'Invalid or missing API key' };
+  }
+
+  // Timing-safe comparison to prevent key length leakage
+  const expected = Buffer.from(expectedKey, 'utf8');
+  const provided = Buffer.from(apiKey, 'utf8');
+  if (expected.length !== provided.length || !timingSafeEqual(expected, provided)) {
     return { valid: false, status: 401, error: 'Invalid or missing API key' };
   }
 

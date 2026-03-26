@@ -4,15 +4,13 @@ import { FLAG_THRESHOLDS } from '../../shared/types';
 
 // ── Mock Cosmos DB ──────────────────────────────────────────────────
 
-const mockRead = jest.fn();
-const mockReplace = jest.fn();
+const mockPatch = jest.fn();
 const mockCreate = jest.fn();
 
 jest.mock('../../shared/cosmos-client', () => ({
   getFlagsContainer: () => ({
     item: () => ({
-      read: mockRead,
-      replace: mockReplace,
+      patch: mockPatch,
     }),
     items: {
       create: mockCreate,
@@ -26,7 +24,7 @@ function makeRequest(body: Record<string, unknown>): HttpRequest {
   return {
     method: 'POST',
     url: 'http://localhost/api/flag-handler',
-    headers: new Map(),
+    headers: new Map([['x-lb-api-key', 'test-api-key-for-jest']]),
     query: new Map(),
     params: {},
     json: async () => body,
@@ -57,20 +55,9 @@ describe('flag-handler', () => {
   };
 
   it('creates a new flag document when none exists', async () => {
-    mockRead.mockResolvedValue({ resource: null });
-    mockCreate.mockResolvedValue({
-      resource: {
-        id: 'test-hash',
-        word: 'photosynthesis',
-        language: 'dari',
-        flagCount: 1,
-        status: 'logged',
-        requiresReview: false,
-        schoolCodes: [],
-        createdAt: '2026-03-18T12:00:00Z',
-        lastFlaggedAt: '2026-03-18T12:00:00Z',
-      },
-    });
+    // Patch fails (doc doesn't exist), then create succeeds
+    mockPatch.mockRejectedValue(new Error('Not found'));
+    mockCreate.mockResolvedValue({ resource: {} });
 
     const response = await flagHandler(makeRequest(validBody), makeContext());
     expect(response.status).toBe(200);
@@ -83,33 +70,11 @@ describe('flag-handler', () => {
   });
 
   it('increments existing flag and escalates to review at threshold', async () => {
-    mockRead.mockResolvedValue({
-      resource: {
-        id: 'test-hash',
-        word: 'photosynthesis',
-        language: 'dari',
-        flagCount: 2, // Will become 3 → review threshold
-        status: 'logged',
-        requiresReview: false,
-        schoolCodes: [],
-        audioUrl: undefined,
-        createdAt: '2026-03-18T10:00:00Z',
-        lastFlaggedAt: '2026-03-18T11:00:00Z',
-      },
-    });
-    mockReplace.mockResolvedValue({
-      resource: {
-        id: 'test-hash',
-        word: 'photosynthesis',
-        language: 'dari',
-        flagCount: 3,
-        status: 'review',
-        requiresReview: true,
-        schoolCodes: [],
-        createdAt: '2026-03-18T10:00:00Z',
-        lastFlaggedAt: '2026-03-18T12:00:00Z',
-      },
-    });
+    // First patch (incr) succeeds, returning count of 3
+    mockPatch
+      .mockResolvedValueOnce({ resource: { flagCount: 3 } })
+      // Second patch (set status) succeeds
+      .mockResolvedValueOnce({});
 
     const response = await flagHandler(makeRequest(validBody), makeContext());
     expect(response.status).toBe(200);
@@ -121,33 +86,9 @@ describe('flag-handler', () => {
   });
 
   it('escalates to high_priority at threshold', async () => {
-    mockRead.mockResolvedValue({
-      resource: {
-        id: 'test-hash',
-        word: 'photosynthesis',
-        language: 'dari',
-        flagCount: FLAG_THRESHOLDS.HIGH_PRIORITY - 1,
-        status: 'bounty',
-        requiresReview: true,
-        schoolCodes: [],
-        audioUrl: undefined,
-        createdAt: '2026-03-18T10:00:00Z',
-        lastFlaggedAt: '2026-03-18T11:00:00Z',
-      },
-    });
-    mockReplace.mockResolvedValue({
-      resource: {
-        id: 'test-hash',
-        word: 'photosynthesis',
-        language: 'dari',
-        flagCount: FLAG_THRESHOLDS.HIGH_PRIORITY,
-        status: 'high_priority',
-        requiresReview: true,
-        schoolCodes: [],
-        createdAt: '2026-03-18T10:00:00Z',
-        lastFlaggedAt: '2026-03-18T12:00:00Z',
-      },
-    });
+    mockPatch
+      .mockResolvedValueOnce({ resource: { flagCount: FLAG_THRESHOLDS.HIGH_PRIORITY } })
+      .mockResolvedValueOnce({});
 
     const response = await flagHandler(makeRequest(validBody), makeContext());
     const body = response.jsonBody as Record<string, unknown>;
@@ -174,7 +115,7 @@ describe('flag-handler', () => {
     const request = {
       method: 'POST',
       url: 'http://localhost/api/flag-handler',
-      headers: new Map(),
+      headers: new Map([['x-lb-api-key', 'test-api-key-for-jest']]),
       query: new Map(),
       params: {},
       json: async () => { throw new Error('Invalid JSON'); },

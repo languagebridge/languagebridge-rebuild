@@ -19,10 +19,22 @@ jobs:
 
       - run: npm ci
 
+      - name: Security audit
+        run: npm audit --audit-level=high
+
+      - name: Lint backend
+        run: npm run lint:backend
+
       - name: Type check
         run: npx tsc --noEmit --project tsconfig.backend.json
 
-      - name: Unit tests
+      - name: Build backend
+        run: npm run build:backend
+
+      - name: Backend unit tests (Jest)
+        run: npm run test:backend
+
+      - name: Unit tests (Vitest)
         run: npx vitest run tests/unit
 
       - name: Integration tests

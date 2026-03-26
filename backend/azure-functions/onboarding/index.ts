@@ -9,7 +9,7 @@ import {
   GradeBand,
 } from '../../shared/types';
 import { getEnrollmentsContainer, getPilotsContainer } from '../../shared/cosmos-client';
-import { requireFields, isValidLanguage, validateApiKey, errorResponse } from '../../shared/validators';
+import { requireFields, isValidLanguage, validateApiKey, checkRateLimit, errorResponse } from '../../shared/validators';
 
 /**
  * onboarding
@@ -51,6 +51,13 @@ export async function getSchools(
   const keyCheck = validateApiKey(request);
   if (!keyCheck.valid) {
     return error(401, 'UNAUTHORIZED', keyCheck.error);
+  }
+
+  // Rate limit by IP-like key (no studentCode available for GET)
+  const clientIp = request.headers.get('x-forwarded-for') ?? 'unknown';
+  const rateCheck = checkRateLimit(`schools:${clientIp}`);
+  if (!rateCheck.allowed) {
+    return error(429, 'RATE_LIMITED', `Rate limit exceeded. Retry after ${rateCheck.retryAfterMs}ms`);
   }
 
   try {
@@ -98,6 +105,13 @@ export async function enroll(
 
   if (!isValidLanguage(req.language)) {
     return error(400, 'INVALID_LANGUAGE', `Language '${req.language}' is not supported`);
+  }
+
+  // Rate limit enrollment by IP
+  const clientIp = request.headers.get('x-forwarded-for') ?? 'unknown';
+  const rateCheck = checkRateLimit(`enroll:${clientIp}`);
+  if (!rateCheck.allowed) {
+    return error(429, 'RATE_LIMITED', `Rate limit exceeded. Retry after ${rateCheck.retryAfterMs}ms`);
   }
 
   const VALID_GRADE_BANDS = ['K-2', '3-5', '6-8', '9-12'];

@@ -94,7 +94,7 @@ describe('auth-layer', () => {
     mockQuery.mockResolvedValue({
       resources: [{
         email: 'teacher@school.edu',
-        schoolCodes: [],
+        pilotIds: ['PCSD-2026'],
         permissions: ['view_dashboard', 'manage_flags'],
       }],
     });

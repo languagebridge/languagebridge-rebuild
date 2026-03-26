@@ -20,6 +20,7 @@ jest.mock('../../shared/blob-client', () => ({
       url: mockBlobUrl,
     }),
   }),
+  generateSasUrl: () => mockBlobUrl,
 }));
 
 jest.mock('../../shared/cosmos-client', () => ({
@@ -37,7 +38,7 @@ function makeRequest(body: Record<string, unknown>): HttpRequest {
   return {
     method: 'POST',
     url: 'http://localhost/api/tts-router',
-    headers: new Map(),
+    headers: new Map([['x-lb-api-key', 'test-api-key-for-jest']]),
     query: new Map(),
     params: {},
     json: async () => body,
@@ -123,7 +124,7 @@ describe('tts-router', () => {
     const request = {
       method: 'POST',
       url: 'http://localhost/api/tts-router',
-      headers: new Map(),
+      headers: new Map([['x-lb-api-key', 'test-api-key-for-jest']]),
       json: async () => { throw new Error('Invalid JSON'); },
     } as unknown as HttpRequest;
 

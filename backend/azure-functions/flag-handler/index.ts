@@ -8,7 +8,7 @@ import {
   FLAG_THRESHOLDS,
 } from '../../shared/types';
 import { getFlagsContainer } from '../../shared/cosmos-client';
-import { requireFields, isValidLanguage, validateApiKey, errorResponse } from '../../shared/validators';
+import { requireFields, isValidLanguage, validateApiKey, checkRateLimit, errorResponse } from '../../shared/validators';
 
 /**
  * flag-handler
@@ -53,6 +53,12 @@ export async function flagHandler(
   }
 
   const { word, language, studentCode, audioUrl, timestamp } = body as FlagEventRequest;
+
+  // ── 2b. Rate limit ──────────────────────────────────────────────
+  const rateCheck = checkRateLimit(`flag:${studentCode}`);
+  if (!rateCheck.allowed) {
+    return error(429, 'RATE_LIMITED', `Rate limit exceeded. Retry after ${rateCheck.retryAfterMs}ms`);
+  }
 
   // ── 3. Validate language ───────────────────────────────────────
   if (!isValidLanguage(language)) {
@@ -104,9 +110,29 @@ export async function flagHandler(
       await container.items.create(newDoc);
       flagCount = 1;
       status = 'logged';
-    } catch (err) {
-      context.warn('Flag upsert failed:', err);
-      return error(500, 'INTERNAL_ERROR', 'Failed to process flag');
+    } catch (createErr: unknown) {
+      // Handle 409 conflict — another request created the doc first, retry the patch
+      const code = (createErr as { code?: number })?.code;
+      if (code === 409) {
+        try {
+          const { resource: patched } = await container.item(flagId, language).patch<FlagDoc>([
+            { op: 'incr', path: '/flagCount', value: 1 },
+            { op: 'set', path: '/lastFlaggedAt', value: timestamp },
+          ]);
+          flagCount = patched!.flagCount;
+          status = escalationStatus(flagCount);
+          await container.item(flagId, language).patch([
+            { op: 'set', path: '/status', value: status },
+            { op: 'set', path: '/requiresReview', value: flagCount >= FLAG_THRESHOLDS.REVIEW },
+          ]);
+        } catch (retryErr) {
+          context.warn('Flag conflict retry failed:', retryErr);
+          return error(500, 'INTERNAL_ERROR', 'Failed to process flag');
+        }
+      } else {
+        context.warn('Flag upsert failed:', createErr);
+        return error(500, 'INTERNAL_ERROR', 'Failed to process flag');
+      }
     }
   }
 

@@ -29,7 +29,7 @@ function makeRequest(body: Record<string, unknown>): HttpRequest {
   return {
     method: 'POST',
     url: 'http://localhost/api/lexicon-lookup',
-    headers: new Map(),
+    headers: new Map([['x-lb-api-key', 'test-api-key-for-jest']]),
     query: new Map(),
     params: {},
     json: async () => body,
@@ -81,7 +81,7 @@ describe('lexicon-lookup', () => {
     const response = await lexiconLookup(makeRequest(validBody), makeContext());
     expect(response.status).toBe(200);
 
-    const body = JSON.parse(response.body as string);
+    const body = response.jsonBody as Record<string, unknown>;
     expect(body.source).toBe('lexicon');
     expect(body.type).toBe('bridge');
     expect(body.cognate).toBe('فوتوسنتز');
@@ -108,7 +108,7 @@ describe('lexicon-lookup', () => {
     const response = await lexiconLookup(makeRequest({ ...validBody, term: 'absorb' }), makeContext());
     expect(response.status).toBe(200);
 
-    const body = JSON.parse(response.body as string);
+    const body = response.jsonBody as Record<string, unknown>;
     expect(body.source).toBe('lexicon');
     expect(body.cognate).toBe('ندرک بذج');
   });
@@ -132,7 +132,7 @@ describe('lexicon-lookup', () => {
     );
     expect(response.status).toBe(200);
 
-    const body = JSON.parse(response.body as string);
+    const body = response.jsonBody as Record<string, unknown>;
     expect(body.source).toBe('translator_fallback');
     expect(body.type).toBe('cognate');
     expect(body.cognate).toBe('ترجمه');
@@ -170,7 +170,7 @@ describe('lexicon-lookup', () => {
     );
     expect(response.status).toBe(400);
 
-    const body = JSON.parse(response.body as string);
+    const body = response.jsonBody as Record<string, unknown>;
     expect(body.error).toBe('MISSING_FIELDS');
   });
 
@@ -181,7 +181,7 @@ describe('lexicon-lookup', () => {
     );
     expect(response.status).toBe(400);
 
-    const body = JSON.parse(response.body as string);
+    const body = response.jsonBody as Record<string, unknown>;
     expect(body.error).toBe('INVALID_LANGUAGE');
   });
 
@@ -189,7 +189,7 @@ describe('lexicon-lookup', () => {
     const request = {
       method: 'POST',
       url: 'http://localhost/api/lexicon-lookup',
-      headers: new Map(),
+      headers: new Map([['x-lb-api-key', 'test-api-key-for-jest']]),
       json: async () => { throw new Error('Invalid JSON'); },
     } as unknown as HttpRequest;
 

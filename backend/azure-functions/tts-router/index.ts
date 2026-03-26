@@ -2,7 +2,7 @@ import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/fu
 import { createHash } from 'crypto';
 import axios from 'axios';
 import { TTSRequest, TTSResponse, AudioCacheMetadataDoc } from '../../shared/types';
-import { getAudioCacheContainer } from '../../shared/blob-client';
+import { getAudioCacheContainer, generateSasUrl } from '../../shared/blob-client';
 import { getAudioCacheMetadataContainer } from '../../shared/cosmos-client';
 import { requireFields, isValidLanguage, validateTTSText, validateApiKey, checkRateLimit, errorResponse } from '../../shared/validators';
 import voiceConfig from '../../shared/voice-config.json';
@@ -81,8 +81,9 @@ export async function ttsRouter(
       context.log(`Cache hit: ${blobName}`);
       await incrementCacheHit(textHash);
 
+      const containerName = process.env.AZURE_STORAGE_CONTAINER_AUDIO ?? 'tts-audio-cache';
       const response: TTSResponse = {
-        audioUrl: blobClient.url,
+        audioUrl: generateSasUrl(containerName, blobName),
         source: 'azure_cache',
         durationMs: 0,
         cached: true,
@@ -172,12 +173,13 @@ export async function ttsRouter(
 
   let audioUrl: string;
   try {
+    const audioContainerName = process.env.AZURE_STORAGE_CONTAINER_AUDIO ?? 'tts-audio-cache';
     const audioContainer = getAudioCacheContainer();
     const blockBlobClient = audioContainer.getBlockBlobClient(finalBlobName);
     await blockBlobClient.upload(audioBuffer, audioBuffer.length, {
       blobHTTPHeaders: { blobContentType: contentType },
     });
-    audioUrl = blockBlobClient.url;
+    audioUrl = generateSasUrl(audioContainerName, finalBlobName);
   } catch (err) {
     context.log('Blob upload failed:', err);
     return error(500, 'INTERNAL_ERROR', 'Failed to cache audio');
@@ -246,6 +248,6 @@ async function incrementCacheHit(textHash: string): Promise<void> {
       { op: 'incr', path: '/hitCount', value: 1 },
     ]);
   } catch (err) {
-    console.warn('Cache hit increment failed (non-fatal):', err);
+    // Non-fatal: cache hit tracking should not block responses
   }
 }

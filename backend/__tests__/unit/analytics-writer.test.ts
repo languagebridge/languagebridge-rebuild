@@ -5,9 +5,14 @@ import { HttpRequest, InvocationContext } from '@azure/functions';
 
 const mockCreate = jest.fn();
 
+const mockEnrollmentRead = jest.fn();
+
 jest.mock('../../shared/cosmos-client', () => ({
   getSessionsContainer: () => ({
     items: { create: mockCreate },
+  }),
+  getEnrollmentsContainer: () => ({
+    item: () => ({ read: mockEnrollmentRead }),
   }),
 }));
 
@@ -17,7 +22,7 @@ function makeRequest(body: Record<string, unknown>): HttpRequest {
   return {
     method: 'POST',
     url: 'http://localhost/api/analytics-writer',
-    headers: new Map(),
+    headers: new Map([['x-lb-api-key', 'test-api-key-for-jest']]),
     query: new Map(),
     params: {},
     json: async () => body,
@@ -37,6 +42,7 @@ function makeContext(): InvocationContext {
 beforeEach(() => {
   jest.clearAllMocks();
   mockCreate.mockResolvedValue({});
+  mockEnrollmentRead.mockResolvedValue({ resource: { schoolCode: 'test-school', gradeBand: 'K-2' } });
 });
 
 describe('analytics-writer', () => {
@@ -96,7 +102,7 @@ describe('analytics-writer', () => {
   });
 
   it('accepts all valid event types', async () => {
-    const eventTypes = ['session_start', 'tts_request', 'flag_event', 'session_end', 'glossary_view'];
+    const eventTypes = ['session_start', 'tts_play', 'flag_event', 'session_end', 'glossary_view'];
     for (const eventType of eventTypes) {
       mockCreate.mockResolvedValue({});
       const response = await analyticsWriter(
