@@ -1,0 +1,79 @@
+{
+  "manifest_version": 3,
+  "name": "LanguageBridge - Real-Time Translation for Students",
+  "version": "2.0.0",
+  "description": "Instant translation and text-to-speech for English learners in 9 languages.",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": [
+    "https://languagebridge-api.azurewebsites.net/*",
+    "https://storage.blob.core.windows.net/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [{
+    "matches": ["<all_urls>"],
+    "js": [
+      "utils/logger.js",
+      "config.js",
+      "content/core/lb-state-manager.js",
+      "content/services/lb-azure-core.js",
+      "content/services/lb-translation-service.js",
+      "content/services/lb-tts-service.js",
+      "content/services/lb-stt-service.js",
+      "content/services/lb-glossary-service.js",
+      "content/session-audio-cache.js",
+      "content/activation-modal.js",
+      "content/google-docs-adapter.js",
+      "content/onboarding.js",
+      "content/toolbar.js",
+      "content/floating-translator.js"
+    ],
+    "css": [
+      "content/brand-tokens.css",
+      "content/toolbar.css",
+      "content/floating-translator.css"
+    ],
+    "run_at": "document_idle"
+  }],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "assets/icon16.png",
+      "32": "assets/icon32.png",
+      "48": "assets/icon48.png",
+      "128": "assets/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "assets/icon16.png",
+    "32": "assets/icon32.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  },
+  "commands": {
+    "toggle-toolbar": {
+      "suggested_key": {
+        "default": "Alt+Shift+L",
+        "mac": "Alt+Shift+L"
+      },
+      "description": "Toggle LanguageBridge toolbar"
+    },
+    "toggle-floating-translator": {
+      "suggested_key": {
+        "default": "Alt+Shift+T",
+        "mac": "Alt+Shift+T"
+      },
+      "description": "Toggle floating conversation translator"
+    }
+  },
+  "web_accessible_resources": [{
+    "resources": [
+      "assets/*",
+      "content/*.css",
+      "content/*.html"
+    ],
+    "matches": ["<all_urls>"]
+  }]
+}

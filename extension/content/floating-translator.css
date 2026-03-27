@@ -1,0 +1,251 @@
+/* LanguageBridge - Floating Translator Styles */
+
+.lb-floating-translator {
+    position: fixed;
+    width: 320px;
+    height: 620px;
+    background: linear-gradient(135deg, #742a69 0%, #f37030 80%, #ffc755 100%);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    z-index: 9998;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .lb-floating-translator:hover {
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.4);
+  }
+
+  /* Header */
+  .lb-float-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    gap: 8px;
+  }
+
+  .lb-float-drag-handle {
+    cursor: grab;
+    color: rgba(255, 255, 255, 0.6);
+    padding: 4px;
+    margin-right: 8px;
+    transition: color 0.2s;
+  }
+
+  .lb-float-drag-handle:hover {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .lb-float-drag-handle:active {
+    cursor: grabbing;
+  }
+
+  .lb-header-title {
+    flex: 1;
+    font-size: 16px;
+    font-weight: 600;
+    text-align: center;
+    color: white;
+    opacity: 0.95;
+  }
+
+  .lb-float-close {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .lb-float-close:hover {
+    background: rgba(239, 68, 68, 0.8);
+  }
+
+  /* Body */
+  .lb-float-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    gap: 0;
+    min-height: 0;
+  }
+
+  /* Speaker Zones - Split Screen Layout */
+  .lb-speaker-zone {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    min-height: 0;
+  }
+
+  .lb-speaker-zone:hover:not(.disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.02);
+  }
+
+  .lb-speaker-zone:active:not(.disabled) {
+    transform: scale(0.98);
+  }
+
+  .lb-speaker-zone.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .lb-student-zone {
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .lb-teacher-zone {
+    border-top: 2px solid rgba(255, 255, 255, 0.2);
+  }
+
+  /* Visual States */
+  .lb-speaker-zone.listening {
+    background: rgba(239, 68, 68, 0.3);
+    animation: pulse 1.5s infinite;
+  }
+
+  .lb-speaker-zone.translating {
+    background: rgba(255, 199, 85, 0.3);
+  }
+
+  .lb-speaker-zone.transcribing {
+    background: rgba(59, 130, 246, 0.3);
+    animation: transcribePulse 1s infinite;
+  }
+
+  @keyframes transcribePulse {
+    0%, 100% { opacity: 0.8; }
+    50% { opacity: 1; }
+  }
+
+  .lb-speaker-zone.speaking {
+    background: rgba(34, 197, 94, 0.3);
+    animation: speakingPulse 1s infinite;
+  }
+
+  @keyframes speakingPulse {
+    0%, 100% { box-shadow: inset 0 0 20px rgba(34, 197, 94, 0.3); }
+    50% { box-shadow: inset 0 0 40px rgba(34, 197, 94, 0.5); }
+  }
+
+  /* Speaker Header */
+  .lb-speaker-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .lb-speaker-icon { font-size: 32px; line-height: 1; }
+  .lb-speaker-label { font-size: 16px; font-weight: 600; color: white; white-space: nowrap; }
+
+  /* Speaker Content */
+  .lb-speaker-content {
+    text-align: center;
+    margin-bottom: 16px;
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .lb-speaker-text {
+    font-size: 16px;
+    line-height: 1.5;
+    color: white;
+    margin-bottom: 8px;
+    padding: 0 16px;
+    max-width: 100%;
+    word-wrap: break-word;
+  }
+
+  .lb-speaker-zone:not(.listening):not(.translating):not(.transcribing):not(.speaking) .lb-speaker-text {
+    opacity: 0.6;
+    font-style: italic;
+  }
+
+  .lb-speaker-lang { font-size: 12px; color: rgba(255, 255, 255, 0.7); font-weight: 500; }
+
+  /* Speaker Microphone Icon */
+  .lb-speaker-mic { opacity: 0.4; transition: opacity 0.3s; }
+  .lb-speaker-zone:hover .lb-speaker-mic { opacity: 0.7; }
+
+  .lb-speaker-zone.listening .lb-speaker-mic {
+    opacity: 1;
+    animation: micPulse 1.5s infinite;
+  }
+
+  @keyframes micPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.1); opacity: 0.8; }
+  }
+
+  /* Conversation Controls */
+  .lb-conversation-controls {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+  }
+
+  .lb-control-btn {
+    flex: 1;
+    padding: 12px 8px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .lb-control-btn:hover { background: rgba(255, 255, 255, 0.25); transform: translateY(-2px); }
+  .lb-control-btn:active { transform: translateY(0); }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .lb-floating-translator { width: 280px; height: 480px; }
+  }
+
+  /* Accessibility */
+  .lb-floating-translator *:focus-visible {
+    outline: 2px solid var(--lb-color-accent-end);
+    outline-offset: 2px;
+  }
+
+  /* Print */
+  @media print {
+    .lb-floating-translator { display: none !important; }
+  }
