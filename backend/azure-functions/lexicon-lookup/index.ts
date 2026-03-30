@@ -137,10 +137,21 @@ export async function lexiconLookup(
     if (results.length > 0) {
       const entry = results[0];
 
-      // Increment usage_count (fire-and-forget — don't block response)
-      container.item(entry.id, entry.language).patch([
-        { op: 'incr', path: '/usage_count', value: 1 },
-      ]).catch((err: unknown) => { context.warn('Non-critical write failed:', err); });
+      // Backfill cognate via Azure Translator if missing
+      let cognate = entry.cognate;
+      if (!cognate) {
+        cognate = await translateWithAzure(entry.term, language, context);
+        // Persist the cognate so future lookups don't need to translate again
+        container.item(entry.id, entry.language).patch([
+          { op: 'set', path: '/cognate', value: cognate },
+          { op: 'incr', path: '/usage_count', value: 1 },
+        ]).catch((err: unknown) => { context.warn('Non-critical write failed:', err); });
+      } else {
+        // Increment usage_count (fire-and-forget — don't block response)
+        container.item(entry.id, entry.language).patch([
+          { op: 'incr', path: '/usage_count', value: 1 },
+        ]).catch((err: unknown) => { context.warn('Non-critical write failed:', err); });
+      }
 
       // Log analytics (anonymized)
       logAnalytics(context, {
@@ -159,7 +170,7 @@ export async function lexiconLookup(
         term: entry.term,
         language: entry.language,
         type: 'bridge',
-        cognate: entry.cognate,
+        cognate,
         bridge_anchor: entry.bridge_anchor ?? null,
         bridge_scaffold: entry.bridge_scaffold ?? null,
         bridge_definition: entry.bridge_definition,

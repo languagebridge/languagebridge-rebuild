@@ -1,5 +1,5 @@
-# Documentation (planning docs, not part of the codebase)
-docs/
+# Documentation — planning docs excluded, but frontend guide is tracked
+docs/LANGUAGEBRIDGE-MASTER-BLUEPRINT.md
 
 # Environment & Secrets
 .env
