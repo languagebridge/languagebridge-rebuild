@@ -59,7 +59,7 @@ export async function dashboard(
   }
 
   // ── 3. Rate limit per user ───────────────────────────────────
-  const rateCheck = checkRateLimit(`dashboard:${user.userId}`);
+  const rateCheck = await checkRateLimit(`dashboard:${user.userId}`);
   if (!rateCheck.allowed) {
     return error(429, 'RATE_LIMITED', `Rate limit exceeded. Retry after ${rateCheck.retryAfterMs}ms`);
   }
@@ -89,6 +89,16 @@ export async function dashboard(
 
   if (!VALID_GRADE_BANDS.includes(gradeBand as GradeBand)) {
     return error(400, 'INVALID_GRADE_BAND', `Grade band '${gradeBand}' is not valid`);
+  }
+
+  // Validate date formats and logical ordering
+  const startMs = Date.parse(startDate);
+  const endMs = Date.parse(endDate);
+  if (isNaN(startMs) || isNaN(endMs)) {
+    return error(400, 'INVALID_DATE', 'startDate and endDate must be valid ISO 8601 dates');
+  }
+  if (startMs > endMs) {
+    return error(400, 'INVALID_DATE', 'startDate must be before endDate');
   }
 
   // ── 6. ENFORCE SCHOOL ACCESS ─────────────────────────────────

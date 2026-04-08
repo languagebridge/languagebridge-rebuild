@@ -16,6 +16,10 @@ jest.mock('../../shared/cosmos-client', () => ({
       create: mockCreate,
     },
   }),
+  getRateLimitContainer: () => ({
+    item: () => ({ patch: jest.fn().mockResolvedValue({ resource: { count: 1 } }) }),
+    items: { create: jest.fn().mockResolvedValue({}) },
+  }),
 }));
 
 // ── Helpers ─────────────────────────────────────────────────────────
@@ -92,6 +96,36 @@ describe('flag-handler', () => {
     const response = await flagHandler(makeRequest(validBody), makeContext());
     const body = response.jsonBody as Record<string, unknown>;
     expect(body.status).toBe('high_priority');
+  });
+
+  it('escalates to bounty at threshold', async () => {
+    mockPatch
+      .mockResolvedValueOnce({ resource: { flagCount: FLAG_THRESHOLDS.BOUNTY } })
+      .mockResolvedValueOnce({});
+
+    const response = await flagHandler(makeRequest(validBody), makeContext());
+    const body = response.jsonBody as Record<string, unknown>;
+    expect(body.flagCount).toBe(FLAG_THRESHOLDS.BOUNTY);
+    expect(body.status).toBe('bounty');
+    expect(body.requiresReview).toBe(true);
+  });
+
+  it('handles 409 conflict on create by retrying patch', async () => {
+    // First patch fails (doc doesn't exist)
+    mockPatch.mockRejectedValueOnce(new Error('Not found'));
+    // Create fails with 409 (another instance created it)
+    mockCreate.mockRejectedValueOnce(Object.assign(new Error('Conflict'), { code: 409 }));
+    // Retry patch succeeds
+    mockPatch
+      .mockResolvedValueOnce({ resource: { flagCount: 2 } })
+      .mockResolvedValueOnce({});
+
+    const response = await flagHandler(makeRequest(validBody), makeContext());
+    expect(response.status).toBe(200);
+
+    const body = response.jsonBody as Record<string, unknown>;
+    expect(body.flagCount).toBe(2);
+    expect(body.status).toBe('logged');
   });
 
   it('rejects missing required fields', async () => {

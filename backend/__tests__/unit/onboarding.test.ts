@@ -17,6 +17,10 @@ jest.mock('../../shared/cosmos-client', () => ({
       create: mockCreate,
     },
   }),
+  getRateLimitContainer: () => ({
+    item: () => ({ patch: jest.fn().mockResolvedValue({ resource: { count: 1 } }) }),
+    items: { create: jest.fn().mockResolvedValue({}) },
+  }),
 }));
 
 // ── Helpers ─────────────────────────────────────────────────────────

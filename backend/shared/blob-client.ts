@@ -33,10 +33,10 @@ export function generateSasUrl(containerName: string, blobName: string): string 
   const account = process.env.AZURE_STORAGE_ACCOUNT;
   const key = process.env.AZURE_STORAGE_KEY;
   if (!account || !key) {
-    // Fall back to unsigned URL if credentials not available
-    return getBlobServiceClient()
-      .getContainerClient(containerName)
-      .getBlobClient(blobName).url;
+    throw new Error(
+      'AZURE_STORAGE_ACCOUNT and AZURE_STORAGE_KEY must be set to generate signed URLs. ' +
+      'Refusing to return unsigned URL — this would expose blobs without auth.'
+    );
   }
 
   const credential = new StorageSharedKeyCredential(account, key);

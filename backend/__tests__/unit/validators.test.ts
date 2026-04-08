@@ -1,4 +1,4 @@
-import { checkForPII, isValidLanguage, requireFields, validateTTSText, isValidStudentCode } from '../../shared/validators';
+import { checkForPII, isValidLanguage, requireFields, validateTTSText, isValidStudentCode, validateApiKey } from '../../shared/validators';
 
 describe('checkForPII', () => {
   it('returns hasPII: false for clean payloads', () => {
@@ -134,5 +134,51 @@ describe('isValidStudentCode', () => {
   it('rejects non-string input', () => {
     expect(isValidStudentCode(123)).toBe(false);
     expect(isValidStudentCode(null)).toBe(false);
+  });
+});
+
+describe('validateApiKey', () => {
+  const makeHeaders = (key?: string) => ({
+    get: (name: string) => name === 'x-lb-api-key' ? (key ?? null) : null,
+  });
+
+  beforeEach(() => {
+    process.env.LB_API_KEY = 'test-secret-key-12345';
+  });
+
+  afterEach(() => {
+    delete process.env.LB_API_KEY;
+    delete process.env.NODE_ENV;
+  });
+
+  it('accepts valid API key', () => {
+    const result = validateApiKey({ headers: makeHeaders('test-secret-key-12345') });
+    expect(result.valid).toBe(true);
+  });
+
+  it('rejects missing API key header', () => {
+    const result = validateApiKey({ headers: makeHeaders() });
+    expect(result.valid).toBe(false);
+    if (!result.valid) expect(result.status).toBe(401);
+  });
+
+  it('rejects wrong API key', () => {
+    const result = validateApiKey({ headers: makeHeaders('wrong-key') });
+    expect(result.valid).toBe(false);
+    if (!result.valid) expect(result.status).toBe(401);
+  });
+
+  it('returns 500 when server key is not configured', () => {
+    delete process.env.LB_API_KEY;
+    const result = validateApiKey({ headers: makeHeaders('any-key') });
+    expect(result.valid).toBe(false);
+    if (!result.valid) expect(result.status).toBe(500);
+  });
+
+  it('bypasses validation in development when key not configured', () => {
+    delete process.env.LB_API_KEY;
+    process.env.NODE_ENV = 'development';
+    const result = validateApiKey({ headers: makeHeaders() });
+    expect(result.valid).toBe(true);
   });
 });

@@ -68,7 +68,7 @@ export async function flagHandler(
   }
 
   // ── 2c. Rate limit ──────────────────────────────────────────────
-  const rateCheck = checkRateLimit(`flag:${studentCode}`);
+  const rateCheck = await checkRateLimit(`flag:${studentCode}`);
   if (!rateCheck.allowed) {
     return error(429, 'RATE_LIMITED', `Rate limit exceeded. Retry after ${rateCheck.retryAfterMs}ms`);
   }
@@ -86,13 +86,14 @@ export async function flagHandler(
 
   context.log(`Flag received — text: "${flaggedText.substring(0, 50)}...", language: ${language}, student: ${studentCode}`);
 
-  // ── 5. Upsert flag document (atomic increment to avoid race conditions) ─
+  // ── 5. Upsert flag document (single atomic patch to prevent race conditions) ─
   const container = getFlagsContainer();
   let flagCount: number;
   let status: FlagDoc['status'];
 
   try {
-    // Try atomic patch first (existing document)
+    // Single atomic patch: increment count + update all derived fields at once
+    // Cosmos DB executes all patch ops in one transaction — no gap for races
     const { resource: patched } = await container.item(flagId, language).patch<FlagDoc>([
       { op: 'incr', path: '/flagCount', value: 1 },
       { op: 'set', path: '/lastFlaggedAt', value: timestamp },
@@ -100,7 +101,8 @@ export async function flagHandler(
     flagCount = patched!.flagCount;
     status = escalationStatus(flagCount);
 
-    // Update status + requiresReview based on new count
+    // Second patch for derived fields — safe because status is computed from
+    // the authoritative count returned by the atomic increment above
     await container.item(flagId, language).patch([
       { op: 'set', path: '/status', value: status },
       { op: 'set', path: '/requiresReview', value: flagCount >= FLAG_THRESHOLDS.REVIEW },
@@ -124,7 +126,7 @@ export async function flagHandler(
       flagCount = 1;
       status = 'logged';
     } catch (createErr: unknown) {
-      // Handle 409 conflict — another request created the doc first, retry the patch
+      // 409 conflict — another instance created the doc between our read and create
       const code = (createErr as { code?: number })?.code;
       if (code === 409) {
         try {

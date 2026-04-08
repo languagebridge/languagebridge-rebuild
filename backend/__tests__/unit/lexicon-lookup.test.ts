@@ -19,6 +19,10 @@ jest.mock('../../shared/cosmos-client', () => ({
   getAnalyticsContainer: () => ({
     items: { create: mockAnalyticsCreate },
   }),
+  getRateLimitContainer: () => ({
+    item: () => ({ patch: jest.fn().mockResolvedValue({ resource: { count: 1 } }) }),
+    items: { create: jest.fn().mockResolvedValue({}) },
+  }),
 }));
 
 jest.mock('axios');

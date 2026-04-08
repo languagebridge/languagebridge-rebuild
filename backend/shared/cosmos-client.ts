@@ -62,3 +62,7 @@ export function getEnrollmentsContainer(): Container {
 export function getAnalyticsContainer(): Container {
   return getDatabase().container('analytics');
 }
+
+export function getRateLimitContainer(): Container {
+  return getDatabase().container('rate_limits');
+}

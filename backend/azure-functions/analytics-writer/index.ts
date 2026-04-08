@@ -92,7 +92,7 @@ export async function analyticsWriter(
   }
 
   // ── 5b. Rate limit ──────────────────────────────────────────────
-  const rateCheck = checkRateLimit(`analytics:${req.studentCode}`);
+  const rateCheck = await checkRateLimit(`analytics:${req.studentCode}`);
   if (!rateCheck.allowed) {
     return error(429, 'RATE_LIMITED', `Rate limit exceeded. Retry after ${rateCheck.retryAfterMs}ms`);
   }

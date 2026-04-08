@@ -14,6 +14,10 @@ jest.mock('../../shared/cosmos-client', () => ({
   getEnrollmentsContainer: () => ({
     item: () => ({ read: mockEnrollmentRead }),
   }),
+  getRateLimitContainer: () => ({
+    item: () => ({ patch: jest.fn().mockResolvedValue({ resource: { count: 1 } }) }),
+    items: { create: jest.fn().mockResolvedValue({}) },
+  }),
 }));
 
 // ── Helpers ─────────────────────────────────────────────────────────

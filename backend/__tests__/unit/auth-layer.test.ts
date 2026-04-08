@@ -16,10 +16,13 @@ jest.mock('@supabase/supabase-js', () => ({
 
 const mockQuery = jest.fn();
 
+const mockAdminCreate = jest.fn().mockReturnValue({ catch: jest.fn() });
+
 jest.mock('../../shared/cosmos-client', () => ({
   getAdminUsersContainer: () => ({
     items: {
       query: () => ({ fetchAll: mockQuery }),
+      create: mockAdminCreate,
     },
   }),
 }));
@@ -125,6 +128,24 @@ describe('auth-layer', () => {
     expect(body.permissions).toEqual(
       expect.arrayContaining(['view_dashboard', 'export_data', 'manage_flags', 'manage_users'])
     );
+  });
+
+  it('uses isSuperAdmin from Cosmos DB, not just email domain', async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: 'admin-2', email: 'justin@languagebridge.app' } },
+      error: null,
+    });
+    // DB explicitly says isSuperAdmin: false (revoked)
+    mockQuery.mockResolvedValue({
+      resources: [{ isSuperAdmin: false, pilotIds: ['PCSD-2026'], permissions: ['view_dashboard'] }],
+    });
+
+    const response = await authLayer(makeRequest('valid-token'), makeContext());
+    expect(response.status).toBe(200);
+
+    const body = response.jsonBody as Record<string, unknown>;
+    expect(body.isSuperAdmin).toBe(false); // DB overrides email domain
+    expect(body.permissions).toEqual(['view_dashboard']);
   });
 
   it('returns empty permissions for unknown non-super users', async () => {

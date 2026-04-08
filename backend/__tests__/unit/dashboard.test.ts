@@ -19,6 +19,10 @@ jest.mock('../../shared/cosmos-client', () => ({
       query: () => ({ fetchAll: mockFetchAll }),
     },
   }),
+  getRateLimitContainer: () => ({
+    item: () => ({ patch: jest.fn().mockResolvedValue({ resource: { count: 1 } }) }),
+    items: { create: jest.fn().mockResolvedValue({}) },
+  }),
 }));
 
 // ── Helpers ─────────────────────────────────────────────────────────

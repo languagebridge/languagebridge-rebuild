@@ -137,45 +137,92 @@ export function validateApiKey(request: { headers: { get(name: string): string |
 }
 
 // ============================================
-// RATE LIMITING (in-memory sliding window)
+// RATE LIMITING (Cosmos DB distributed counter)
 // ============================================
+//
+// Each rate limit key gets a Cosmos DB document with a counter and window start.
+// This works correctly across multiple Azure Functions instances (distributed).
+// Falls back to in-memory if Cosmos is unavailable (graceful degradation).
 
-const rateLimitWindows = new Map<string, number[]>();
+import { getRateLimitContainer } from './cosmos-client';
+
 const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
 const RATE_LIMIT_MAX = 100;          // 100 requests per minute per key
-const MAX_MAP_SIZE = 10_000;
 
-export function checkRateLimit(key: string): { allowed: boolean; remaining: number; retryAfterMs?: number } {
+// In-memory fallback for when Cosmos is unavailable
+const _fallbackMap = new Map<string, number[]>();
+
+export async function checkRateLimit(key: string): Promise<{ allowed: boolean; remaining: number; retryAfterMs?: number }> {
   const now = Date.now();
+  const windowStart = now - (now % RATE_LIMIT_WINDOW_MS); // Align to minute boundary
+  const docId = `${key}::${windowStart}`;
+
+  try {
+    const container = getRateLimitContainer();
+
+    // Atomic increment via upsert with conditional check
+    let count: number;
+    try {
+      const { resource } = await container.item(docId, key).patch([
+        { op: 'incr', path: '/count', value: 1 },
+      ]);
+      count = resource!.count;
+    } catch {
+      // Document doesn't exist — create it with TTL for auto-cleanup
+      try {
+        await container.items.create({
+          id: docId,
+          partitionKey: key,
+          count: 1,
+          windowStart,
+          ttl: 120, // Auto-delete after 2 minutes (Cosmos DB TTL)
+        });
+        count = 1;
+      } catch (createErr: unknown) {
+        // 409 conflict — another instance created it first, retry patch
+        if ((createErr as { code?: number })?.code === 409) {
+          const { resource } = await container.item(docId, key).patch([
+            { op: 'incr', path: '/count', value: 1 },
+          ]);
+          count = resource!.count;
+        } else {
+          throw createErr;
+        }
+      }
+    }
+
+    if (count > RATE_LIMIT_MAX) {
+      const retryAfterMs = windowStart + RATE_LIMIT_WINDOW_MS - now;
+      return { allowed: false, remaining: 0, retryAfterMs };
+    }
+
+    return { allowed: true, remaining: RATE_LIMIT_MAX - count };
+  } catch {
+    // Cosmos unavailable — fall back to in-memory (best-effort, per-instance)
+    return checkRateLimitFallback(key, now);
+  }
+}
+
+function checkRateLimitFallback(key: string, now: number): { allowed: boolean; remaining: number; retryAfterMs?: number } {
   const cutoff = now - RATE_LIMIT_WINDOW_MS;
 
-  // Evict stale entries if map is too large
-  if (rateLimitWindows.size > MAX_MAP_SIZE) {
-    for (const [k, timestamps] of rateLimitWindows) {
-      if (timestamps.every(t => t < cutoff)) {
-        rateLimitWindows.delete(k);
-      }
+  // Evict stale entries periodically
+  if (_fallbackMap.size > 5_000) {
+    for (const [k, timestamps] of _fallbackMap) {
+      if (timestamps.every(t => t < cutoff)) _fallbackMap.delete(k);
     }
   }
 
-  let timestamps = rateLimitWindows.get(key);
-  if (!timestamps) {
-    timestamps = [];
-    rateLimitWindows.set(key, timestamps);
-  }
+  const timestamps = (_fallbackMap.get(key) ?? []).filter(t => t > cutoff);
+  timestamps.push(now);
+  _fallbackMap.set(key, timestamps);
 
-  // Prune old timestamps
-  const valid = timestamps.filter(t => t > cutoff);
-  rateLimitWindows.set(key, valid);
-
-  if (valid.length >= RATE_LIMIT_MAX) {
-    const oldestInWindow = valid[0];
-    const retryAfterMs = oldestInWindow + RATE_LIMIT_WINDOW_MS - now;
+  if (timestamps.length > RATE_LIMIT_MAX) {
+    const retryAfterMs = timestamps[0] + RATE_LIMIT_WINDOW_MS - now;
     return { allowed: false, remaining: 0, retryAfterMs };
   }
 
-  valid.push(now);
-  return { allowed: true, remaining: RATE_LIMIT_MAX - valid.length };
+  return { allowed: true, remaining: RATE_LIMIT_MAX - timestamps.length };
 }
 
 // ============================================

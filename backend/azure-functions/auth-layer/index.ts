@@ -78,7 +78,10 @@ export async function authLayer(
   }
 
   // ── 4. Look up user permissions in Cosmos DB ───────────────────
-  const isSuperAdmin = email.endsWith('@languagebridge.app');
+  // Cosmos DB admin_users table is the source of truth for permissions.
+  // Email domain (@languagebridge.app) is used ONLY as a bootstrap hint
+  // for first-time setup — the DB record always takes precedence.
+  let isSuperAdmin = false;
   let accessiblePilotIds: string[] = [];
   let permissions: AuthResponse['permissions'] = [];
 
@@ -92,18 +95,27 @@ export async function authLayer(
 
     if (resources.length > 0) {
       const adminUser = resources[0];
+      isSuperAdmin = adminUser.isSuperAdmin === true;
       accessiblePilotIds = adminUser.pilotIds ?? [];
       permissions = adminUser.permissions ?? [];
-    } else if (isSuperAdmin) {
-      // Super admins have access to everything even if not in DB yet
+    } else if (email.endsWith('@languagebridge.app')) {
+      // Bootstrap: first-time login for a @languagebridge.app email
+      // Auto-provision with full permissions and persist to DB
+      isSuperAdmin = true;
       permissions = ['view_dashboard', 'export_data', 'manage_flags', 'manage_users'];
+      container.items.create({
+        id: userId,
+        email,
+        pilotIds: [],
+        permissions,
+        isSuperAdmin: true,
+        createdAt: new Date().toISOString(),
+      }).catch((err: unknown) => context.warn('Auto-provision admin write failed:', err));
     }
   } catch (err) {
-    context.log('Cosmos admin user lookup failed:', err);
-    // Non-fatal for super admins, fatal for regular users
-    if (!isSuperAdmin) {
-      return error(500, 'INTERNAL_ERROR', 'Failed to load user permissions');
-    }
+    context.warn('Cosmos admin user lookup failed:', err);
+    // Fatal for all users — we can't grant permissions without the DB
+    return error(500, 'INTERNAL_ERROR', 'Failed to load user permissions');
   }
 
   context.log(`Auth success — user: ${email}, superAdmin: ${isSuperAdmin}, pilots: ${accessiblePilotIds.join(', ')}`);

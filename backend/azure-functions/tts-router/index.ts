@@ -51,7 +51,7 @@ export async function ttsRouter(
   context.log(`tts-router request — student: ${studentCode}`);
 
   // ── 2b. Rate limit (per student, most expensive endpoint) ────
-  const rateCheck = checkRateLimit(`tts:${studentCode}`);
+  const rateCheck = await checkRateLimit(`tts:${studentCode}`);
   if (!rateCheck.allowed) {
     return error(429, 'RATE_LIMITED', `Rate limit exceeded. Retry after ${rateCheck.retryAfterMs}ms`);
   }

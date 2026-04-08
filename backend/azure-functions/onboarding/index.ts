@@ -55,7 +55,7 @@ export async function getSchools(
 
   // Rate limit by IP-like key (no studentCode available for GET)
   const clientIp = request.headers.get('x-forwarded-for') ?? 'unknown';
-  const rateCheck = checkRateLimit(`schools:${clientIp}`);
+  const rateCheck = await checkRateLimit(`schools:${clientIp}`);
   if (!rateCheck.allowed) {
     return error(429, 'RATE_LIMITED', `Rate limit exceeded. Retry after ${rateCheck.retryAfterMs}ms`);
   }
@@ -109,7 +109,7 @@ export async function enroll(
 
   // Rate limit enrollment by IP
   const clientIp = request.headers.get('x-forwarded-for') ?? 'unknown';
-  const rateCheck = checkRateLimit(`enroll:${clientIp}`);
+  const rateCheck = await checkRateLimit(`enroll:${clientIp}`);
   if (!rateCheck.allowed) {
     return error(429, 'RATE_LIMITED', `Rate limit exceeded. Retry after ${rateCheck.retryAfterMs}ms`);
   }
