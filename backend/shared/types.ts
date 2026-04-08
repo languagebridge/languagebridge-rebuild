@@ -126,11 +126,14 @@ export type AnalyticsWriterRequest = {
 };
 
 export type FlagEventRequest = {
-  word: string;           // The word that was flagged
+  flaggedText: string;    // The full highlighted text the student flagged (up to 500 chars)
   language: SupportedLanguage;
   studentCode: string;
   timestamp: string;      // ISO 8601
-  audioUrl?: string;      // URL of the audio that was flagged (optional)
+  // NOTE: We intentionally do NOT accept or store audioUrl or any Azure-generated
+  // content in flags. The bounty pipeline must only contain student-highlighted
+  // text (original input) + target language. Azure translations and audio are
+  // ephemeral placeholders, not our IP to redistribute.
 };
 
 export type LexiconLookupRequest = {
@@ -188,7 +191,8 @@ export type FlagHandlerResponse = {
   flagCount: number;
   status: 'logged' | 'review' | 'bounty' | 'high_priority';
   requiresReview: boolean;
-  bountyValue?: number;   // Phase 3: interpreter marketplace
+  // Phase 3: bountyValue will be set when status='bounty' — interpreter marketplace
+  // Bounty only contains (word + language), never Azure-derived content
 };
 
 export type FlagHandlerErrorResponse = {
@@ -276,16 +280,19 @@ export type EnrollmentDoc = {
 };
 
 export type FlagDoc = {
-  id: string;             // SHA-256 hash of (word + language) for deduplication
-  word: string;
+  id: string;             // SHA-256 hash of (flaggedText + language) for deduplication
+  flaggedText: string;    // Full highlighted text (up to 500 chars) — student input only, never Azure output
   language: SupportedLanguage;
   flagCount: number;
   status: 'logged' | 'review' | 'bounty' | 'high_priority';
   schoolCodes: string[];
-  audioUrl?: string;
+  contentSource: 'student_input';  // Provenance tag — this data is user-generated, not Azure-derived
   createdAt: string;
   lastFlaggedAt: string;
   requiresReview: boolean;
+  // NOTE: No audioUrl, cognate, or translation fields here. The bounty pipeline
+  // sends ONLY (flaggedText + language) to interpreters. Azure-generated content is
+  // never forwarded to the interpreter marketplace.
 };
 
 export type PilotDoc = {

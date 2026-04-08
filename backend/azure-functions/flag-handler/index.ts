@@ -13,10 +13,18 @@ import { requireFields, isValidLanguage, validateApiKey, checkRateLimit, errorRe
 /**
  * flag-handler
  *
- * Processes pronunciation flags from students.
- * Deduplicates by (word + language) hash.
+ * Processes flags from students on translations, audio, or full passages.
+ * Accepts up to 500 characters of highlighted text (not just single words).
+ * Deduplicates by (flaggedText + language) hash.
  * Escalates status at thresholds: 3 → review, 6 → bounty, 10 → high_priority.
  * Foundation for the Phase 3 interpreter marketplace.
+ *
+ * TOS COMPLIANCE: This handler stores ONLY the original highlighted text
+ * (student input) and the target language. It intentionally does NOT store
+ * Azure Translator output, Azure TTS audio URLs, or any Azure-derived content.
+ * When a flag reaches "bounty" status, only (flaggedText + language) is sent to
+ * the interpreter marketplace. Azure content is an ephemeral placeholder that
+ * gets replaced by interpreter-provided translations and audio.
  */
 
 app.http('flag-handler', {
@@ -47,14 +55,19 @@ export async function flagHandler(
   }
 
   // ── 2. Validate required fields ────────────────────────────────
-  const fieldCheck = requireFields(body, ['word', 'language', 'studentCode', 'timestamp']);
+  const fieldCheck = requireFields(body, ['flaggedText', 'language', 'studentCode', 'timestamp']);
   if (!fieldCheck.valid) {
     return error(400, 'MISSING_FIELDS', `Missing required fields: ${fieldCheck.missing.join(', ')}`);
   }
 
-  const { word, language, studentCode, audioUrl, timestamp } = body as FlagEventRequest;
+  const { flaggedText, language, studentCode, timestamp } = body as FlagEventRequest;
 
-  // ── 2b. Rate limit ──────────────────────────────────────────────
+  // ── 2b. Validate flagged text length (same 500-char limit as TTS) ──
+  if (flaggedText.length > 500) {
+    return error(400, 'TEXT_TOO_LONG', 'Flagged text must be 500 characters or fewer');
+  }
+
+  // ── 2c. Rate limit ──────────────────────────────────────────────
   const rateCheck = checkRateLimit(`flag:${studentCode}`);
   if (!rateCheck.allowed) {
     return error(429, 'RATE_LIMITED', `Rate limit exceeded. Retry after ${rateCheck.retryAfterMs}ms`);
@@ -66,12 +79,12 @@ export async function flagHandler(
   }
 
   // ── 4. Generate deduplication key ─────────────────────────────
-  // Same word + language = same document, regardless of who flagged it
+  // Same flaggedText + language = same document, regardless of who flagged it
   const flagId = createHash('sha256')
-    .update(`${word.toLowerCase().trim()}::${language}`)
+    .update(`${flaggedText.toLowerCase().trim()}::${language}`)
     .digest('hex');
 
-  context.log(`Flag received — word: "${word}", language: ${language}, student: ${studentCode}`);
+  context.log(`Flag received — text: "${flaggedText.substring(0, 50)}...", language: ${language}, student: ${studentCode}`);
 
   // ── 5. Upsert flag document (atomic increment to avoid race conditions) ─
   const container = getFlagsContainer();
@@ -97,12 +110,12 @@ export async function flagHandler(
     try {
       const newDoc: FlagDoc = {
         id: flagId,
-        word: word.toLowerCase().trim(),
+        flaggedText: flaggedText.toLowerCase().trim(),
         language,
         flagCount: 1,
         status: 'logged',
         schoolCodes: [],
-        audioUrl,
+        contentSource: 'student_input',
         createdAt: timestamp,
         lastFlaggedAt: timestamp,
         requiresReview: false,

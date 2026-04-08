@@ -47,10 +47,9 @@ beforeEach(() => {
 
 describe('flag-handler', () => {
   const validBody = {
-    word: 'photosynthesis',
+    flaggedText: 'photosynthesis',
     language: 'dari',
     studentCode: "LB-TEST1",
-    
     timestamp: '2026-03-18T12:00:00Z',
   };
 
@@ -97,7 +96,7 @@ describe('flag-handler', () => {
 
   it('rejects missing required fields', async () => {
     const response = await flagHandler(
-      makeRequest({ word: 'test' }), // missing language, studentCode, etc.
+      makeRequest({ flaggedText: 'test' }), // missing language, studentCode, etc.
       makeContext()
     );
     expect(response.status).toBe(400);
@@ -109,6 +108,28 @@ describe('flag-handler', () => {
       makeContext()
     );
     expect(response.status).toBe(400);
+  });
+
+  it('accepts full highlighted passages up to 500 characters', async () => {
+    const longText = 'The process by which green plants and some other organisms use sunlight to synthesize foods from carbon dioxide and water. Photosynthesis in plants generally involves the green pigment chlorophyll and generates oxygen as a byproduct.';
+    mockPatch.mockRejectedValue(new Error('Not found'));
+    mockCreate.mockResolvedValue({ resource: {} });
+
+    const response = await flagHandler(
+      makeRequest({ ...validBody, flaggedText: longText }),
+      makeContext()
+    );
+    expect(response.status).toBe(200);
+    expect((response.jsonBody as Record<string, unknown>).flagCount).toBe(1);
+  });
+
+  it('rejects flagged text over 500 characters', async () => {
+    const response = await flagHandler(
+      makeRequest({ ...validBody, flaggedText: 'a'.repeat(501) }),
+      makeContext()
+    );
+    expect(response.status).toBe(400);
+    expect((response.jsonBody as Record<string, unknown>).error).toBe('TEXT_TOO_LONG');
   });
 
   it('rejects invalid JSON body', async () => {

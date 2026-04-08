@@ -7,6 +7,6 @@ module.exports = {
   moduleFileExtensions: ['ts', 'js', 'json'],
   setupFiles: ['<rootDir>/__tests__/setup.ts'],
   transform: {
-    '^.+\\.ts$': ['ts-jest', { tsconfig: '../tsconfig.backend.json' }],
+    '^.+\\.ts$': ['ts-jest', { tsconfig: require('path').resolve(__dirname, '..', 'tsconfig.backend.json') }],
   },
 };

@@ -141,7 +141,7 @@ describe('lexicon-lookup', () => {
     delete process.env.AZURE_TRANSLATOR_REGION;
   });
 
-  it('increments usage_count on lexicon hit (fire-and-forget)', async () => {
+  it('increments usage_count on lexicon hit when cognate exists', async () => {
     mockQuery.mockResolvedValue({
       resources: [{
         id: 'test_dari_rbern',
@@ -161,6 +161,46 @@ describe('lexicon-lookup', () => {
     expect(mockPatch).toHaveBeenCalledWith([
       { op: 'incr', path: '/usage_count', value: 1 },
     ]);
+  });
+
+  it('backfills cognate via translator when lexicon entry has null cognate', async () => {
+    mockQuery.mockResolvedValue({
+      resources: [{
+        id: 'test_dari_bridge',
+        term: 'photosynthesis',
+        language: 'dari',
+        cognate: null,
+        bridge_definition: 'the way plants make food',
+        bridge_definition_en: 'the way plants make food',
+        audio_blob_path: null,
+        audio_source: null,
+        version: 1,
+        usage_count: 0,
+      }],
+    });
+
+    const axios = require('axios');
+    axios.post.mockResolvedValue({
+      data: [{ translations: [{ text: 'فتوسنتز' }] }],
+    });
+
+    process.env.AZURE_TRANSLATOR_KEY = 'test-key';
+    process.env.AZURE_TRANSLATOR_REGION = 'eastus';
+
+    const response = await lexiconLookup(makeRequest(validBody), makeContext());
+    const body = response.jsonBody as Record<string, unknown>;
+
+    expect(response.status).toBe(200);
+    expect(body.source).toBe('lexicon');
+    expect(body.cognate).toBe('فتوسنتز');
+    // Should patch both cognate and usage_count
+    expect(mockPatch).toHaveBeenCalledWith([
+      { op: 'set', path: '/cognate', value: 'فتوسنتز' },
+      { op: 'incr', path: '/usage_count', value: 1 },
+    ]);
+
+    delete process.env.AZURE_TRANSLATOR_KEY;
+    delete process.env.AZURE_TRANSLATOR_REGION;
   });
 
   it('rejects missing required fields', async () => {
