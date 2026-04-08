@@ -36,10 +36,22 @@ app.http('onboarding-enroll', {
 });
 
 function generateStudentCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/O/0/1 to avoid confusion
-  const bytes = randomBytes(6); // 32^6 = ~1 billion possible codes
-  const code = Array.from(bytes).map(b => chars[b % chars.length]).join('');
-  return `LB-${code}`;
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 chars, no I/O/0/1
+  // Rejection sampling: only use bytes 0-223 (evenly divisible by 32)
+  // to eliminate modulo bias. Bytes 224-255 are discarded.
+  const codeLen = 6;
+  const maxUnbiased = 256 - (256 % chars.length); // 224
+  const result: string[] = [];
+  while (result.length < codeLen) {
+    const bytes = randomBytes(codeLen - result.length + 2); // request extra to handle rejections
+    for (const b of bytes) {
+      if (b < maxUnbiased) {
+        result.push(chars[b % chars.length]);
+        if (result.length === codeLen) break;
+      }
+    }
+  }
+  return `LB-${result.join('')}`;
 }
 
 const error = errorResponse;

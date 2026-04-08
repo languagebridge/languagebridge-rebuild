@@ -22,7 +22,10 @@ function getClient(): CosmosClient {
 }
 
 function getDatabase() {
-  const databaseId = process.env.COSMOS_DB_DATABASE ?? 'languagebridge-prod';
+  const databaseId = process.env.COSMOS_DB_DATABASE;
+  if (!databaseId) {
+    throw new Error('COSMOS_DB_DATABASE must be set — refusing to use a hardcoded default');
+  }
   return getClient().database(databaseId);
 }
 
