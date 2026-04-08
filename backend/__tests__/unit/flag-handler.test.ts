@@ -7,6 +7,8 @@ import { FLAG_THRESHOLDS } from '../../shared/types';
 const mockPatch = jest.fn();
 const mockCreate = jest.fn();
 
+const mockRateLimitPatch = jest.fn().mockResolvedValue({ resource: { count: 1 } });
+
 jest.mock('../../shared/cosmos-client', () => ({
   getFlagsContainer: () => ({
     item: () => ({
@@ -17,7 +19,7 @@ jest.mock('../../shared/cosmos-client', () => ({
     },
   }),
   getRateLimitContainer: () => ({
-    item: () => ({ patch: jest.fn().mockResolvedValue({ resource: { count: 1 } }) }),
+    item: () => ({ patch: mockRateLimitPatch }),
     items: { create: jest.fn().mockResolvedValue({}) },
   }),
 }));
@@ -155,6 +157,17 @@ describe('flag-handler', () => {
     );
     expect(response.status).toBe(200);
     expect((response.jsonBody as Record<string, unknown>).flagCount).toBe(1);
+  });
+
+  it('rejects when rate limit is exceeded', async () => {
+    // Simulate rate limit exceeded — count > 100
+    mockRateLimitPatch.mockResolvedValueOnce({ resource: { count: 101 } });
+
+    const response = await flagHandler(makeRequest(validBody), makeContext());
+    expect(response.status).toBe(429);
+
+    const body = response.jsonBody as Record<string, unknown>;
+    expect(body.error).toBe('RATE_LIMITED');
   });
 
   it('rejects flagged text over 500 characters', async () => {

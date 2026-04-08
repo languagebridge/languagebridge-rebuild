@@ -103,14 +103,33 @@ export async function authLayer(
       // Auto-provision with full permissions and persist to DB
       isSuperAdmin = true;
       permissions = ['view_dashboard', 'export_data', 'manage_flags', 'manage_users'];
-      container.items.create({
-        id: userId,
-        email,
-        pilotIds: [],
-        permissions,
-        isSuperAdmin: true,
-        createdAt: new Date().toISOString(),
-      }).catch((err: unknown) => context.warn('Auto-provision admin write failed:', err));
+      try {
+        await container.items.create({
+          id: userId,
+          email,
+          pilotIds: [],
+          permissions,
+          isSuperAdmin: true,
+          createdAt: new Date().toISOString(),
+        });
+      } catch (createErr: unknown) {
+        // 409 = another instance already provisioned this user — read their record
+        if ((createErr as { code?: number })?.code === 409) {
+          context.log('Auto-provision 409 — reading existing admin record');
+          try {
+            const { resource } = await container.item(userId, userId).read();
+            if (resource) {
+              isSuperAdmin = resource.isSuperAdmin === true;
+              accessiblePilotIds = resource.pilotIds ?? [];
+              permissions = resource.permissions ?? [];
+            }
+          } catch (readErr) {
+            context.warn('Failed to read existing admin after 409:', readErr);
+          }
+        } else {
+          context.warn('Auto-provision admin write failed:', createErr);
+        }
+      }
     }
   } catch (err) {
     context.warn('Cosmos admin user lookup failed:', err);

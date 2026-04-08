@@ -124,6 +124,81 @@ describe('tts-router', () => {
     expect(body.error).toBe('INVALID_LANGUAGE');
   });
 
+  it('generates audio via Azure TTS on cache miss and uploads to blob', async () => {
+    // Cache miss
+    mockBlobExists.mockResolvedValue(false);
+    mockUpload.mockResolvedValue({});
+    mockUpsert.mockResolvedValue({});
+
+    // Mock Azure TTS response
+    const axios = require('axios');
+    const fakeAudio = Buffer.from('fake-audio-data');
+    axios.post.mockResolvedValue({
+      data: fakeAudio,
+      headers: {},
+    });
+
+    process.env.AZURE_TTS_KEY = 'test-tts-key';
+    process.env.AZURE_TTS_REGION = 'eastus';
+
+    const response = await ttsRouter(makeRequest(validBody), makeContext());
+    expect(response.status).toBe(200);
+
+    const body = response.jsonBody as Record<string, unknown>;
+    expect(body.source).toBe('azure_live');
+    expect(body.cached).toBe(false);
+    expect(body.audioUrl).toBe(mockBlobUrl);
+
+    // Verify blob upload was called
+    expect(mockUpload).toHaveBeenCalledTimes(1);
+    // Verify metadata was written to Cosmos
+    expect(mockUpsert).toHaveBeenCalledTimes(1);
+
+    delete process.env.AZURE_TTS_KEY;
+    delete process.env.AZURE_TTS_REGION;
+  });
+
+  it('returns 500 when TTS key is not configured on cache miss', async () => {
+    mockBlobExists.mockResolvedValue(false);
+    delete process.env.AZURE_TTS_KEY;
+    delete process.env.LB_TTS_SERVICE_URL;
+
+    const response = await ttsRouter(makeRequest(validBody), makeContext());
+    expect(response.status).toBe(500);
+  });
+
+  it('falls back to Azure TTS when proprietary service fails', async () => {
+    mockBlobExists.mockResolvedValue(false);
+    mockUpload.mockResolvedValue({});
+    mockUpsert.mockResolvedValue({});
+
+    const axios = require('axios');
+    const fakeAudio = Buffer.from('azure-audio');
+
+    // First call = proprietary (fails), second call = Azure TTS (succeeds)
+    process.env.LB_TTS_SERVICE_URL = 'http://fake-tts.local';
+    process.env.AZURE_TTS_KEY = 'test-tts-key';
+    process.env.AZURE_TTS_REGION = 'eastus';
+
+    axios.post
+      .mockRejectedValueOnce(new Error('Proprietary service down'))
+      .mockResolvedValueOnce({ data: fakeAudio, headers: {} });
+
+    // Need axios.isAxiosError to return false for the generic Error
+    axios.isAxiosError = jest.fn().mockReturnValue(false);
+
+    const response = await ttsRouter(makeRequest(validBody), makeContext());
+    expect(response.status).toBe(200);
+
+    const body = response.jsonBody as Record<string, unknown>;
+    expect(body.source).toBe('azure_live');
+    expect(mockUpload).toHaveBeenCalledTimes(1);
+
+    delete process.env.LB_TTS_SERVICE_URL;
+    delete process.env.AZURE_TTS_KEY;
+    delete process.env.AZURE_TTS_REGION;
+  });
+
   it('rejects invalid JSON body', async () => {
     const request = {
       method: 'POST',

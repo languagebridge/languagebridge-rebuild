@@ -111,6 +111,7 @@ export async function dashboard(
 
   // ── 7. Execute query ─────────────────────────────────────────
   const sql = VALID_QUERIES[queryName];
+  const MAX_RESULTS = 5_000; // Cap results to prevent DoS via unbounded queries
 
   try {
     const container = getSessionsContainer();
@@ -123,9 +124,13 @@ export async function dashboard(
           { name: '@startDate', value: startDate },
           { name: '@endDate', value: endDate },
         ],
-      })
+      }, { maxItemCount: MAX_RESULTS })
       .fetchAll();
 
+    const truncated = resources.length >= MAX_RESULTS;
+    if (truncated) {
+      context.warn(`Dashboard query '${queryName}' hit ${MAX_RESULTS} row limit for ${schoolCode}/${gradeBand}`);
+    }
     context.log(`Dashboard query '${queryName}' — ${resources.length} results for ${schoolCode}/${gradeBand}`);
 
     return {
@@ -136,8 +141,9 @@ export async function dashboard(
         gradeBand,
         startDate,
         endDate,
-        results: resources,
+        results: resources.slice(0, MAX_RESULTS),
         count: resources.length,
+        truncated,
       },
     };
   } catch (err) {

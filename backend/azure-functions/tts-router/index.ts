@@ -185,7 +185,9 @@ export async function ttsRouter(
     return error(500, 'INTERNAL_ERROR', 'Failed to cache audio');
   }
 
-  // ── 10. Write cache metadata to Cosmos DB ─────────────────────
+  // ── 10. Write cache metadata to Cosmos DB (blocking — required for cache hits) ─
+  // Without this metadata, future requests won't find the cached blob and will
+  // regenerate audio unnecessarily. This write MUST succeed.
   try {
     const metadataContainer = getAudioCacheMetadataContainer();
     const doc: AudioCacheMetadataDoc = {
@@ -201,7 +203,20 @@ export async function ttsRouter(
     };
     await metadataContainer.items.upsert(doc);
   } catch (err) {
-    context.log('Cosmos metadata write failed (non-fatal):', err);
+    // Retry once — transient failures are common on cold starts
+    context.warn('Cosmos metadata write failed, retrying:', err);
+    try {
+      const metadataContainer = getAudioCacheMetadataContainer();
+      await metadataContainer.items.upsert({
+        id: textHash, textHash, language, audioUrl,
+        blobName: finalBlobName, source: ttsSource,
+        durationMs: 0, cachedAt: new Date().toISOString(), hitCount: 0,
+      });
+    } catch (retryErr) {
+      // Audio was uploaded but metadata wasn't saved — log for investigation
+      // The audio still works (URL is valid), but won't be found as cached next time
+      context.error('Cosmos metadata write failed after retry — cache will miss on next request:', retryErr);
+    }
   }
 
   const response: TTSResponse = {
