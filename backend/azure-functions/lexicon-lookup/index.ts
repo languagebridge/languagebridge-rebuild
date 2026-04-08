@@ -166,10 +166,14 @@ export async function lexiconLookup(
         ? `https://${process.env.AZURE_STORAGE_ACCOUNT ?? 'lb-storage'}.blob.core.windows.net/${entry.audio_blob_path}`
         : null;
 
+      // Determine type based on whether the entry has actual bridge content
+      const hasBridge = !!(entry.bridge_anchor || entry.bridge_scaffold || entry.bridge_definition);
+      const entryType = hasBridge ? 'bridge' : 'cognate';
+
       return respond(200, {
         term: entry.term,
         language: entry.language,
-        type: 'bridge',
+        type: entryType,
         cognate,
         bridge_anchor: entry.bridge_anchor ?? null,
         bridge_scaffold: entry.bridge_scaffold ?? null,
