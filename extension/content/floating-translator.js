@@ -205,7 +205,8 @@
       zone.classList.remove('translating');
       textEl.textContent = 'Tap to speak in your language';
     } else if (!isRecording) {
-      await window.LBSTTService?.startRecording();
+      const result = await window.LBSTTService?.startRecording();
+      if (result?.error) { textEl.textContent = result.error; return; }
       isRecording = true;
       activeZone = 'student';
       zone.classList.add('listening');
@@ -233,7 +234,8 @@
       zone.classList.remove('translating');
       textEl.textContent = 'Tap to speak in English';
     } else if (!isRecording) {
-      await window.LBSTTService?.startRecording();
+      const result = await window.LBSTTService?.startRecording();
+      if (result?.error) { textEl.textContent = result.error; return; }
       isRecording = true;
       activeZone = 'teacher';
       zone.classList.add('listening');

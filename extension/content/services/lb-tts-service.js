@@ -45,6 +45,10 @@ window.LBTTSService = {
 
   // Generate audio via tts-router (through background proxy) then play it
   async generateAndPlay(text, language) {
+    if (!window.LBRateLimiter.check('tts', window.CONFIG.rateLimits.ttsPerMinute)) {
+      LBLog.warn('TTS rate limit reached');
+      return null;
+    }
     try {
       const res = await chrome.runtime.sendMessage({
         action: 'api-fetch',
@@ -56,6 +60,7 @@ window.LBTTSService = {
         },
       });
 
+      if (!res) { LBLog.warn('TTS: no response from background'); return null; }
       LBLog.info('TTS response:', JSON.stringify(res.data));
 
       const audioUrl = res.data?.audioUrl || res.data?.audio_url;

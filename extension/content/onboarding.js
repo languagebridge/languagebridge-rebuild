@@ -2,20 +2,23 @@
 // 3-step onboarding: School → Grade Band → Language → Enroll via API to get studentCode.
 
 (function () {
-  function shouldRun() {
-    return window.LBState.consentGiven && !window.LBState.studentCode;
-  }
+  // Read directly from storage to avoid race condition
+  chrome.storage.local.get(['studentCode'], (local) => {
+    if (local.studentCode) {
+      window.LBState.studentCode = local.studentCode;
+      return; // Already enrolled
+    }
 
-  // If consent not given yet, wait for it
-  if (!shouldRun()) {
-    window.addEventListener('lb-consent-given', () => {
-      if (shouldRun()) startOnboarding();
+    chrome.storage.sync.get(['consentGiven'], (sync) => {
+      if (sync.consentGiven) {
+        window.LBState.consentGiven = true;
+        startOnboarding();
+      } else {
+        // Wait for consent event
+        window.addEventListener('lb-consent-given', () => startOnboarding());
+      }
     });
-    if (!window.LBState.consentGiven) return;
-    if (window.LBState.studentCode) return;
-  }
-
-  startOnboarding();
+  });
 
   function startOnboarding() {
 

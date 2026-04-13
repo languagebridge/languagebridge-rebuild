@@ -48,7 +48,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       body: JSON.stringify(msg.body),
     })
       .then(async (res) => {
-        const data = await res.json();
+        let data;
+        try { data = await res.json(); } catch { data = { error: 'Invalid response from server' }; }
         sendResponse({ ok: res.ok, status: res.status, data });
       })
       .catch((err) => {
@@ -65,7 +66,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       headers: { 'x-lb-api-key': API_KEY },
     })
       .then(async (res) => {
-        const data = await res.json();
+        let data;
+        try { data = await res.json(); } catch { data = { error: 'Invalid response from server' }; }
         sendResponse({ ok: res.ok, status: res.status, data });
       })
       .catch((err) => {
@@ -95,5 +97,5 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
-  return true;
+  return false; // Don't keep channel open for unhandled messages
 });

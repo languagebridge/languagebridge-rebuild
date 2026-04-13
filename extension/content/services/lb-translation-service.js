@@ -23,6 +23,8 @@ window.LBTranslationService = {
         },
       });
 
+      if (!res) return { error: 'No response from extension. Try reloading the page.' };
+
       if (!res.ok) {
         if (res.status === 401) return { error: 'API key invalid. Contact your administrator.' };
         LBLog.warn('Lexicon error:', res.data?.error, res.data?.details);

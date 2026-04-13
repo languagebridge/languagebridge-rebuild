@@ -218,7 +218,10 @@ class LanguageBridgeToolbar {
       talkBtn.addEventListener('click', () => {
         const translator = document.getElementById('lb-floating-translator');
         if (translator) {
-          translator.style.display = translator.style.display === 'none' ? 'block' : 'none';
+          const isVisible = translator.style.display !== 'none';
+          if (window.FloatingTranslator) {
+            isVisible ? window.FloatingTranslator.hide() : window.FloatingTranslator.show();
+          }
         }
       });
     }
@@ -354,7 +357,7 @@ class LanguageBridgeToolbar {
     this.toolbar.classList.add('collapsed');
     this.isExpanded = false;
     this.adjustPageLayout();
-    if (this.isReading) window.LBTTSService.stop();
+    if (this.isReading) window.LBTTSService?.stop();
   }
 
   adjustPageLayout() {
@@ -522,7 +525,6 @@ class LanguageBridgeToolbar {
       if (this.isPaused) throw new Error('Paused');
 
       const sentence = this.sentences[this.currentSentenceIndex];
-      const remaining = this.sentences.length - this.currentSentenceIndex;
       this.showStatus(`Playing sentence ${this.currentSentenceIndex + 1}/${this.sentences.length}`, 'info');
 
       // Generate and play this sentence
@@ -1079,7 +1081,10 @@ class LanguageBridgeToolbar {
 
   hideTranslationTooltip() {
     const tooltip = document.getElementById('lb-translation-tooltip');
-    if (tooltip) tooltip.remove();
+    if (tooltip) {
+      if (tooltip._dragController) tooltip._dragController.abort();
+      tooltip.remove();
+    }
   }
 
   setupTabNavigation(tooltip) {
@@ -1100,6 +1105,10 @@ class LanguageBridgeToolbar {
     if (!header) return;
     let isDragging = false, startX, startY, origLeft, origTop;
 
+    // Use AbortController so listeners are cleaned up when tooltip is removed
+    const dragController = new AbortController();
+    tooltip._dragController = dragController;
+
     header.addEventListener('mousedown', (e) => {
       isDragging = true;
       startX = e.clientX;
@@ -1113,9 +1122,9 @@ class LanguageBridgeToolbar {
       if (!isDragging) return;
       tooltip.style.left = `${origLeft + (e.clientX - startX)}px`;
       tooltip.style.top = `${origTop + (e.clientY - startY)}px`;
-    });
+    }, { signal: dragController.signal });
 
-    document.addEventListener('mouseup', () => { isDragging = false; });
+    document.addEventListener('mouseup', () => { isDragging = false; }, { signal: dragController.signal });
   }
 }
 

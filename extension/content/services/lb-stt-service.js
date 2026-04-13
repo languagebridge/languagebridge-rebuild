@@ -21,8 +21,10 @@ window.LBSTTService = {
 
       this.mediaRecorder.start();
       LBLog.info('Recording started');
+      return { success: true };
     } catch (err) {
       LBLog.error('Microphone access denied:', err);
+      this.isRecording = false;
       return { error: 'Microphone access is required for Talk to Teacher.' };
     }
   },
@@ -47,3 +49,10 @@ window.LBSTTService = {
     });
   },
 };
+
+// Bug 15 fix: Clean up mic stream on page unload
+window.addEventListener('beforeunload', () => {
+  if (window.LBSTTService.mediaRecorder?.stream) {
+    window.LBSTTService.mediaRecorder.stream.getTracks().forEach(t => t.stop());
+  }
+});

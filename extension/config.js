@@ -2,7 +2,7 @@
 // Creates window.CONFIG. Every content script reads from this.
 
 window.CONFIG = {
-  apiKey: '02dd1fc2301b6277cd7aed4357ea09990373078409a11942707d760726ec58e3',
+  // API key is stored only in background.js (service worker) for security
   endpoints: {
     api: 'https://languagebridge-api.azurewebsites.net/api',
     lexiconLookup: 'https://languagebridge-api.azurewebsites.net/api/lexicon-lookup',
