@@ -16,8 +16,8 @@ window.LBTTSService = {
 
       // Fetch audio through background proxy to avoid CORS
       const res = await chrome.runtime.sendMessage({ action: 'fetch-audio', url: audioUrl });
-      if (!res.ok) {
-        LBLog.error('Audio fetch failed:', res.error);
+      if (!res || !res.ok) {
+        LBLog.error('Audio fetch failed:', res?.error || 'no response');
         return;
       }
       const response = await fetch(res.dataUrl);

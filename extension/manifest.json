@@ -28,6 +28,9 @@
       "content/google-docs-adapter.js",
       "content/onboarding.js",
       "content/toolbar.js",
+      "content/toolbar-audio.js",
+      "content/toolbar-tooltip.js",
+      "content/toolbar-flag.js",
       "content/floating-translator.js"
     ],
     "css": [

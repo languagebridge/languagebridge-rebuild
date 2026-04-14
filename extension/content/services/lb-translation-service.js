@@ -1,13 +1,26 @@
 // extension/content/services/lb-translation-service.js
 // Calls /lexicon-lookup via background service worker (avoids CORS).
+// Includes offline detection and null-response guards.
 
 window.LBTranslationService = {
   async translate(text, targetLang) {
+    // Offline check
+    if (!navigator.onLine) {
+      return { error: 'You appear to be offline. Check your internet connection.' };
+    }
+
+    // Student code check
+    if (!window.LBState.studentCode) {
+      return { error: 'Not enrolled yet. Please complete onboarding first.' };
+    }
+
+    // Rate limit
     if (!window.LBRateLimiter.check('translation', window.CONFIG.rateLimits.translationsPerMinute)) {
       LBLog.warn('Translation rate limit reached');
       return { error: 'Rate limit reached. Please wait a moment.' };
     }
 
+    // Cache check
     const cached = window.LBSessionCache?.get(text, targetLang, 'translation');
     if (cached) return cached;
 
@@ -23,7 +36,8 @@ window.LBTranslationService = {
         },
       });
 
-      if (!res) return { error: 'No response from extension. Try reloading the page.' };
+      // Guard against undefined response (background didn't respond)
+      if (!res) return { error: 'Extension error. Try reloading the page.' };
 
       if (!res.ok) {
         if (res.status === 401) return { error: 'API key invalid. Contact your administrator.' };
@@ -32,7 +46,6 @@ window.LBTranslationService = {
       }
 
       const data = res.data;
-      LBLog.info('Lexicon response:', JSON.stringify(data));
 
       const result = {
         term: data.term,
