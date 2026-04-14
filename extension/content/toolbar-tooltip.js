@@ -223,7 +223,9 @@ _TT._buildGlossaryTab = function () {
     wordList.innerHTML = '';
     let found = false;
 
-    for (const word of unique.slice(0, 20)) {
+    for (const word of unique.slice(0, 12)) {
+      // Check if tooltip was closed (early exit)
+      if (!document.getElementById('lb-translation-tooltip')) return;
       try {
         const res = await window.LBTranslationService.translate(word, this.userLanguage);
         if (!res || res.error) continue;
@@ -257,6 +259,8 @@ _TT._buildGlossaryTab = function () {
         wordList.appendChild(row);
         if (res.audioUrl) audioCache[cognateText] = res.audioUrl;
       } catch (err) { /* skip */ }
+      // Small delay between lookups to avoid rate limiting
+      await new Promise(r => setTimeout(r, 200));
     }
 
     if (!found) wordList.innerHTML = `<div class="lb-glossary-empty">No ${band} vocabulary found. Try another tier.</div>`;

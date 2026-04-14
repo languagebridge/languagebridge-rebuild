@@ -11,8 +11,8 @@ window.CONFIG = {
     flagHandler: 'https://languagebridge-api.azurewebsites.net/api/flag-handler',
   },
   rateLimits: {
-    translationsPerMinute: 30,
-    ttsPerMinute: 20,
+    translationsPerMinute: 60,
+    ttsPerMinute: 40,
     sttPerMinute: 15,
   },
   textLimits: {
