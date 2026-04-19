@@ -23,6 +23,7 @@
       "content/services/lb-tts-service.js",
       "content/services/lb-stt-service.js",
       "content/services/lb-glossary-service.js",
+      "content/services/lb-analytics.js",
       "content/session-audio-cache.js",
       "content/activation-modal.js",
       "content/google-docs-adapter.js",

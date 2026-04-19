@@ -125,6 +125,7 @@ _TF.reportProblem = async function (flagText) {
     if (res?.ok && res.data) {
       const count = res.data.flagCount || 1;
       this.showStatus(`Flagged! (${count} student${count > 1 ? 's' : ''} reported this)`, 'success');
+      window.LBAnalytics?.flagEvent(text);
     } else {
       this.showStatus('Flagged! Thank you.', 'success');
     }
@@ -139,3 +140,11 @@ _TF.reportProblem = async function (flagText) {
 
 window.__lbToolbar = new LanguageBridgeToolbar();
 LBLog.info('Toolbar loaded');
+
+// Session start analytics
+window.LBAnalytics?.sessionStart();
+
+// Session end on page unload
+window.addEventListener('beforeunload', () => {
+  window.LBAnalytics?.sessionEnd();
+});

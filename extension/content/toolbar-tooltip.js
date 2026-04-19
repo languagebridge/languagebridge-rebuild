@@ -349,6 +349,9 @@ _TT.setupTabNavigation = function (tooltip) {
       const idx = dot.getAttribute('data-tab');
       tabs.forEach(t => t.classList.toggle('active', t.getAttribute('data-tab') === idx));
       dots.forEach(d => d.classList.toggle('active', d.getAttribute('data-tab') === idx));
+      // Analytics: track glossary and scaffold views
+      if (idx === '1') window.LBAnalytics?.glossaryView();
+      if (idx === '0') window.LBAnalytics?.scaffoldView(this.selectedText);
     });
   });
 };

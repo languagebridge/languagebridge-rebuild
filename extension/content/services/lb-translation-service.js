@@ -25,6 +25,14 @@ window.LBTranslationService = {
     if (cached) return cached;
 
     try {
+      // Detect subject context from page content/URL
+      const pageText = (document.title + ' ' + window.location.href).toLowerCase();
+      let context = null;
+      if (/science|biology|chemistry|physics|photosynthesis|cell|atom/.test(pageText)) context = 'science';
+      else if (/math|algebra|geometry|calculus|equation|fraction/.test(pageText)) context = 'math';
+      else if (/history|government|geography|social.studies|civics/.test(pageText)) context = 'social_studies';
+      else if (/english|reading|writing|literature|essay|grammar/.test(pageText)) context = 'ela';
+
       const res = await chrome.runtime.sendMessage({
         action: 'api-fetch',
         endpoint: 'lexicon-lookup',
@@ -32,7 +40,7 @@ window.LBTranslationService = {
           term: text,
           language: targetLang,
           studentCode: window.LBState.studentCode,
-          domain: 'k12_academic',
+          ...(context && { context }),
         },
       });
 
@@ -41,6 +49,18 @@ window.LBTranslationService = {
 
       if (!res.ok) {
         if (res.status === 401) return { error: 'API key invalid. Contact your administrator.' };
+
+        // Retry once on INTERNAL_ERROR
+        if (res.data?.error === 'INTERNAL_ERROR' && !this._retrying) {
+          this._retrying = true;
+          LBLog.info('INTERNAL_ERROR — retrying once...');
+          await new Promise(r => setTimeout(r, 500));
+          const result = await this.translate(text, targetLang);
+          this._retrying = false;
+          return result;
+        }
+        this._retrying = false;
+
         LBLog.warn('Lexicon error:', res.data?.error, res.data?.details);
         return { error: res.data?.details || res.data?.error || 'Translation failed' };
       }

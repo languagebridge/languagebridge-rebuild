@@ -83,6 +83,17 @@ window.LBTTSService = {
         }
       }
 
+      // Retry once on INTERNAL_ERROR
+      if (res.data?.error === 'INTERNAL_ERROR' && !this._retrying) {
+        this._retrying = true;
+        LBLog.info('TTS INTERNAL_ERROR — retrying once...');
+        await new Promise(r => setTimeout(r, 500));
+        const result = await this.generateAndPlay(text, language);
+        this._retrying = false;
+        return result;
+      }
+      this._retrying = false;
+
       LBLog.warn('TTS generation returned no audio:', JSON.stringify(res.data));
       return null;
     } catch (err) {

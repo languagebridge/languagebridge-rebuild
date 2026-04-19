@@ -49,19 +49,9 @@ _TB.readText = async function (text) {
 
     await this.playSentences();
 
-    // Analytics (fire and forget)
-    chrome.runtime.sendMessage({
-      action: 'api-fetch', endpoint: 'analytics-writer',
-      body: {
-        eventType: 'term_lookup', language: this.userLanguage,
-        studentCode: window.LBState.studentCode,
-        timestamp: new Date().toISOString(),
-        extensionVersion: window.CONFIG.version,
-        term: text,
-        subject: result.subject || null,
-        source: result.source || null,
-      },
-    }).catch(() => {});
+    // Analytics
+    window.LBAnalytics?.termLookup(text, result);
+    window.LBAnalytics?.ttsPlay(text);
 
   } catch (err) {
     if (err.message !== 'Paused') {
