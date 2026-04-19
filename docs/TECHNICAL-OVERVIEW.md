@@ -58,7 +58,7 @@ Every student-facing request follows the same pattern: validate API key, check r
 | Language | TypeScript (strict mode) |
 | Database | Azure Cosmos DB (NoSQL, 9 containers) |
 | Blob Storage | Azure Blob Storage (audio cache) |
-| Translation | Azure Translator (22 languages) |
+| Translation | Azure Translator (21 languages, Haitian Creole in training) |
 | Speech | Azure Speech Services + Piper TTS (proprietary voices) |
 | Auth | Supabase (teacher/admin JWTs) |
 | Deployment | Azure Functions Core Tools via deploy script |
@@ -133,7 +133,7 @@ The `type` field tells the frontend exactly how to render: `"bridge"` means show
 
 #### `POST /tts-router`
 
-Converts text to speech. Tries proprietary Piper TTS first (13 languages with custom-trained voices), falls back to Azure Speech Services (all 22 languages). Every generated audio file is cached in Blob Storage and deduplicated by SHA-256 hash.
+Converts text to speech. Tries proprietary Piper TTS first (13 languages with custom-trained voices), falls back to Azure Speech Services (all 21 languages). Every generated audio file is cached in Blob Storage and deduplicated by SHA-256 hash.
 
 Returns a signed SAS URL (1-hour read-only expiry) that the browser plays directly.
 
@@ -174,7 +174,7 @@ Ten pre-built analytics queries, school-scoped. Teachers can only query schools 
 
 | Container | Partition Key | TTL | Purpose |
 |-----------|--------------|-----|---------|
-| `lexicon` | `/language` | — | 127,590 bridge definitions across 22 languages |
+| `lexicon` | `/language` | — | 127,590 bridge definitions across 21 languages |
 | `sessions` | `/language` | — | Anonymous analytics events (composite indexed) |
 | `flags` | `/language` | — | Flagged content with escalation status |
 | `enrollments` | `/schoolCode` | — | Student code to school mapping |
@@ -246,7 +246,7 @@ POST /tts-router { text: "فتوسنتز", language: "dari" }
     ├─ Proprietary TTS (Piper, 13 languages)
     │   └─ Success → Upload to Blob → Write metadata → Return URL
     │
-    └─ Azure Speech Services fallback (all 22 languages)
+    └─ Azure Speech Services fallback (all 21 languages)
         └─ Success → Upload to Blob → Write metadata → Return URL
 ```
 
@@ -391,9 +391,9 @@ There is no CI/CD pipeline yet — deploys are manual. The deploy script is idem
 
 ---
 
-## Supported Languages (22)
+## Supported Languages (21 live, Haitian Creole in training)
 
-These 22 languages represent the most common home languages of ELL students in U.S. public schools, covering over 95% of the K-12 English learner population.
+These 21 languages represent the most common home languages of ELL students in U.S. public schools, covering over 95% of the K-12 English learner population. Haitian Creole is in active training — the French Piper model serves as the base, fine-tuned on Creole data — and will ship as the 22nd supported language post-pilot.
 
 | Tier | Languages | Count |
 |------|-----------|-------|
