@@ -147,12 +147,13 @@ export function validateApiKey(request: { headers: { get(name: string): string |
 import { getRateLimitContainer } from './cosmos-client';
 
 const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
-const RATE_LIMIT_MAX = 100;          // 100 requests per minute per key
+const RATE_LIMIT_DEFAULT = 100;      // Default ceiling when caller doesn't specify
 
 // In-memory fallback for when Cosmos is unavailable
 const _fallbackMap = new Map<string, number[]>();
 
-export async function checkRateLimit(key: string): Promise<{ allowed: boolean; remaining: number; retryAfterMs?: number }> {
+export async function checkRateLimit(key: string, limit: number = RATE_LIMIT_DEFAULT): Promise<{ allowed: boolean; remaining: number; retryAfterMs?: number }> {
+  const RATE_LIMIT_MAX = limit;
   const now = Date.now();
   const windowStart = now - (now % RATE_LIMIT_WINDOW_MS); // Align to minute boundary
   const docId = `${key}::${windowStart}`;
@@ -199,11 +200,11 @@ export async function checkRateLimit(key: string): Promise<{ allowed: boolean; r
     return { allowed: true, remaining: RATE_LIMIT_MAX - count };
   } catch {
     // Cosmos unavailable — fall back to in-memory (best-effort, per-instance)
-    return checkRateLimitFallback(key, now);
+    return checkRateLimitFallback(key, now, RATE_LIMIT_MAX);
   }
 }
 
-function checkRateLimitFallback(key: string, now: number): { allowed: boolean; remaining: number; retryAfterMs?: number } {
+function checkRateLimitFallback(key: string, now: number, limit: number): { allowed: boolean; remaining: number; retryAfterMs?: number } {
   const cutoff = now - RATE_LIMIT_WINDOW_MS;
 
   // Evict stale entries periodically
@@ -217,12 +218,12 @@ function checkRateLimitFallback(key: string, now: number): { allowed: boolean; r
   timestamps.push(now);
   _fallbackMap.set(key, timestamps);
 
-  if (timestamps.length > RATE_LIMIT_MAX) {
+  if (timestamps.length > limit) {
     const retryAfterMs = timestamps[0] + RATE_LIMIT_WINDOW_MS - now;
     return { allowed: false, remaining: 0, retryAfterMs };
   }
 
-  return { allowed: true, remaining: RATE_LIMIT_MAX - timestamps.length };
+  return { allowed: true, remaining: limit - timestamps.length };
 }
 
 // ============================================

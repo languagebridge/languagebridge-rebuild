@@ -147,6 +147,68 @@ export type LexiconLookupRequest = {
 // auth-layer reads the Authorization header directly — no request body type needed
 
 // ============================================
+// TALK TO TEACHER — STT + TRANSLATE
+// ============================================
+//
+// PRIVACY NOTE: Both endpoints are ephemeral. Audio and translated text are
+// never persisted to the database. We pass through to Azure, return the result,
+// and forget it. This is more sensitive data than vocabulary lookups because
+// conversations can include anything a student says to a teacher.
+
+export type SpeechToTextRequest = {
+  audioBase64: string;       // Audio file encoded as base64 (webm/opus, wav, or mp3)
+  audioFormat: 'webm' | 'wav' | 'mp3' | 'ogg';
+  language: SupportedLanguage;
+  studentCode: string;
+};
+
+export type SpeechToTextResponse = {
+  text: string;              // Transcribed text in the source language
+  language: SupportedLanguage;
+  confidence?: number;       // Azure's confidence score (0-1)
+};
+
+export type SpeechToTextErrorResponse = {
+  error:
+    | 'UNAUTHORIZED'
+    | 'RATE_LIMITED'
+    | 'MISSING_FIELDS'
+    | 'INVALID_LANGUAGE'
+    | 'LANGUAGE_NOT_SUPPORTED'  // Some languages don't have STT support
+    | 'AUDIO_TOO_LARGE'
+    | 'TRANSCRIPTION_FAILED'
+    | 'AZURE_SERVICE_ERROR'
+    | 'INTERNAL_ERROR';
+  details: string;
+};
+
+export type TranslateRequest = {
+  text: string;              // Text to translate (max 2000 chars)
+  fromLanguage: SupportedLanguage;
+  toLanguage: SupportedLanguage;
+  studentCode: string;
+};
+
+export type TranslateResponse = {
+  translatedText: string;
+  fromLanguage: SupportedLanguage;
+  toLanguage: SupportedLanguage;
+};
+
+export type TranslateErrorResponse = {
+  error:
+    | 'UNAUTHORIZED'
+    | 'RATE_LIMITED'
+    | 'MISSING_FIELDS'
+    | 'INVALID_LANGUAGE'
+    | 'TEXT_TOO_LONG'
+    | 'TRANSLATION_FAILED'
+    | 'AZURE_SERVICE_ERROR'
+    | 'INTERNAL_ERROR';
+  details: string;
+};
+
+// ============================================
 // RESPONSE TYPES (what backend returns)
 // ============================================
 

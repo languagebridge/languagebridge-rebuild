@@ -51,7 +51,8 @@ export async function ttsRouter(
   context.log(`tts-router request — student: ${studentCode}`);
 
   // ── 2b. Rate limit (per student, most expensive endpoint) ────
-  const rateCheck = await checkRateLimit(`tts:${studentCode}`);
+  // Lower limit — TTS generation is expensive (Azure API calls + blob upload)
+  const rateCheck = await checkRateLimit(`tts:${studentCode}`, 60);
   if (!rateCheck.allowed) {
     return error(429, 'RATE_LIMITED', `Rate limit exceeded. Retry after ${rateCheck.retryAfterMs}ms`);
   }

@@ -101,7 +101,8 @@ export async function lexiconLookup(
     } as LexiconLookupErrorResponse);
   }
 
-  const rateCheck = await checkRateLimit(`lexicon:${studentCode}`);
+  // Higher limit for lexicon lookups — legitimate glossary browsing can burst
+  const rateCheck = await checkRateLimit(`lexicon:${studentCode}`, 300);
   if (!rateCheck.allowed) {
     return respond(429, {
       error: 'RATE_LIMITED',

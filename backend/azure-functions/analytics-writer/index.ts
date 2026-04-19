@@ -92,7 +92,8 @@ export async function analyticsWriter(
   }
 
   // ── 5b. Rate limit ──────────────────────────────────────────────
-  const rateCheck = await checkRateLimit(`analytics:${req.studentCode}`);
+  // Higher limit — analytics is fire-and-forget, one event per interaction
+  const rateCheck = await checkRateLimit(`analytics:${req.studentCode}`, 300);
   if (!rateCheck.allowed) {
     return error(429, 'RATE_LIMITED', `Rate limit exceeded. Retry after ${rateCheck.retryAfterMs}ms`);
   }
