@@ -17,3 +17,5 @@ import './azure-functions/auth-layer/index';
 import './azure-functions/lexicon-lookup/index';
 import './azure-functions/onboarding/index';
 import './azure-functions/dashboard/index';
+import './azure-functions/speech-to-text/index';
+import './azure-functions/translate/index';
