@@ -10,6 +10,13 @@ window.LBTTSService = {
       if (!this.audioContext) {
         this.audioContext = new AudioContext();
       }
+
+      // Resume AudioContext if suspended (Chrome blocks audio until user gesture)
+      if (this.audioContext.state === 'suspended') {
+        LBLog.info('AudioContext suspended, resuming...');
+        await this.audioContext.resume();
+      }
+
       if (this.currentSource) {
         try { this.currentSource.stop(); } catch (e) { /* already stopped */ }
       }
@@ -20,8 +27,17 @@ window.LBTTSService = {
         LBLog.error('Audio fetch failed:', res?.error || 'no response');
         return;
       }
+
       const response = await fetch(res.dataUrl);
       const arrayBuffer = await response.arrayBuffer();
+
+      if (arrayBuffer.byteLength === 0) {
+        LBLog.error('Audio data is empty');
+        return;
+      }
+
+      LBLog.info(`Audio data: ${arrayBuffer.byteLength} bytes, context state: ${this.audioContext.state}`);
+
       const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
 
       const source = this.audioContext.createBufferSource();
@@ -30,7 +46,7 @@ window.LBTTSService = {
       source.start(0);
 
       this.currentSource = source;
-      LBLog.info('Audio playing');
+      LBLog.info(`Audio playing (${audioBuffer.duration.toFixed(1)}s)`);
 
       return new Promise((resolve) => {
         source.onended = () => {
@@ -39,7 +55,18 @@ window.LBTTSService = {
         };
       });
     } catch (err) {
-      LBLog.error('TTS playback failed:', err);
+      LBLog.error('TTS playback via WebAudio failed, trying HTML5 Audio fallback:', err);
+      // Fallback: try HTML5 Audio with data URL
+      try {
+        const res = await chrome.runtime.sendMessage({ action: 'fetch-audio', url: audioUrl });
+        if (res?.ok && res.dataUrl) {
+          const audio = new Audio(res.dataUrl);
+          await audio.play();
+          return new Promise(resolve => { audio.onended = resolve; });
+        }
+      } catch (fallbackErr) {
+        LBLog.error('HTML5 Audio fallback also failed:', fallbackErr);
+      }
     }
   },
 
