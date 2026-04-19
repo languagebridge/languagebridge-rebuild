@@ -1,16 +1,31 @@
 // extension/background.js
 // Service Worker (World 1). Handles install, shortcuts, message relay, and API proxy.
-// API calls go through here to avoid CORS issues in content scripts.
+// API key is stored in chrome.storage.local, not hardcoded.
 
 const API_BASE = 'https://languagebridge-api.azurewebsites.net/api';
-const API_KEY = '02dd1fc2301b6277cd7aed4357ea09990373078409a11942707d760726ec58e3';
 
-// On first install: generate session token
+// Get API key from storage (set on install)
+async function getApiKey() {
+  const { lbApiKey } = await chrome.storage.local.get('lbApiKey');
+  return lbApiKey || '';
+}
+
+// On first install: store API key and generate session token
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === 'install') {
+    await chrome.storage.local.set({
+      lbApiKey: '02dd1fc2301b6277cd7aed4357ea09990373078409a11942707d760726ec58e3',
+    });
     const token = crypto.randomUUID();
     await chrome.storage.sync.set({ lb_session_token: token });
-    console.log('LanguageBridge installed. Session token generated.');
+    console.log('LanguageBridge installed. API key and session token stored.');
+  }
+  // Also set key on update (in case user had old version without it)
+  const { lbApiKey } = await chrome.storage.local.get('lbApiKey');
+  if (!lbApiKey) {
+    await chrome.storage.local.set({
+      lbApiKey: '02dd1fc2301b6277cd7aed4357ea09990373078409a11942707d760726ec58e3',
+    });
   }
 });
 
@@ -35,35 +50,15 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return false;
   }
 
-  // API proxy: content script sends { action: 'api-fetch', endpoint, body }
-  // Background makes the fetch (no CORS) and sends the response back
+  // API POST proxy
   if (msg.action === 'api-fetch') {
-    const url = `${API_BASE}/${msg.endpoint}`;
-    fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-lb-api-key': API_KEY,
-      },
-      body: JSON.stringify(msg.body),
-    })
-      .then(async (res) => {
-        let data;
-        try { data = await res.json(); } catch { data = { error: 'Invalid response from server' }; }
-        sendResponse({ ok: res.ok, status: res.status, data });
-      })
-      .catch((err) => {
-        sendResponse({ ok: false, error: err.message });
+    getApiKey().then(apiKey => {
+      const url = `${API_BASE}/${msg.endpoint}`;
+      return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-lb-api-key': apiKey },
+        body: JSON.stringify(msg.body),
       });
-    return true; // Keep channel open for async response
-  }
-
-  // API GET proxy: for endpoints like /onboarding/schools
-  if (msg.action === 'api-fetch-get') {
-    const url = `${API_BASE}/${msg.endpoint}`;
-    fetch(url, {
-      method: 'GET',
-      headers: { 'x-lb-api-key': API_KEY },
     })
       .then(async (res) => {
         let data;
@@ -76,8 +71,27 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
-  // Audio proxy: content script sends { action: 'fetch-audio', url }
-  // Background fetches the audio blob and sends it back as a base64 data URL
+  // API GET proxy
+  if (msg.action === 'api-fetch-get') {
+    getApiKey().then(apiKey => {
+      const url = `${API_BASE}/${msg.endpoint}`;
+      return fetch(url, {
+        method: 'GET',
+        headers: { 'x-lb-api-key': apiKey },
+      });
+    })
+      .then(async (res) => {
+        let data;
+        try { data = await res.json(); } catch { data = { error: 'Invalid response from server' }; }
+        sendResponse({ ok: res.ok, status: res.status, data });
+      })
+      .catch((err) => {
+        sendResponse({ ok: false, error: err.message });
+      });
+    return true;
+  }
+
+  // Audio proxy
   if (msg.action === 'fetch-audio') {
     fetch(msg.url)
       .then(res => res.arrayBuffer())
@@ -97,5 +111,5 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return true;
   }
 
-  return false; // Don't keep channel open for unhandled messages
+  return false;
 });

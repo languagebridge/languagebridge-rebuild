@@ -53,10 +53,13 @@ _TB.readText = async function (text) {
     chrome.runtime.sendMessage({
       action: 'api-fetch', endpoint: 'analytics-writer',
       body: {
-        eventType: 'tts_request', language: this.userLanguage,
+        eventType: 'term_lookup', language: this.userLanguage,
         studentCode: window.LBState.studentCode,
         timestamp: new Date().toISOString(),
         extensionVersion: window.CONFIG.version,
+        term: text,
+        subject: result.subject || null,
+        source: result.source || null,
       },
     }).catch(() => {});
 

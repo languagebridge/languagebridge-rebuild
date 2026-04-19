@@ -50,7 +50,7 @@ _TF.populateFlagTab = function (tooltip) {
   if (flagAllBtn) {
     flagAllBtn.addEventListener('click', async () => {
       flagAllBtn.textContent = 'Sending...';
-      await this.reportProblem(this.selectedText, 'general', this.cachedTranslation?.audioUrl);
+      await this.reportProblem(this.selectedText);
       flagAllBtn.textContent = 'Flagged! Thank you';
       flagAllBtn.classList.add('lb-flagged');
     });
@@ -88,10 +88,9 @@ _TF._showFlagTypePopup = function (word, anchorBtn) {
   // Handle clicks
   popup.querySelectorAll('.lb-flag-type-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const type = btn.dataset.type;
       popup.remove();
       anchorBtn.innerHTML = '...';
-      await this.reportProblem(word, type, null);
+      await this.reportProblem(word);
       anchorBtn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="#10b981"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
     });
   });
@@ -107,21 +106,19 @@ _TF._showFlagTypePopup = function (word, anchorBtn) {
   }, 10);
 };
 
-_TF.reportProblem = async function (flagText, flagType, flagAudioUrl) {
-  const word = flagText || this.selectedText || window.LBState.selectedText;
-  if (!word) { this.showStatus('Select text to flag', 'error'); return; }
+_TF.reportProblem = async function (flagText) {
+  const text = flagText || this.selectedText || window.LBState.selectedText;
+  if (!text) { this.showStatus('Select text to flag', 'error'); return; }
 
   try {
     const res = await chrome.runtime.sendMessage({
       action: 'api-fetch',
       endpoint: 'flag-handler',
       body: {
-        word,
+        flaggedText: text,
         language: this.userLanguage,
         studentCode: window.LBState.studentCode,
         timestamp: new Date().toISOString(),
-        audioUrl: flagAudioUrl || this.cachedTranslation?.audioUrl || null,
-        flagType: flagType || 'general',
       },
     });
 
