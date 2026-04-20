@@ -3,7 +3,6 @@ import axios from 'axios';
 import {
   SpeechToTextRequest,
   SpeechToTextResponse,
-  SpeechToTextErrorResponse,
 } from '../../shared/types';
 import { requireFields, isValidLanguage, validateApiKey, checkRateLimit, errorResponse } from '../../shared/validators';
 

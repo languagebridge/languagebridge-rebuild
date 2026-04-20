@@ -263,7 +263,7 @@ async function incrementCacheHit(textHash: string): Promise<void> {
     await container.item(textHash, textHash).patch([
       { op: 'incr', path: '/hitCount', value: 1 },
     ]);
-  } catch (err) {
+  } catch {
     // Non-fatal: cache hit tracking should not block responses
   }
 }

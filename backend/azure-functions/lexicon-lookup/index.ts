@@ -9,7 +9,7 @@ import {
   SUPPORTED_LANGUAGES,
 } from '../../shared/types';
 import { getLexiconContainer, getAnalyticsContainer } from '../../shared/cosmos-client';
-import { requireFields, isValidLanguage, validateApiKey, checkRateLimit, errorResponse } from '../../shared/validators';
+import { requireFields, isValidLanguage, validateApiKey, checkRateLimit } from '../../shared/validators';
 
 /**
  * lexicon-lookup

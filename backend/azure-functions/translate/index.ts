@@ -3,7 +3,6 @@ import axios from 'axios';
 import {
   TranslateRequest,
   TranslateResponse,
-  TranslateErrorResponse,
 } from '../../shared/types';
 import { requireFields, isValidLanguage, validateApiKey, checkRateLimit, errorResponse } from '../../shared/validators';
 

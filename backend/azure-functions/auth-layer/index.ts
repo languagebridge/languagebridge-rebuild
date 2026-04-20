@@ -1,6 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { AuthResponse, AuthErrorResponse } from '../../shared/types';
+import { AuthResponse } from '../../shared/types';
 import { getAdminUsersContainer } from '../../shared/cosmos-client';
 import { errorResponse } from '../../shared/validators';
 

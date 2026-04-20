@@ -3,7 +3,6 @@ import { createHash } from 'crypto';
 import {
   FlagEventRequest,
   FlagHandlerResponse,
-  FlagHandlerErrorResponse,
   FlagDoc,
   FLAG_THRESHOLDS,
 } from '../../shared/types';
