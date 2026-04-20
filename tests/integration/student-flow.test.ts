@@ -203,10 +203,10 @@ describe('Student flow: validation guards', () => {
 describe('Student flow: flag bad audio', () => {
   it('creates a new flag and returns count', async () => {
     const req = mockRequest({
-      word: 'photosynthesis',
+      flaggedText: 'photosynthesis',
       language: 'dari',
       studentCode: 'LB-TEST1',
-      
+      flagType: 'pronunciation',
       timestamp: new Date().toISOString(),
     });
     const res = await flagHandler(req, mockContext());

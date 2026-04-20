@@ -116,18 +116,18 @@ describe('validateApiKey', () => {
 // ── checkRateLimit ────────────────────────────────────────
 
 describe('checkRateLimit', () => {
-  it('allows requests under limit', () => {
-    const result = checkRateLimit('test-fresh-key');
+  it('allows requests under limit', async () => {
+    const result = await checkRateLimit('test-fresh-key-' + Date.now());
     expect(result.allowed).toBe(true);
     expect(result.remaining).toBeGreaterThan(0);
   });
 
-  it('blocks after 100 requests', () => {
+  it('blocks after 100 requests', async () => {
     const key = 'test-flood-key-' + Date.now();
     for (let i = 0; i < 100; i++) {
-      checkRateLimit(key);
+      await checkRateLimit(key);
     }
-    const result = checkRateLimit(key);
+    const result = await checkRateLimit(key);
     expect(result.allowed).toBe(false);
     expect(result.remaining).toBe(0);
   });
