@@ -57,6 +57,7 @@ describe('flag-handler', () => {
     language: 'dari',
     studentCode: "LB-TEST1",
     timestamp: '2026-03-18T12:00:00Z',
+    flagType: 'translation',
   };
 
   it('creates a new flag document when none exists', async () => {
@@ -136,6 +137,43 @@ describe('flag-handler', () => {
       makeContext()
     );
     expect(response.status).toBe(400);
+  });
+
+  it('rejects invalid flagType', async () => {
+    const response = await flagHandler(
+      makeRequest({ ...validBody, flagType: 'banana' }),
+      makeContext()
+    );
+    expect(response.status).toBe(400);
+  });
+
+  it('accepts pronunciation flagType', async () => {
+    mockPatch.mockRejectedValue(new Error('Not found'));
+    mockCreate.mockResolvedValue({ resource: {} });
+
+    const response = await flagHandler(
+      makeRequest({ ...validBody, flagType: 'pronunciation' }),
+      makeContext()
+    );
+    expect(response.status).toBe(200);
+    // Verify the create call set pronunciationFlagCount: 1, translationFlagCount: 0
+    const createdDoc = mockCreate.mock.calls[0][0];
+    expect(createdDoc.pronunciationFlagCount).toBe(1);
+    expect(createdDoc.translationFlagCount).toBe(0);
+  });
+
+  it('accepts translation flagType', async () => {
+    mockPatch.mockRejectedValue(new Error('Not found'));
+    mockCreate.mockResolvedValue({ resource: {} });
+
+    const response = await flagHandler(
+      makeRequest({ ...validBody, flagType: 'translation' }),
+      makeContext()
+    );
+    expect(response.status).toBe(200);
+    const createdDoc = mockCreate.mock.calls[0][0];
+    expect(createdDoc.pronunciationFlagCount).toBe(0);
+    expect(createdDoc.translationFlagCount).toBe(1);
   });
 
   it('rejects invalid language', async () => {

@@ -248,6 +248,7 @@ describe('Student Journey Integration', () => {
       language: 'dari',
       studentCode,
       timestamp: new Date().toISOString(),
+      flagType: 'pronunciation',
     }), ctx());
     expect(res.status).toBe(200);
 
@@ -282,6 +283,7 @@ describe('Student Journey Integration', () => {
         language: 'dari',
         studentCode,
         timestamp: new Date().toISOString(),
+        flagType: 'pronunciation',
       }), ctx());
       expect(res.status).toBe(200);
     }
@@ -292,6 +294,7 @@ describe('Student Journey Integration', () => {
       language: 'dari',
       studentCode,
       timestamp: new Date().toISOString(),
+      flagType: 'pronunciation',
     }), ctx());
     expect(finalRes.status).toBe(200);
 

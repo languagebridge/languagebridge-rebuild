@@ -125,11 +125,18 @@ export type AnalyticsWriterRequest = {
   // NEVER ADD: email, name, studentId, schoolId, or any PII
 };
 
+export type FlagType = 'pronunciation' | 'translation';
+// 'pronunciation' = sounds wrong (bad TTS, wrong accent/dialect, robotic voice)
+//                   → interpreter re-records the audio
+// 'translation'   = doesn't make sense (confusing wording, mistranslation)
+//                   → interpreter retranslates the text
+
 export type FlagEventRequest = {
   flaggedText: string;    // The full highlighted text the student flagged (up to 500 chars)
   language: SupportedLanguage;
   studentCode: string;
   timestamp: string;      // ISO 8601
+  flagType: FlagType;     // What kind of fix is needed — guides the interpreter
   // NOTE: We intentionally do NOT accept or store audioUrl or any Azure-generated
   // content in flags. The bounty pipeline must only contain student-highlighted
   // text (original input) + target language. Azure translations and audio are
@@ -345,16 +352,19 @@ export type FlagDoc = {
   id: string;             // SHA-256 hash of (flaggedText + language) for deduplication
   flaggedText: string;    // Full highlighted text (up to 500 chars) — student input only, never Azure output
   language: SupportedLanguage;
-  flagCount: number;
+  flagCount: number;                  // Total flags (pronunciation + translation)
+  pronunciationFlagCount: number;     // How many students said it sounds wrong
+  translationFlagCount: number;       // How many students said the words don't make sense
   status: 'logged' | 'review' | 'bounty' | 'high_priority';
   schoolCodes: string[];
-  contentSource: 'student_input';  // Provenance tag — this data is user-generated, not Azure-derived
+  contentSource: 'student_input';     // Provenance tag — user-generated, not Azure-derived
   createdAt: string;
   lastFlaggedAt: string;
   requiresReview: boolean;
   // NOTE: No audioUrl, cognate, or translation fields here. The bounty pipeline
-  // sends ONLY (flaggedText + language) to interpreters. Azure-generated content is
-  // never forwarded to the interpreter marketplace.
+  // sends ONLY (flaggedText + language + flag type breakdown) to interpreters.
+  // The per-type counts tell the interpreter whether to prioritize re-recording
+  // audio or retranslating text.
 };
 
 export type PilotDoc = {

@@ -55,16 +55,21 @@ export async function flagHandler(
   }
 
   // ── 2. Validate required fields ────────────────────────────────
-  const fieldCheck = requireFields(body, ['flaggedText', 'language', 'studentCode', 'timestamp']);
+  const fieldCheck = requireFields(body, ['flaggedText', 'language', 'studentCode', 'timestamp', 'flagType']);
   if (!fieldCheck.valid) {
     return error(400, 'MISSING_FIELDS', `Missing required fields: ${fieldCheck.missing.join(', ')}`);
   }
 
-  const { flaggedText, language, studentCode, timestamp } = body as FlagEventRequest;
+  const { flaggedText, language, studentCode, timestamp, flagType } = body as FlagEventRequest;
 
   // ── 2b. Validate flagged text length (same 500-char limit as TTS) ──
   if (flaggedText.length > 500) {
     return error(400, 'TEXT_TOO_LONG', 'Flagged text must be 500 characters or fewer');
+  }
+
+  // ── 2c. Validate flag type ──────────────────────────────────────
+  if (flagType !== 'pronunciation' && flagType !== 'translation') {
+    return error(400, 'MISSING_FIELDS', `flagType must be 'pronunciation' or 'translation'`);
   }
 
   // ── 2c. Rate limit ──────────────────────────────────────────────
@@ -88,14 +93,15 @@ export async function flagHandler(
 
   // ── 5. Upsert flag document (single atomic patch to prevent race conditions) ─
   const container = getFlagsContainer();
+  const typeCountPath = flagType === 'pronunciation' ? '/pronunciationFlagCount' : '/translationFlagCount';
   let flagCount: number;
   let status: FlagDoc['status'];
 
   try {
-    // Single atomic patch: increment count + update all derived fields at once
-    // Cosmos DB executes all patch ops in one transaction — no gap for races
+    // Single atomic patch: increment total + per-type counter together
     const { resource: patched } = await container.item(flagId, language).patch<FlagDoc>([
       { op: 'incr', path: '/flagCount', value: 1 },
+      { op: 'incr', path: typeCountPath, value: 1 },
       { op: 'set', path: '/lastFlaggedAt', value: timestamp },
     ]);
     flagCount = patched!.flagCount;
@@ -115,6 +121,8 @@ export async function flagHandler(
         flaggedText: flaggedText.toLowerCase().trim(),
         language,
         flagCount: 1,
+        pronunciationFlagCount: flagType === 'pronunciation' ? 1 : 0,
+        translationFlagCount: flagType === 'translation' ? 1 : 0,
         status: 'logged',
         schoolCodes: [],
         contentSource: 'student_input',
@@ -132,6 +140,7 @@ export async function flagHandler(
         try {
           const { resource: patched } = await container.item(flagId, language).patch<FlagDoc>([
             { op: 'incr', path: '/flagCount', value: 1 },
+            { op: 'incr', path: typeCountPath, value: 1 },
             { op: 'set', path: '/lastFlaggedAt', value: timestamp },
           ]);
           flagCount = patched!.flagCount;
