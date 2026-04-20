@@ -160,15 +160,15 @@ Each risk has:
 
 | Aspect | Assessment |
 |---|---|
-| Description | Founder is also employed by school district where pilot is running; potential violation of district conflict-of-interest policy or improper procurement procedure |
-| Inherent likelihood | 4 (currently active situation; under legal review by Parma) |
-| Inherent impact | 4 (could result in pilot termination, employment consequences, IP claims by district) |
+| Description | Founder is also employed by school district where pilot is running; potential exposure under Ohio Revised Code 2921.42 (unlawful interest in a public contract), ORC 102.03 (state ethics law), or district conflict-of-interest policy |
+| Inherent likelihood | 4 (active situation; pilot paused for legal review) |
+| Inherent impact | 4 (could result in pilot termination, employment consequences, IP claims by district, ethics referral) |
 | Inherent score | 16 (High) |
-| **Mitigations** | None currently formalized |
-| **Residual likelihood** | 4 |
-| **Residual impact** | 4 |
-| **Residual score** | 16 (High) |
-| **Action items** | **(1) Engage employment attorney for consultation IMMEDIATELY. (2) Pull and review district employment contract for IP, outside-employment, and COI clauses. (3) Document any prior disclosures of LanguageBridge LLC as outside business interest. (4) Inventory whether any LanguageBridge work was performed using district resources. (5) For v2 launch: ensure procurement goes through formal RFP/vendor process with founder recusal.** |
+| **Mitigations** | **Substantial documented disclosure record (see [DISCLOSURE-EVIDENCE-LOG.md](./DISCLOSURE-EVIDENCE-LOG.md)):** (1) **Jan 9, 2026 pilot-deployment request email** — Justin wrote to Dan Gedeon (Technical Systems Manager, Parma CO-DIS), CC'ing Principal Schissler, Dr. Dobransky (EL Lead), and Deb Vanek: "LanguageBridge, a Chrome extension **I've built** specifically for our preliterate English Language Learners." Opened with "With Principal Schissler's approval," confirming prior principal approval. Dr. Dobransky replied enthusiastically; Dan Gedeon routed Justin to the curriculum approval form and introduced Jason Smith. (2) **Jan 9, 2026 (or shortly after) Google Form** — Instructional Technology Approval Form naming LanguageBridge, approved by Principal Schissler, monitored by Dr. Kristine Dobransky; $0 cost. (3) **Jan 30, 2026 in-office demo** — live demonstration of LanguageBridge to office leadership team; attendee subsequently shared onward with additional office leadership. (4) **Feb 27, 2026 grand prize announcement email** — sent to 9 district administrators including Superintendent Scott J. Hunt, EdD, explicitly identifying Justin as "Founder & CEO, LanguageBridge LLC" and stating $5,000 prize for startup; Superintendent replied "Congratulations! What a great honor!" (5) **Feb 27, 2026 continuing-contract conversation** — Principal Jill Schissler showed Justin her written recommendation for a continuing contract the same day Justin informed her of the Accelerate win, demonstrating employer endorsement of continued employment with contemporaneous knowledge of the outside business. (6) **March 3, 2026 signed DPA** — Parma CFO/Treasurer Sean Nuccio countersigned DPA in which Justin signed as "CEO/Founder, LanguageBridge LLC," creating bilateral awareness at CFO level. (7) **March 5-13, 2026 Jason Smith (IT) email chain** — Justin wrote "In order for my app to work I need to access my server," disclosing ownership through official IT channels; IT whitelisted the Netlify URL. **Structural mitigations:** pilot was $0 (no public-contract dollars exchanged); Justin had no approval authority over the pilot procurement; planned resignation from Parma before any paid v2 contract. |
+| **Residual likelihood** | 2 (disclosure record is dense, bilateral, and preserved; primary remaining risk is procedural — whether ORC 2921.42 applies to a $0 pilot and whether Parma policy required a separate written COI disclosure beyond these touchpoints) |
+| **Residual impact** | 3 (worst realistic case is pilot termination and mandated resignation; ethics referral remains possible but defensible given documented disclosure) |
+| **Residual score** | 6 (Medium) |
+| **Action items** | (1) **Preserve all disclosure evidence** — forward the Feb 27 announcement email, Jason Smith IT chain, Google Form confirmation, and signed DPA to personal email and encrypted cloud storage; maintain as legal records per [DISCLOSURE-EVIDENCE-LOG.md](./DISCLOSURE-EVIDENCE-LOG.md). (2) Engage employment/education attorney for a targeted review of (a) ORC 2921.42 applicability to zero-dollar pilots, (b) any Parma written-disclosure requirement the documented disclosures do not already satisfy, (c) IP/outside-employment clauses in the 19-CON-01-0493 contract agreement. (3) Confirm resignation date precedes any v2 paid procurement; structure resignation to avoid implying misconduct. (4) For v2 launch: procurement through formal RFP with founder fully disengaged from Parma; no employee-vendor overlap. (5) Inventory any LanguageBridge work that touched district resources (devices, network, time); maintain clean separation going forward. |
 
 #### C3. New regulatory requirement (FERPA, COPPA, state law) emerges mid-pilot
 
@@ -267,22 +267,22 @@ Each risk has:
               1     2     3     4     5
    1  Low    .     .     .     .     D1
               
-   2          .     .     .     B2,A4 .
+   2          .     .     C2    B2,A4 .
    Likelihood
    3          .     B1    A3,B3,C3 D2,D3 A1
               
-   4          .     A2    E2    C2,C1 .
+   4          .     A2    E2    C1    .
               
    5  High   .     .     E1    .     .
 ```
 
 **High-priority residual risks (score ≥12):**
 - C1 — DPA non-compliance through architecture drift
-- C2 — Conflict of interest (employment status)
 - E1 — Low flag volume (ML flywheel bootstrap)
-- E2 — Translation quality complaints
 
-These four risks dominate the priority list for the next 12 months.
+These two risks dominate the priority list for the next 12 months.
+
+**Notable reduction this cycle:** C2 (Conflict of interest) dropped from 16 (High) to 6 (Medium) after cataloging the disclosure evidence record (Jan 9, 2026 pilot-deployment email thread to Dan Gedeon with CC chain; Jan 9+ Google Form approval; Jan 30 in-office demo; Feb 27 announcement email to Superintendent Hunt + same-day continuing-contract conversation with Principal Schissler; March 3 signed DPA with CFO Nuccio; March 5-13 Jason Smith IT email chain). The disclosure record is dense, bilateral across five levels of district hierarchy (principal, EL lead, technical systems manager, superintendent, CFO), and preserved — see [DISCLOSURE-EVIDENCE-LOG.md](./DISCLOSURE-EVIDENCE-LOG.md).
 
 ---
 
@@ -292,16 +292,17 @@ Aggregated from individual risks, ranked by urgency:
 
 | # | Action | Risk addressed | Owner | Due |
 |---|---|---|---|---|
-| 1 | **Engage employment attorney consultation** | C2 | DSO | This week |
-| 2 | **Pull district employment contract; document any prior LB LLC disclosures** | C2 | DSO | This week |
-| 3 | **Add DPA review to PR template** | C1 | DSO | Next 2 weeks |
-| 4 | **Implement frontend "no personal info" flag warning** | A3 | Frontend Lead | Next sprint |
-| 5 | **Add per-IP rate limiting alongside per-studentCode** | A2 | DSO | Next month |
-| 6 | **Bind cyber liability insurance** | A4, A1 | DSO | Before v2 launch |
-| 7 | **Define minimum flag rate target for pilot success** | E1 | DSO | Before pilot resumes |
-| 8 | **Recruit native speaker reviewers for top languages** | E2 | DSO | Next month |
-| 9 | **Set Azure budget alerts per pilot** | D3 | DSO | Next month |
-| 10 | **Document business operations runbook (succession enablement)** | D1 | DSO | Next quarter |
+| 1 | **Preserve all C2 disclosure evidence to personal + encrypted cloud; maintain [DISCLOSURE-EVIDENCE-LOG.md](./DISCLOSURE-EVIDENCE-LOG.md)** | C2 | DSO | This week |
+| 2 | **Targeted attorney review of ORC 2921.42 applicability, Parma written-disclosure requirements, and 19-CON-01-0493 IP/outside-employment clauses** | C2 | DSO | Next 2 weeks |
+| 3 | **Confirm Parma resignation date precedes any v2 paid procurement; document resignation structure** | C2 | DSO | Before v2 procurement |
+| 4 | **Add DPA review to PR template** | C1 | DSO | Next 2 weeks |
+| 5 | **Implement frontend "no personal info" flag warning** | A3 | Frontend Lead | Next sprint |
+| 6 | **Add per-IP rate limiting alongside per-studentCode** | A2 | DSO | Next month |
+| 7 | **Bind cyber liability insurance** | A4, A1 | DSO | Before v2 launch |
+| 8 | **Define minimum flag rate target for pilot success** | E1 | DSO | Before pilot resumes |
+| 9 | **Recruit native speaker reviewers for top languages** | E2 | DSO | Next month |
+| 10 | **Set Azure budget alerts per pilot** | D3 | DSO | Next month |
+| 11 | **Document business operations runbook (succession enablement)** | D1 | DSO | Next quarter |
 
 ---
 
