@@ -52,41 +52,62 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 
   // API POST proxy
   if (msg.action === 'api-fetch') {
+    const controller = new AbortController();
+    const timeout = msg.endpoint === 'speech-to-text' ? 25000 : 15000;
+    const timer = setTimeout(() => controller.abort(), timeout);
+
     getApiKey().then(apiKey => {
       const url = `${API_BASE}/${msg.endpoint}`;
       return fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-lb-api-key': apiKey },
         body: JSON.stringify(msg.body),
+        signal: controller.signal,
       });
     })
       .then(async (res) => {
+        clearTimeout(timer);
         let data;
         try { data = await res.json(); } catch { data = { error: 'Invalid response from server' }; }
         sendResponse({ ok: res.ok, status: res.status, data });
       })
       .catch((err) => {
-        sendResponse({ ok: false, error: err.message });
+        clearTimeout(timer);
+        const isTimeout = err.name === 'AbortError';
+        sendResponse({
+          ok: false,
+          data: { error: isTimeout ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR', details: err.message },
+        });
       });
     return true;
   }
 
   // API GET proxy
   if (msg.action === 'api-fetch-get') {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 15000);
+
     getApiKey().then(apiKey => {
       const url = `${API_BASE}/${msg.endpoint}`;
       return fetch(url, {
         method: 'GET',
         headers: { 'x-lb-api-key': apiKey },
+        signal: controller.signal,
       });
     })
       .then(async (res) => {
+        clearTimeout(timer);
         let data;
         try { data = await res.json(); } catch { data = { error: 'Invalid response from server' }; }
         sendResponse({ ok: res.ok, status: res.status, data });
       })
       .catch((err) => {
-        sendResponse({ ok: false, error: err.message });
+        clearTimeout(timer);
+        const isTimeout = err.name === 'AbortError';
+        sendResponse({
+          ok: false,
+          data: { error: isTimeout ? 'REQUEST_TIMEOUT' : 'NETWORK_ERROR', details: err.message },
+        });
       });
     return true;
   }

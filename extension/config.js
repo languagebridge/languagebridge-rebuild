@@ -9,11 +9,14 @@ window.CONFIG = {
     ttsRouter: 'https://languagebridge-api.azurewebsites.net/api/tts-router',
     analyticsWriter: 'https://languagebridge-api.azurewebsites.net/api/analytics-writer',
     flagHandler: 'https://languagebridge-api.azurewebsites.net/api/flag-handler',
+    speechToText: 'https://languagebridge-api.azurewebsites.net/api/speech-to-text',
+    translate: 'https://languagebridge-api.azurewebsites.net/api/translate',
   },
   rateLimits: {
     translationsPerMinute: 90,
     ttsPerMinute: 90,
-    sttPerMinute: 15,
+    sttPerMinute: 30,
+    translatePerMinute: 100,
   },
   textLimits: {
     maxSelectionLength: 2000,

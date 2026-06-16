@@ -64,23 +64,18 @@ _TT.showTranslationTooltip = function (result, selection) {
   // Tab 1: Translation
   const tab1 = this._buildTranslationTab(bridgeAnchor, bridgeScaffold, cognate, forms, subject, gradeBand, source, displayText, textDir, textAlign);
 
-  // Tab 2: Glossary
+  // Tab 2: Glossary + Flag (merged)
   const tab2 = this._buildGlossaryTab();
-
-  // Tab 3: Flag
-  const tab3 = this._buildFlagTab();
 
   body.appendChild(tab1);
   body.appendChild(tab2);
-  body.appendChild(tab3);
 
-  // --- Tab Navigation ---
+  // --- Tab Navigation (2 tabs) ---
   const pagination = document.createElement('div');
   pagination.className = 'lb-tooltip-pagination';
   [
     { icon: '\uD83C\uDF0D', label: 'Translation', index: 0, active: true },
     { icon: '\uD83D\uDCDA', label: 'Glossary',    index: 1, active: false },
-    { icon: '\uD83D\uDEA9', label: 'Flag',        index: 2, active: false },
   ].forEach(tab => {
     const dot = document.createElement('div');
     dot.className = tab.active ? 'lb-pagination-dot active' : 'lb-pagination-dot';
@@ -107,7 +102,6 @@ _TT.showTranslationTooltip = function (result, selection) {
 
   this.makeTooltipDraggable(tooltip);
   this.setupTabNavigation(tooltip);
-  this.populateFlagTab(tooltip);
 };
 
 // ---------- Tab Builders ----------
@@ -132,6 +126,15 @@ _TT._buildTranslationTab = function (bridgeAnchor, bridgeScaffold, cognate, form
   }
 
   if (cognate) {
+    if (!bridgeAnchor) {
+      const label = document.createElement('div');
+      label.className = 'lb-tooltip-simplified';
+      label.style.fontSize = '11px';
+      label.style.opacity = '0.7';
+      label.style.marginBottom = '4px';
+      label.textContent = 'Translation:';
+      tab.appendChild(label);
+    }
     const el = document.createElement('div');
     el.className = 'lb-tooltip-text lb-cognate-display';
     el.setAttribute('dir', textDir);
@@ -188,7 +191,7 @@ _TT._buildGlossaryTab = function () {
   const glossary = document.createElement('div');
   glossary.className = 'lb-tooltip-glossary';
 
-  // Tier selector
+  // Tier selector with loading state
   const tierSelector = document.createElement('div');
   tierSelector.className = 'lb-tier-selector';
   TIER_BANDS.forEach((tier, i) => {
@@ -197,7 +200,7 @@ _TT._buildGlossaryTab = function () {
     btn.dataset.band = tier.band;
     btn.style.borderColor = tier.color;
     if (i === 0) btn.style.background = tier.color;
-    btn.textContent = tier.label;
+    btn.innerHTML = `<span class="lb-tier-label">${tier.label}</span>`;
     tierSelector.appendChild(btn);
   });
   glossary.appendChild(tierSelector);
@@ -208,11 +211,31 @@ _TT._buildGlossaryTab = function () {
   wordList.innerHTML = '<div class="lb-glossary-empty">Loading vocabulary...</div>';
   glossary.appendChild(wordList);
 
-  // Audio cache
+  // Audio cache + flagged words tracker
   const audioCache = {};
+  const flaggedWords = new Set();
+
+  const FLAG_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>';
+  const CHECK_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="#10b981"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+
+  // Set loading state on a tier button
+  const setTierLoading = (btn, loading) => {
+    const label = btn.querySelector('.lb-tier-label');
+    if (loading) {
+      btn.disabled = true;
+      btn.style.opacity = '0.7';
+      label.innerHTML = `<span class="lb-tooltip-spinner" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px;"></span>${btn.dataset.band}`;
+    } else {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      label.textContent = TIER_BANDS.find(t => t.band === btn.dataset.band)?.label || btn.dataset.band;
+    }
+  };
 
   // Load tier
   const loadTier = async (band) => {
+    const activeBtn = tierSelector.querySelector(`.lb-tier-select-btn[data-band="${band}"]`);
+    setTierLoading(activeBtn, true);
     wordList.innerHTML = '<div class="lb-tooltip-loading"><div class="lb-tooltip-spinner"></div><span>Loading vocabulary...</span></div>';
 
     const words = this.selectedText.split(/\s+/)
@@ -224,7 +247,6 @@ _TT._buildGlossaryTab = function () {
     let found = false;
 
     for (const word of unique.slice(0, 12)) {
-      // Check if tooltip was closed (early exit)
       if (!document.getElementById('lb-translation-tooltip')) return;
       try {
         const res = await window.LBTranslationService.translate(word, this.userLanguage);
@@ -237,6 +259,7 @@ _TT._buildGlossaryTab = function () {
         const langInfo = window.LB_LANGUAGES[this.userLanguage];
         const dir = langInfo?.rtl ? 'rtl' : 'ltr';
         const cognateText = res.cognate || '';
+        const isFlagged = flaggedWords.has(word);
 
         const row = document.createElement('div');
         row.className = 'lb-glossary-item';
@@ -246,12 +269,14 @@ _TT._buildGlossaryTab = function () {
             <div class="lb-vocab-english">
               <span class="lb-vocab-word">${window.escapeHtml(word)}</span>
               <button class="lb-vocab-audio lb-en-audio" data-word="${window.escapeHtml(word)}" data-lang="english" title="Listen in English">&#9654;</button>
-              <button class="lb-vocab-audio lb-vocab-slow" data-word="${window.escapeHtml(word)}" title="Slow">&#9202;</button>
             </div>
             <span class="lb-vocab-arrow">\u2192</span>
             <div class="lb-vocab-translated">
               <span class="lb-vocab-word" dir="${dir}">${window.escapeHtml(cognateText)}</span>
               <button class="lb-vocab-audio lb-cognate-audio" data-word="${window.escapeHtml(cognateText)}" data-lang="${this.userLanguage}" title="Listen">&#9654;</button>
+              <button class="lb-vocab-flag" data-word="${window.escapeHtml(word)}" title="Flag this word" ${isFlagged ? 'disabled' : ''}>
+                ${isFlagged ? CHECK_SVG : FLAG_SVG}
+              </button>
             </div>
           </div>
           ${res.bridgeAnchor ? `<div class="lb-vocab-bridge">${window.escapeHtml(res.bridgeAnchor)}</div>` : ''}
@@ -259,18 +284,16 @@ _TT._buildGlossaryTab = function () {
         wordList.appendChild(row);
         if (res.audioUrl) audioCache[cognateText] = res.audioUrl;
       } catch (err) { /* skip */ }
-      // Small delay between lookups to avoid rate limiting
       await new Promise(r => setTimeout(r, 200));
     }
 
     if (!found) wordList.innerHTML = `<div class="lb-glossary-empty">No ${band} vocabulary found. Try another tier.</div>`;
 
-    // Wire audio
+    setTierLoading(activeBtn, false);
+
+    // Wire audio buttons
     wordList.querySelectorAll('.lb-en-audio').forEach(btn => {
       btn.addEventListener('click', async (e) => { e.stopPropagation(); btn.textContent = '...'; await window.LBTTSService?.generateAndPlay(btn.dataset.word, 'english'); btn.innerHTML = '&#9654;'; });
-    });
-    wordList.querySelectorAll('.lb-vocab-slow').forEach(btn => {
-      btn.addEventListener('click', async (e) => { e.stopPropagation(); btn.textContent = '...'; await window.LBTTSService?.generateAndPlay(btn.dataset.word.split('').join(' '), 'english'); btn.innerHTML = '&#9202;'; });
     });
     wordList.querySelectorAll('.lb-cognate-audio').forEach(btn => {
       btn.addEventListener('click', async (e) => {
@@ -279,6 +302,20 @@ _TT._buildGlossaryTab = function () {
         if (cached) await window.LBTTSService?.play(cached);
         else { const r = await window.LBTTSService?.generateAndPlay(btn.dataset.word, btn.dataset.lang); if (r?.audioUrl) audioCache[btn.dataset.word] = r.audioUrl; }
         btn.innerHTML = '&#9654;';
+      });
+    });
+
+    // Wire flag buttons
+    wordList.querySelectorAll('.lb-vocab-flag').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const word = btn.dataset.word;
+        btn.innerHTML = '...';
+        btn.disabled = true;
+        await this.reportProblem(word);
+        flaggedWords.add(word);
+        btn.innerHTML = CHECK_SVG;
+        btn.title = 'Flagged';
       });
     });
   };
@@ -296,24 +333,23 @@ _TT._buildGlossaryTab = function () {
     });
   });
 
+  // Flag entire translation button at bottom
+  const flagAllBtn = document.createElement('button');
+  flagAllBtn.className = 'lb-flag-all-btn';
+  flagAllBtn.textContent = 'Flag Entire Translation';
+  flagAllBtn.addEventListener('click', async () => {
+    flagAllBtn.textContent = 'Sending...';
+    flagAllBtn.disabled = true;
+    await this.reportProblem(this.selectedText);
+    flagAllBtn.textContent = 'Flagged! Thank you';
+    flagAllBtn.classList.add('lb-flagged');
+  });
+  glossary.appendChild(flagAllBtn);
+
   // Auto-load first tier
   loadTier(TIER_BANDS[0].band);
 
   tab.appendChild(glossary);
-  return tab;
-};
-
-_TT._buildFlagTab = function () {
-  const tab = document.createElement('div');
-  tab.className = 'lb-tooltip-tab-content';
-  tab.setAttribute('data-tab', '2');
-  tab.innerHTML = `
-    <div class="lb-flag-container">
-      <div class="lb-flag-title">Flag a problem with this translation</div>
-      <div id="lb-flag-words" class="lb-flag-words"></div>
-      <button id="lb-flag-all-btn" class="lb-flag-all-btn">Flag Entire Translation</button>
-    </div>
-  `;
   return tab;
 };
 

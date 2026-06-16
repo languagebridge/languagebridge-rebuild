@@ -62,10 +62,43 @@ window.LBTranslationService = {
         this._retrying = false;
 
         LBLog.warn('Lexicon error:', res.data?.error, res.data?.details);
+        // Try /translate fallback before giving up
+        const fallback = await this._translateFallback(text, targetLang);
+        if (fallback) {
+          window.LBSessionCache?.set(text, targetLang, 'translation', fallback);
+          return fallback;
+        }
         return { error: res.data?.details || res.data?.error || 'Translation failed' };
       }
 
       const data = res.data;
+      LBLog.info(`Lexicon response for "${text}" in ${targetLang}:`, JSON.stringify({
+        bridge_anchor: data.bridge_anchor,
+        cognate: data.cognate,
+        bridge_scaffold: data.bridge_scaffold,
+        source: data.source,
+        audio_url: data.audio_url ? '(has url)' : null,
+      }));
+
+      const term = (text || '').toLowerCase().trim();
+      const anchor = (data.bridge_anchor || '').toLowerCase().trim();
+      const cognateVal = (data.cognate || '').toLowerCase().trim();
+      const scaffold = (data.bridge_scaffold || '').toLowerCase().trim();
+      // Check if lexicon returned real translated content (not just echoing the English input back)
+      const hasContent = (anchor && anchor !== term) || (cognateVal && cognateVal !== term) || (scaffold && scaffold !== term);
+
+      // If lexicon returned empty or echoed-back data, fall back to /translate endpoint
+      if (!hasContent) {
+        LBLog.info(`Lexicon returned no bridge data for "${text}" in ${targetLang}, falling back to /translate`);
+        const fallback = await this._translateFallback(text, targetLang);
+        if (fallback) {
+          fallback.audioUrl = data.audio_url;
+          fallback.subject = data.subject;
+          fallback.gradeBand = data.grade_band;
+          window.LBSessionCache?.set(text, targetLang, 'translation', fallback);
+          return fallback;
+        }
+      }
 
       const result = {
         term: data.term,
@@ -90,6 +123,49 @@ window.LBTranslationService = {
     } catch (err) {
       LBLog.error('Translation failed:', err);
       return { error: 'Translation unavailable. Please try again.' };
+    }
+  },
+
+  async _translateFallback(text, targetLang) {
+    try {
+      const res = await chrome.runtime.sendMessage({
+        action: 'api-fetch',
+        endpoint: 'translate',
+        body: {
+          text,
+          fromLanguage: 'english',
+          toLanguage: targetLang,
+          studentCode: window.LBState.studentCode,
+        },
+      });
+      if (!res?.ok) {
+        LBLog.warn('Translate fallback failed:', res?.data?.error);
+        return null;
+      }
+      const translated = res.data?.translation || res.data?.translatedText || res.data?.text || '';
+      if (!translated) return null;
+
+      LBLog.info(`Translate fallback: "${text}" → "${translated}" (${targetLang})`);
+      return {
+        term: text,
+        source: 'translator_fallback',
+        cognate: translated,
+        bridgeAnchor: null,
+        bridgeScaffold: null,
+        bridgeDefinition: null,
+        grammaticalForms: null,
+        audioUrl: null,
+        audioSource: null,
+        ttsBackend: null,
+        subject: null,
+        gradeBand: null,
+        transliterationDifficulty: null,
+        translatedText: translated,
+        translation: translated,
+      };
+    } catch (err) {
+      LBLog.error('Translate fallback error:', err);
+      return null;
     }
   },
 };

@@ -184,26 +184,130 @@
     body.scrollTop = body.scrollHeight;
   }
 
+  // Translate text via /translate endpoint (not lexicon-lookup \u2014 this is plain translation)
+  async function translateText(text, fromLanguage, toLanguage) {
+    if (!window.LBRateLimiter.check('translate', window.CONFIG.rateLimits.translatePerMinute)) {
+      return { error: 'Translation rate limit reached. Please wait.' };
+    }
+    try {
+      const res = await chrome.runtime.sendMessage({
+        action: 'api-fetch',
+        endpoint: 'translate',
+        body: {
+          text,
+          fromLanguage,
+          toLanguage,
+          studentCode: window.LBState.studentCode,
+        },
+      });
+      if (!res) return { error: 'No response from extension.' };
+      if (!res.ok) {
+        const errCode = res.data?.error || res.error || '';
+        LBLog.warn('Translate error:', errCode, res.data?.details);
+        if (errCode === 'REQUEST_TIMEOUT') return { error: 'Translation timed out. Try again.' };
+        return { error: res.data?.details || errCode || 'Translation failed.' };
+      }
+      const translated = res.data?.translation || res.data?.translatedText || res.data?.text || '';
+      if (!translated) {
+        LBLog.warn('Translate returned empty. Full data:', JSON.stringify(res.data));
+        return { error: 'No translation returned. Try again.' };
+      }
+      return { text: translated };
+    } catch (err) {
+      LBLog.error('Translate failed:', err);
+      return { error: 'Translation failed.' };
+    }
+  }
+
+  let isProcessing = false;
+
+  // Full pipeline: record \u2192 transcribe \u2192 translate \u2192 display \u2192 speak
+  async function processSpeech(zone, textEl, speakerType) {
+    if (isProcessing) return;
+    isProcessing = true;
+
+    zone.classList.remove('listening');
+    zone.classList.add('translating');
+    isRecording = false;
+    activeZone = null;
+
+    const fromLang = speakerType === 'student' ? studentLang : teacherLang;
+    const toLang = speakerType === 'student' ? teacherLang : studentLang;
+    const defaultPrompt = speakerType === 'student' ? 'Tap to speak in your language' : 'Tap to speak in English';
+
+    function done(message, delay) {
+      zone.classList.remove('translating');
+      isProcessing = false;
+      if (message) {
+        textEl.textContent = message;
+        if (delay) setTimeout(() => { textEl.textContent = defaultPrompt; }, delay);
+      }
+    }
+
+    try {
+      // Step 1: Stop recording and get audio blob
+      textEl.textContent = 'Processing audio...';
+      LBLog.info(`TTT Step 1: stopping recording (${speakerType}, ${fromLang} \u2192 ${toLang})`);
+      const audioBlob = await window.LBSTTService?.stopRecording();
+      if (!audioBlob || audioBlob.size < 100) {
+        done('No audio captured. Try again.', 3000);
+        return;
+      }
+      LBLog.info(`TTT Step 1 done: ${(audioBlob.size / 1024).toFixed(1)} KB`);
+
+      // Step 2: Transcribe audio \u2192 text
+      textEl.textContent = 'Recognizing speech...';
+      LBLog.info('TTT Step 2: transcribing...');
+      const sttResult = await window.LBSTTService.transcribe(audioBlob, fromLang);
+      LBLog.info('TTT Step 2 result:', JSON.stringify(sttResult));
+      if (sttResult.error) {
+        done(sttResult.error, 4000);
+        return;
+      }
+
+      const spokenText = sttResult.text;
+      textEl.textContent = spokenText;
+
+      // Step 3: Translate to the other language
+      const otherTextEl = panel.querySelector(speakerType === 'student' ? '#lb-teacher-text' : '#lb-student-text');
+      otherTextEl.textContent = 'Translating...';
+      LBLog.info(`TTT Step 3: translating "${spokenText.substring(0, 30)}..." (${fromLang} \u2192 ${toLang})`);
+      const translateResult = await translateText(spokenText, fromLang, toLang);
+      LBLog.info('TTT Step 3 result:', JSON.stringify(translateResult));
+      if (translateResult.error) {
+        otherTextEl.textContent = translateResult.error;
+        addMessage(speakerType, spokenText, null);
+        done(null);
+        setTimeout(() => { otherTextEl.textContent = speakerType === 'student' ? 'Tap to speak in English' : 'Tap to speak in your language'; }, 4000);
+        return;
+      }
+
+      const translatedText = translateResult.text;
+      otherTextEl.textContent = translatedText;
+      addMessage(speakerType, spokenText, translatedText);
+      done(null);
+
+      // Step 4: Play translated text as audio
+      LBLog.info(`TTT Step 4: playing TTS for "${translatedText.substring(0, 30)}..." in ${toLang}`);
+      try {
+        await window.LBTTSService?.generateAndPlay(translatedText, toLang);
+      } catch (ttsErr) {
+        LBLog.warn('TTS playback failed (non-fatal):', ttsErr);
+      }
+    } catch (err) {
+      LBLog.error('TTT pipeline error:', err);
+      done('Something went wrong. Try again.', 4000);
+    }
+  }
+
   // Student mic zone
   panel.querySelector('#lb-student-zone').addEventListener('click', async () => {
+    if (isProcessing) return;
     const zone = panel.querySelector('#lb-student-zone');
     const textEl = panel.querySelector('#lb-student-text');
 
     if (isRecording && activeZone === 'student') {
-      zone.classList.remove('listening');
-      zone.classList.add('translating');
-      textEl.textContent = 'Processing...';
-      isRecording = false;
-      activeZone = null;
-
-      const audioBlob = await window.LBSTTService?.stopRecording();
-      if (audioBlob) {
-        LBLog.info('Student audio captured, size:', audioBlob.size);
-        addMessage('student', '(Audio captured - processing...)', null);
-        // TODO: Send to STT when endpoint available
-      }
-      zone.classList.remove('translating');
-      textEl.textContent = 'Tap to speak in your language';
+      await processSpeech(zone, textEl, 'student');
     } else if (!isRecording) {
       const result = await window.LBSTTService?.startRecording();
       if (result?.error) { textEl.textContent = result.error; return; }
@@ -216,23 +320,12 @@
 
   // Teacher mic zone
   panel.querySelector('#lb-teacher-zone').addEventListener('click', async () => {
+    if (isProcessing) return;
     const zone = panel.querySelector('#lb-teacher-zone');
     const textEl = panel.querySelector('#lb-teacher-text');
 
     if (isRecording && activeZone === 'teacher') {
-      zone.classList.remove('listening');
-      zone.classList.add('translating');
-      textEl.textContent = 'Processing...';
-      isRecording = false;
-      activeZone = null;
-
-      const audioBlob = await window.LBSTTService?.stopRecording();
-      if (audioBlob) {
-        LBLog.info('Teacher audio captured, size:', audioBlob.size);
-        addMessage('teacher', '(Audio captured - processing...)', null);
-      }
-      zone.classList.remove('translating');
-      textEl.textContent = 'Tap to speak in English';
+      await processSpeech(zone, textEl, 'teacher');
     } else if (!isRecording) {
       const result = await window.LBSTTService?.startRecording();
       if (result?.error) { textEl.textContent = result.error; return; }
@@ -248,6 +341,7 @@
     if (isRecording) {
       await window.LBSTTService?.stopRecording();
       isRecording = false;
+      isProcessing = false;
       const zone = panel.querySelector(activeZone === 'student' ? '#lb-student-zone' : '#lb-teacher-zone');
       zone?.classList.remove('listening', 'translating');
       panel.querySelector('#lb-student-text').textContent = 'Tap to speak in your language';
