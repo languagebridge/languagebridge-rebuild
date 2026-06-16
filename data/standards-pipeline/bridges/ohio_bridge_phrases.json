@@ -10526,11 +10526,11 @@
     "subjects": "science|social-studies",
     "grade_bands": "3-5|6-8|9-12|K-2",
     "standard_ref": "5.LS.1",
-    "bridge_anchor": "food-maker",
-    "bridge_scaffold": "a plant or other life shape that builds food from light and air",
+    "bridge_anchor": "maker",
+    "bridge_scaffold": "someone or something that makes or creates something",
     "grammatical_forms": {
-      "noun": "a food maker",
-      "verb": "to make or grow",
+      "noun": "a maker",
+      "verb": "to make or create",
       "adjective": null
     },
     "awl_match": false,

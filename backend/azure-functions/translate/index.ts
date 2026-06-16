@@ -4,7 +4,7 @@ import {
   TranslateRequest,
   TranslateResponse,
 } from '../../shared/types';
-import { requireFields, isValidLanguage, validateApiKey, checkRateLimit, errorResponse } from '../../shared/validators';
+import { requireFields, isValidLanguage, isValidStudentCode, validateApiKey, checkRateLimit, errorResponse } from '../../shared/validators';
 
 /**
  * translate
@@ -52,12 +52,7 @@ const TRANSLATOR_LANGUAGE_MAP: Record<string, string> = {
   urdu: 'ur',
   somali: 'so',
   burmese: 'my',
-  uzbek: 'uz',
-  amharic: 'am',
   tagalog: 'fil',
-  kinyarwanda: 'rw',
-  twi: 'ak',        // Akan family
-  tigrinya: 'ti',
 };
 
 export async function translate(
@@ -87,6 +82,10 @@ export async function translate(
   }
 
   const { text, fromLanguage, toLanguage, studentCode } = body as TranslateRequest;
+
+  if (!isValidStudentCode(studentCode)) {
+    return error(400, 'INVALID_STUDENT_CODE', 'studentCode is malformed');
+  }
 
   // ── 3. Validate text length ────────────────────────────────────
   if (typeof text !== 'string' || text.trim().length === 0) {

@@ -34,15 +34,14 @@ export const SUPPORTED_LANGUAGES = [
   'pashto',     // uses Persian Piper
   'urdu',       // uses Arabic Piper
   'somali',     // uses Swahili Piper
-  'kinyarwanda', // uses Swahili Piper
-  'twi',        // uses Swahili Piper
   // Tier 2 — Azure TTS only (no local model yet)
   'burmese',
-  'uzbek',
-  'amharic',
   'tagalog',
-  'tigrinya',
 ] as const;
+
+// NOTE: kinyarwanda, twi, uzbek, amharic, and tigrinya were removed (2026-06)
+// because their endpoint paths were not working. Re-add here to restore them —
+// TypeScript will flag every place that needs a corresponding entry.
 
 export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
 
@@ -250,7 +249,7 @@ export type AnalyticsWriterResponse = {
 };
 
 export type AnalyticsWriterErrorResponse = {
-  error: 'UNAUTHORIZED' | 'RATE_LIMITED' | 'PII_VIOLATION' | 'INVALID_EVENT_TYPE' | 'MISSING_FIELDS' | 'INTERNAL_ERROR';
+  error: 'UNAUTHORIZED' | 'RATE_LIMITED' | 'PII_VIOLATION' | 'INVALID_EVENT_TYPE' | 'MISSING_FIELDS' | 'INVALID_STUDENT_CODE' | 'INTERNAL_ERROR';
   details: string;
   prohibitedFields?: string[]; // which fields triggered the PII check
 };
@@ -314,7 +313,7 @@ export type LexiconLookupResponse = {
 };
 
 export type LexiconLookupErrorResponse = {
-  error: 'UNAUTHORIZED' | 'RATE_LIMITED' | 'MISSING_FIELDS' | 'INVALID_LANGUAGE' | 'TRANSLATOR_ERROR' | 'INTERNAL_ERROR';
+  error: 'UNAUTHORIZED' | 'RATE_LIMITED' | 'MISSING_FIELDS' | 'INVALID_STUDENT_CODE' | 'INVALID_LANGUAGE' | 'TRANSLATOR_ERROR' | 'INTERNAL_ERROR';
   details: string;
 };
 

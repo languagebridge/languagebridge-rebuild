@@ -62,7 +62,7 @@ describe('lexicon-lookup', () => {
     term: 'photosynthesis',
     language: 'dari',
     
-    studentCode: "LB-TEST1",
+    studentCode: "LB-TEST7",
   };
 
   it('returns bridge definition when lexicon entry exists', async () => {

@@ -29,7 +29,7 @@ const validBody = {
   text: 'I have a stomach ache',
   fromLanguage: 'english',
   toLanguage: 'dari',
-  studentCode: 'LB-TEST1',
+  studentCode: 'LB-TEST7',
 };
 
 beforeEach(() => {

@@ -55,7 +55,7 @@ describe('flag-handler', () => {
   const validBody = {
     flaggedText: 'photosynthesis',
     language: 'dari',
-    studentCode: "LB-TEST1",
+    studentCode: "LB-TEST7",
     timestamp: '2026-03-18T12:00:00Z',
     flagType: 'translation',
   };

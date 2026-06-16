@@ -35,6 +35,15 @@ export type PIICheckResult =
   | { hasPII: false }
   | { hasPII: true; prohibitedFields: string[] };
 
+// Heuristic PII patterns scanned against free-text *values* (not just keys).
+// These are high-signal formats; they are defense-in-depth, not a guarantee.
+// Phone requires a separator to avoid matching ordinary digit runs.
+const PII_VALUE_PATTERNS: Array<{ name: string; re: RegExp }> = [
+  { name: 'email', re: /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i },
+  { name: 'ssn', re: /\b\d{3}-\d{2}-\d{4}\b/ },
+  { name: 'phone', re: /(?:\+?1[-.\s])?\(?\d{3}\)?[-.\s]\d{3}[-.\s]\d{4}\b/ },
+];
+
 export function checkForPII(payload: Record<string, unknown>): PIICheckResult {
   const found = new Set<string>();
   scanForPII(payload, found);
@@ -47,10 +56,19 @@ export function checkForPII(payload: Record<string, unknown>): PIICheckResult {
 function scanForPII(obj: unknown, found: Set<string>, depth = 0): void {
   if (depth > 5 || obj === null || obj === undefined || typeof obj !== 'object') return;
   for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+    // Reject by prohibited field name…
     if (PROHIBITED_PII_FIELDS.includes(key as typeof PROHIBITED_PII_FIELDS[number])) {
       found.add(key);
     }
-    if (typeof value === 'object' && value !== null) {
+    // …and by PII patterns inside free-text string values (the primary vector:
+    // a student typing an email/SSN/phone into `term`, `flaggedText`, `text`).
+    if (typeof value === 'string') {
+      for (const { name, re } of PII_VALUE_PATTERNS) {
+        if (re.test(value)) {
+          found.add(`${key}:${name}`);
+        }
+      }
+    } else if (typeof value === 'object' && value !== null) {
       scanForPII(value, found, depth + 1);
     }
   }
@@ -115,7 +133,10 @@ export function validateApiKey(request: { headers: { get(name: string): string |
   const expectedKey = process.env.LB_API_KEY;
 
   if (!expectedKey) {
-    if (process.env.NODE_ENV === 'development') {
+    // Auth is bypassed ONLY with an explicit, deliberate opt-in — never just
+    // because NODE_ENV happens to be 'development' (which can leak into deployed
+    // or preview environments and silently open every student endpoint).
+    if (process.env.LB_ALLOW_INSECURE_DEV === 'true') {
       return { valid: true };
     }
     return { valid: false, status: 500, error: 'API key not configured on server' };
@@ -143,6 +164,11 @@ export function validateApiKey(request: { headers: { get(name: string): string |
 // Each rate limit key gets a Cosmos DB document with a counter and window start.
 // This works correctly across multiple Azure Functions instances (distributed).
 // Falls back to in-memory if Cosmos is unavailable (graceful degradation).
+//
+// NOTE: this is a FIXED window aligned to the minute boundary, not a sliding
+// window — a client can burst up to `limit` at the end of one window and
+// `limit` again at the start of the next. Acceptable for abuse prevention here;
+// switch to a sliding window if exact smoothing is ever required.
 
 import { getRateLimitContainer } from './cosmos-client';
 

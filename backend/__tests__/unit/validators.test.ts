@@ -149,6 +149,7 @@ describe('validateApiKey', () => {
   afterEach(() => {
     delete process.env.LB_API_KEY;
     delete process.env.NODE_ENV;
+    delete process.env.LB_ALLOW_INSECURE_DEV;
   });
 
   it('accepts valid API key', () => {
@@ -175,10 +176,18 @@ describe('validateApiKey', () => {
     if (!result.valid) expect(result.status).toBe(500);
   });
 
-  it('bypasses validation in development when key not configured', () => {
+  it('bypasses validation only with explicit LB_ALLOW_INSECURE_DEV opt-in', () => {
+    delete process.env.LB_API_KEY;
+    process.env.LB_ALLOW_INSECURE_DEV = 'true';
+    const result = validateApiKey({ headers: makeHeaders() });
+    expect(result.valid).toBe(true);
+  });
+
+  it('does NOT bypass on NODE_ENV=development alone (no opt-in)', () => {
     delete process.env.LB_API_KEY;
     process.env.NODE_ENV = 'development';
     const result = validateApiKey({ headers: makeHeaders() });
-    expect(result.valid).toBe(true);
+    expect(result.valid).toBe(false);
+    if (!result.valid) expect(result.status).toBe(500);
   });
 });

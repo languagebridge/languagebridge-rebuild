@@ -70,7 +70,7 @@ describe('tts-router', () => {
     text: 'photosynthesis',
     language: 'dari',
     
-    studentCode: "LB-TEST1",
+    studentCode: "LB-TEST7",
   };
 
   it('returns cached audio on blob hit', async () => {

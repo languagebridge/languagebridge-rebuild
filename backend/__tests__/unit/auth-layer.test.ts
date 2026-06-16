@@ -15,14 +15,17 @@ jest.mock('@supabase/supabase-js', () => ({
 // ── Mock Cosmos DB ──────────────────────────────────────────────────
 
 const mockQuery = jest.fn();
-
-const mockAdminCreate = jest.fn().mockReturnValue({ catch: jest.fn() });
+const mockPilotsQuery = jest.fn();
 
 jest.mock('../../shared/cosmos-client', () => ({
   getAdminUsersContainer: () => ({
     items: {
       query: () => ({ fetchAll: mockQuery }),
-      create: mockAdminCreate,
+    },
+  }),
+  getPilotsContainer: () => ({
+    items: {
+      query: () => ({ fetchAll: mockPilotsQuery }),
     },
   }),
 }));
@@ -60,11 +63,16 @@ beforeEach(() => {
   // Set env vars so Supabase client initializes
   process.env.SUPABASE_URL = 'https://test.supabase.co';
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key';
+  // No bootstrap super-admins unless a test opts in
+  delete process.env.LB_SUPERADMIN_EMAILS;
+  // Pilots lookup defaults to empty (no schools) unless a test overrides
+  mockPilotsQuery.mockResolvedValue({ resources: [] });
 });
 
 afterEach(() => {
   delete process.env.SUPABASE_URL;
   delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+  delete process.env.LB_SUPERADMIN_EMAILS;
 });
 
 describe('auth-layer', () => {
@@ -113,7 +121,23 @@ describe('auth-layer', () => {
     expect(body.permissions).toEqual(['view_dashboard', 'manage_flags']);
   });
 
-  it('grants super admin for @languagebridge.app emails', async () => {
+  it('does NOT grant super admin from email domain alone', async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: 'admin-1', email: 'someone@languagebridge.app' } },
+      error: null,
+    });
+    mockQuery.mockResolvedValue({ resources: [] }); // No admin_users record, not allowlisted
+
+    const response = await authLayer(makeRequest('valid-token'), makeContext());
+    expect(response.status).toBe(200);
+
+    const body = response.jsonBody as Record<string, unknown>;
+    expect(body.isSuperAdmin).toBe(false);
+    expect(body.permissions).toEqual([]);
+  });
+
+  it('grants super admin for allowlisted emails (bootstrap)', async () => {
+    process.env.LB_SUPERADMIN_EMAILS = 'justin@languagebridge.app, other@x.com';
     mockGetUser.mockResolvedValue({
       data: { user: { id: 'admin-1', email: 'justin@languagebridge.app' } },
       error: null,
@@ -130,12 +154,12 @@ describe('auth-layer', () => {
     );
   });
 
-  it('uses isSuperAdmin from Cosmos DB, not just email domain', async () => {
+  it('uses isSuperAdmin from Cosmos DB, not email domain', async () => {
     mockGetUser.mockResolvedValue({
       data: { user: { id: 'admin-2', email: 'justin@languagebridge.app' } },
       error: null,
     });
-    // DB explicitly says isSuperAdmin: false (revoked)
+    // DB explicitly says isSuperAdmin: false (revoked), and not allowlisted
     mockQuery.mockResolvedValue({
       resources: [{ isSuperAdmin: false, pilotIds: ['PCSD-2026'], permissions: ['view_dashboard'] }],
     });
@@ -144,7 +168,7 @@ describe('auth-layer', () => {
     expect(response.status).toBe(200);
 
     const body = response.jsonBody as Record<string, unknown>;
-    expect(body.isSuperAdmin).toBe(false); // DB overrides email domain
+    expect(body.isSuperAdmin).toBe(false);
     expect(body.permissions).toEqual(['view_dashboard']);
   });
 
@@ -162,5 +186,19 @@ describe('auth-layer', () => {
     expect(body.isSuperAdmin).toBe(false);
     expect(body.permissions).toEqual([]);
     expect(body.accessiblePilotIds).toEqual([]);
+  });
+
+  it('fails closed (500) when the admin lookup throws', async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: 'user-789', email: 'teacher@school.edu' } },
+      error: null,
+    });
+    mockQuery.mockRejectedValue(new Error('Cosmos unavailable'));
+
+    const response = await authLayer(makeRequest('valid-token'), makeContext());
+    expect(response.status).toBe(500);
+
+    const body = response.jsonBody as Record<string, unknown>;
+    expect(body.error).toBe('INTERNAL_ERROR');
   });
 });

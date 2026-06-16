@@ -7,7 +7,7 @@ import {
   FLAG_THRESHOLDS,
 } from '../../shared/types';
 import { getFlagsContainer } from '../../shared/cosmos-client';
-import { requireFields, isValidLanguage, validateApiKey, checkRateLimit, errorResponse } from '../../shared/validators';
+import { requireFields, isValidLanguage, isValidStudentCode, validateApiKey, checkRateLimit, errorResponse } from '../../shared/validators';
 
 /**
  * flag-handler
@@ -60,6 +60,10 @@ export async function flagHandler(
   }
 
   const { flaggedText, language, studentCode, timestamp, flagType } = body as FlagEventRequest;
+
+  if (!isValidStudentCode(studentCode)) {
+    return error(400, 'INVALID_STUDENT_CODE', 'studentCode is malformed');
+  }
 
   // ── 2b. Validate flagged text length (same 500-char limit as TTS) ──
   if (flaggedText.length > 500) {

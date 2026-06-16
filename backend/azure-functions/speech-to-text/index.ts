@@ -4,7 +4,7 @@ import {
   SpeechToTextRequest,
   SpeechToTextResponse,
 } from '../../shared/types';
-import { requireFields, isValidLanguage, validateApiKey, checkRateLimit, errorResponse } from '../../shared/validators';
+import { requireFields, isValidLanguage, isValidStudentCode, validateApiKey, checkRateLimit, errorResponse } from '../../shared/validators';
 
 /**
  * speech-to-text
@@ -46,10 +46,7 @@ const STT_LANGUAGE_MAP: Record<string, string> = {
   urdu: 'ur-IN',
   somali: 'so-SO',
   burmese: 'my-MM',
-  uzbek: 'uz-UZ',
-  amharic: 'am-ET',
   tagalog: 'fil-PH',
-  // Not supported by Azure STT: kinyarwanda, twi, tigrinya
 };
 
 const MAX_AUDIO_SIZE_BYTES = 4 * 1024 * 1024; // 4MB after base64 decode
@@ -81,6 +78,10 @@ export async function speechToText(
   }
 
   const { audioBase64, audioFormat, language, studentCode } = body as SpeechToTextRequest;
+
+  if (!isValidStudentCode(studentCode)) {
+    return error(400, 'INVALID_STUDENT_CODE', 'studentCode is malformed');
+  }
 
   // ── 3. Rate limit (STT is expensive — lower limit) ────────────
   const rateCheck = await checkRateLimit(`stt:${studentCode}`, 30);

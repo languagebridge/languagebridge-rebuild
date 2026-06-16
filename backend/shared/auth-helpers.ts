@@ -29,6 +29,20 @@ export type AuthContext = AuthResponse & {
   accessibleSchoolCodes: string[];
 };
 
+/**
+ * Super-admin allowlist — comma-separated emails in LB_SUPERADMIN_EMAILS.
+ * This is the ONLY way to bootstrap the first super-admin. An email *domain*
+ * (e.g. @languagebridge.app) never confers admin on its own. Once seeded, an
+ * allowlisted admin can grant others via admin_users records (manage_users).
+ */
+function isAllowlistedSuperAdmin(email: string): boolean {
+  const allow = (process.env.LB_SUPERADMIN_EMAILS ?? '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return allow.length > 0 && allow.includes(email.trim().toLowerCase());
+}
+
 export type AuthResult =
   | { authenticated: true; context: AuthContext }
   | { authenticated: false; status: number; error: string; details: string };
@@ -73,7 +87,11 @@ export async function resolveAuthContext(
   }
 
   // ── 3. Look up permissions ───────────────────────────────────
-  const isSuperAdmin = email.endsWith('@languagebridge.app');
+  // Super-admin is granted ONLY by the explicit allowlist (bootstrap) or a
+  // Cosmos admin_users record with isSuperAdmin:true. Email domain confers
+  // NOTHING — matching a domain is never sufficient for any access.
+  const allowlisted = isAllowlistedSuperAdmin(email);
+  let isSuperAdmin = allowlisted;
   let accessiblePilotIds: string[] = [];
   let permissions: AuthResponse['permissions'] = [];
 
@@ -87,16 +105,21 @@ export async function resolveAuthContext(
       .fetchAll();
 
     if (resources.length > 0) {
+      isSuperAdmin = resources[0].isSuperAdmin === true || allowlisted;
       accessiblePilotIds = resources[0].pilotIds ?? [];
       permissions = resources[0].permissions ?? [];
-    } else if (isSuperAdmin) {
+    }
+
+    // Allowlisted bootstrap admins always get full permissions, even before
+    // (or without) an admin_users record existing for them.
+    if (allowlisted) {
+      isSuperAdmin = true;
       permissions = ['view_dashboard', 'export_data', 'manage_flags', 'manage_users'];
     }
   } catch (err) {
     context.warn('Admin user lookup failed:', err);
-    if (!isSuperAdmin) {
-      return { authenticated: false, status: 500, error: 'INTERNAL_ERROR', details: 'Failed to load user permissions' };
-    }
+    // Fail closed: never grant access when permissions cannot be verified.
+    return { authenticated: false, status: 500, error: 'INTERNAL_ERROR', details: 'Failed to load user permissions' };
   }
 
   // ── 4. Resolve pilotIds → schoolCodes ────────────────────────

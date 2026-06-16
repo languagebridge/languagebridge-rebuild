@@ -51,7 +51,7 @@ beforeEach(() => {
 
 describe('analytics-writer', () => {
   const validBody = {
-    studentCode: "LB-TEST1",
+    studentCode: "LB-TEST7",
     
     language: 'dari',
     eventType: 'session_start',
@@ -119,7 +119,7 @@ describe('analytics-writer', () => {
 
   it('rejects missing required fields', async () => {
     const response = await analyticsWriter(
-      makeRequest({ studentCode: "LB-TEST1" }),
+      makeRequest({ studentCode: "LB-TEST7" }),
       makeContext()
     );
     expect(response.status).toBe(400);

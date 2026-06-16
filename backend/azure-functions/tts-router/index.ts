@@ -4,7 +4,7 @@ import axios from 'axios';
 import { TTSRequest, TTSResponse, AudioCacheMetadataDoc } from '../../shared/types';
 import { getAudioCacheContainer, generateSasUrl } from '../../shared/blob-client';
 import { getAudioCacheMetadataContainer } from '../../shared/cosmos-client';
-import { requireFields, isValidLanguage, validateTTSText, validateApiKey, checkRateLimit, errorResponse } from '../../shared/validators';
+import { requireFields, isValidLanguage, isValidStudentCode, validateTTSText, validateApiKey, checkRateLimit, errorResponse } from '../../shared/validators';
 import voiceConfig from '../../shared/voice-config.json';
 
 /**
@@ -48,6 +48,9 @@ export async function ttsRouter(
   }
 
   const { text, language, studentCode } = body as TTSRequest;
+  if (!isValidStudentCode(studentCode)) {
+    return error(400, 'INVALID_STUDENT_CODE', 'studentCode is malformed');
+  }
   context.log(`tts-router request — student: ${studentCode}`);
 
   // ── 2b. Rate limit (per student, most expensive endpoint) ────

@@ -8,7 +8,7 @@ import {
   EnrollmentDoc,
 } from '../../shared/types';
 import { getSessionsContainer, getEnrollmentsContainer } from '../../shared/cosmos-client';
-import { checkForPII, requireFields, isValidLanguage, validateApiKey, errorResponse, checkRateLimit } from '../../shared/validators';
+import { checkForPII, requireFields, isValidLanguage, isValidStudentCode, validateApiKey, errorResponse, checkRateLimit } from '../../shared/validators';
 
 /**
  * analytics-writer
@@ -80,6 +80,10 @@ export async function analyticsWriter(
   }
 
   const req = body as AnalyticsWriterRequest;
+
+  if (!isValidStudentCode(req.studentCode)) {
+    return error(400, 'INVALID_STUDENT_CODE', 'studentCode is malformed');
+  }
 
   // ── 4. Validate language ───────────────────────────────────────
   if (!isValidLanguage(req.language)) {

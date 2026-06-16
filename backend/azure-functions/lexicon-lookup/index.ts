@@ -9,7 +9,7 @@ import {
   SUPPORTED_LANGUAGES,
 } from '../../shared/types';
 import { getLexiconContainer, getAnalyticsContainer } from '../../shared/cosmos-client';
-import { requireFields, isValidLanguage, validateApiKey, checkRateLimit } from '../../shared/validators';
+import { requireFields, isValidLanguage, isValidStudentCode, validateApiKey, checkRateLimit } from '../../shared/validators';
 
 /**
  * lexicon-lookup
@@ -51,12 +51,7 @@ const LANGUAGE_TO_TRANSLATOR: Record<string, string> = {
   nepali: 'ne',
   swahili: 'sw',
   burmese: 'my',
-  uzbek: 'uz',
-  amharic: 'am',
   tagalog: 'fil',
-  kinyarwanda: 'rw',
-  twi: 'ak',       // Akan (closest Azure Translator code)
-  tigrinya: 'ti',
 };
 
 export async function lexiconLookup(
@@ -93,6 +88,13 @@ export async function lexiconLookup(
 
   const { term, language, domain, context: subjectContext, studentCode } =
     body as unknown as LexiconLookupRequest;
+
+  if (!isValidStudentCode(studentCode)) {
+    return respond(400, {
+      error: 'INVALID_STUDENT_CODE',
+      details: 'studentCode is malformed',
+    } as LexiconLookupErrorResponse);
+  }
 
   if (!isValidLanguage(language)) {
     return respond(400, {

@@ -29,7 +29,7 @@ const validBody = {
   audioBase64: Buffer.from('fake-audio-data').toString('base64'),
   audioFormat: 'webm',
   language: 'dari',
-  studentCode: 'LB-TEST1',
+  studentCode: 'LB-TEST7',
 };
 
 beforeEach(() => {
@@ -78,13 +78,14 @@ describe('speech-to-text', () => {
     expect((res.jsonBody as Record<string, unknown>).error).toBe('INVALID_LANGUAGE');
   });
 
-  it('rejects languages not supported by Azure STT', async () => {
+  it('rejects removed/unsupported languages', async () => {
+    // kinyarwanda was removed from SUPPORTED_LANGUAGES (2026-06)
     const res = await speechToText(
       makeRequest({ ...validBody, language: 'kinyarwanda' }),
       ctx()
     );
     expect(res.status).toBe(400);
-    expect((res.jsonBody as Record<string, unknown>).error).toBe('LANGUAGE_NOT_SUPPORTED');
+    expect((res.jsonBody as Record<string, unknown>).error).toBe('INVALID_LANGUAGE');
   });
 
   it('rejects invalid audio format', async () => {
