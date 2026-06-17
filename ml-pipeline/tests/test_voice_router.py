@@ -54,8 +54,8 @@ def test_get_voice_config_invalid():
 
 
 def test_minimum_language_count():
-    """We should support at least 20 languages."""
-    assert len(VOICE_MAP) >= 20, f"Only {len(VOICE_MAP)} languages configured"
+    """We should support at least 16 languages (5 non-working langs dropped 2026-06)."""
+    assert len(VOICE_MAP) >= 16, f"Only {len(VOICE_MAP)} languages configured"
 
 
 def test_pilot_languages_present():
