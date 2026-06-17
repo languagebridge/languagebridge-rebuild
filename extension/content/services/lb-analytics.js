@@ -4,6 +4,8 @@
 window.LBAnalytics = {
   send(eventType, extras = {}) {
     if (!window.LBState?.studentCode) return;
+    // Respect a "limited features" consent choice — no usage events sent.
+    if (window.LBState?.analyticsEnabled === false) return;
 
     chrome.runtime.sendMessage({
       action: 'api-fetch',
@@ -19,7 +21,19 @@ window.LBAnalytics = {
     }).catch(() => {}); // Fire and forget
   },
 
+  // Local usage counters shown in the popup's "Usage Today" panel.
+  _bumpUsage(field) {
+    try {
+      chrome.storage.local.get(['usageStats'], (data) => {
+        const stats = data.usageStats || { translations: 0, speechRecognitions: 0 };
+        stats[field] = (stats[field] || 0) + 1;
+        chrome.storage.local.set({ usageStats: stats });
+      });
+    } catch (e) { /* noop */ }
+  },
+
   termLookup(term, result) {
+    this._bumpUsage('translations');
     this.send('term_lookup', {
       term,
       subject: result?.subject || null,
@@ -32,6 +46,7 @@ window.LBAnalytics = {
   },
 
   ttsPlay(term) {
+    this._bumpUsage('speechRecognitions');
     this.send('tts_play', { term });
   },
 

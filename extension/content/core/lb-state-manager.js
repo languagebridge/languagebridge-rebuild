@@ -10,6 +10,8 @@ window.LBState = {
   gradeBand: null,
   onboardingComplete: false,
   consentGiven: false,
+  analyticsEnabled: true,   // set false if the student chose "limited features"
+  readingSpeed: 1.0,        // TTS playback rate, set in the options page
 };
 
 // Load persisted state from chrome.storage on startup
@@ -23,11 +25,13 @@ chrome.storage.local.get(
 );
 
 chrome.storage.sync.get(
-  ['defaultLanguage', 'lb_session_token', 'onboardingComplete', 'consentGiven'],
+  ['defaultLanguage', 'lb_session_token', 'onboardingComplete', 'consentGiven', 'analyticsEnabled', 'readingSpeed'],
   (data) => {
     if (data.defaultLanguage) window.LBState.language = data.defaultLanguage;
     if (data.lb_session_token) window.LBState.sessionToken = data.lb_session_token;
     if (data.onboardingComplete) window.LBState.onboardingComplete = true;
     if (data.consentGiven) window.LBState.consentGiven = true;
+    if (data.analyticsEnabled === false) window.LBState.analyticsEnabled = false;
+    if (data.readingSpeed) window.LBState.readingSpeed = data.readingSpeed;
   }
 );

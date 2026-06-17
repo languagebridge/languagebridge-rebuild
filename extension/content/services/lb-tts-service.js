@@ -42,6 +42,7 @@ window.LBTTSService = {
 
       const source = this.audioContext.createBufferSource();
       source.buffer = audioBuffer;
+      source.playbackRate.value = window.LBState?.readingSpeed || 1.0;
       source.connect(this.audioContext.destination);
       source.start(0);
 
@@ -61,6 +62,7 @@ window.LBTTSService = {
         const res = await chrome.runtime.sendMessage({ action: 'fetch-audio', url: audioUrl });
         if (res?.ok && res.dataUrl) {
           const audio = new Audio(res.dataUrl);
+          audio.playbackRate = window.LBState?.readingSpeed || 1.0;
           await audio.play();
           return new Promise(resolve => { audio.onended = resolve; });
         }

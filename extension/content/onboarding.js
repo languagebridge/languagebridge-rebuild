@@ -2,21 +2,31 @@
 // 3-step onboarding: School → Grade Band → Language → Enroll via API to get studentCode.
 
 (function () {
-  // Read directly from storage to avoid race condition
+  let _onboardingStarted = false;
+  function startOnboardingOnce() {
+    if (_onboardingStarted) return;
+    _onboardingStarted = true;
+    startOnboarding();
+  }
+
+  // Register the consent listener SYNCHRONOUSLY so we can't miss the event while
+  // an async storage read is still in flight (previously caused new users to get
+  // stuck after agreeing).
+  window.addEventListener('lb-consent-given', startOnboardingOnce);
+
   chrome.storage.local.get(['studentCode'], (local) => {
     if (local.studentCode) {
       window.LBState.studentCode = local.studentCode;
+      window.removeEventListener('lb-consent-given', startOnboardingOnce);
       return; // Already enrolled
     }
 
     chrome.storage.sync.get(['consentGiven'], (sync) => {
       if (sync.consentGiven) {
         window.LBState.consentGiven = true;
-        startOnboarding();
-      } else {
-        // Wait for consent event
-        window.addEventListener('lb-consent-given', () => startOnboarding());
+        startOnboardingOnce();
       }
+      // Otherwise the synchronously-registered listener above starts it on consent.
     });
   });
 
@@ -70,12 +80,12 @@
   function showSchoolSelection() {
     const content = document.getElementById('lb-onboard-content');
     content.innerHTML = schools.map(s => `
-      <button class="lb-onboard-btn" data-school="${s.schoolCode}" style="
+      <button class="lb-onboard-btn" data-school="${window.escapeHtml(s.schoolCode)}" style="
         display: block; width: 100%; padding: 14px 16px; margin: 6px 0;
         border: 2px solid #e0e0e0; border-radius: 10px; background: white;
         cursor: pointer; text-align: left; font-size: 15px; font-weight: 500;
         color: #333; transition: all 0.2s;
-      ">${s.schoolName}</button>
+      ">${window.escapeHtml(s.schoolName)}</button>
     `).join('');
 
     content.querySelectorAll('.lb-onboard-btn').forEach(btn => {
@@ -95,12 +105,12 @@
 
     const content = document.getElementById('lb-onboard-content');
     content.innerHTML = selectedSchool.gradeBands.map(gb => `
-      <button class="lb-onboard-btn" data-grade="${gb}" style="
+      <button class="lb-onboard-btn" data-grade="${window.escapeHtml(gb)}" style="
         display: block; width: 100%; padding: 14px 16px; margin: 6px 0;
         border: 2px solid #e0e0e0; border-radius: 10px; background: white;
         cursor: pointer; text-align: center; font-size: 16px; font-weight: 600;
         color: #333; transition: all 0.2s;
-      ">Grades ${gb}</button>
+      ">Grades ${window.escapeHtml(gb)}</button>
     `).join('');
 
     content.querySelectorAll('.lb-onboard-btn').forEach(btn => {

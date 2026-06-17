@@ -22,7 +22,6 @@
       "content/services/lb-translation-service.js",
       "content/services/lb-tts-service.js",
       "content/services/lb-stt-service.js",
-      "content/services/lb-glossary-service.js",
       "content/services/lb-analytics.js",
       "content/session-audio-cache.js",
       "content/activation-modal.js",
@@ -41,6 +40,10 @@
     ],
     "run_at": "document_idle"
   }],
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
   "action": {
     "default_popup": "popup/popup.html",
     "default_icon": {

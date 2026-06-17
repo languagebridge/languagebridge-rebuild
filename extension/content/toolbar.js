@@ -46,8 +46,14 @@ class LanguageBridgeToolbar {
       }
       if (request.action === 'settings-updated') {
         const oldLang = this.userLanguage;
-        if (request.settings?.userLanguage) this.userLanguage = request.settings.userLanguage;
-        if (request.settings?.readingSpeed) this.readingSpeed = request.settings.readingSpeed;
+        if (request.settings?.userLanguage) {
+          this.userLanguage = request.settings.userLanguage;
+          window.LBState.language = request.settings.userLanguage; // keep services in sync
+        }
+        if (request.settings?.readingSpeed) {
+          this.readingSpeed = request.settings.readingSpeed;
+          window.LBState.readingSpeed = request.settings.readingSpeed;
+        }
         this.updateLanguageDisplay();
         if (oldLang !== this.userLanguage) {
           this.cachedTranslation = null;
@@ -59,7 +65,7 @@ class LanguageBridgeToolbar {
         return true;
       }
       if (request.action === 'show-tutorial') {
-        if (window.LanguageBridgeGuide) window.LanguageBridgeGuide.show(true);
+        this.showHelp();
         sendResponse({ success: true });
         return true;
       }
@@ -166,7 +172,7 @@ class LanguageBridgeToolbar {
     });
 
     q('#lb-help-guide')?.addEventListener('click', () => {
-      if (window.LanguageBridgeGuide) window.LanguageBridgeGuide.show(true);
+      this.showHelp();
     });
 
     q('#lb-collapse')?.addEventListener('click', () => this.collapse());

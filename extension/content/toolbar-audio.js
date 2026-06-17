@@ -42,6 +42,10 @@ _TB.readText = async function (text) {
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) this.showTranslationTooltip(result, selection);
 
+    // Count the lookup as soon as we have a translation — NOT after audio finishes
+    // (pausing would otherwise drop the event entirely).
+    window.LBAnalytics?.termLookup(text, result);
+
     // Only ever speak the NATIVE translation in the native voice. Never feed the
     // English bridge/scaffold to a foreign TTS voice (that produced garbled audio).
     const nativeText = result.cognate || '';
@@ -55,11 +59,8 @@ _TB.readText = async function (text) {
     this.sentences = this.splitSentences(nativeText);
     this.currentSentenceIndex = 0;
 
-    await this.playSentences();
-
-    // Analytics
-    window.LBAnalytics?.termLookup(text, result);
     window.LBAnalytics?.ttsPlay(text);
+    await this.playSentences();
 
   } catch (err) {
     if (err.message !== 'Paused') {
@@ -159,6 +160,7 @@ _TB.showWrittenTranslation = async function () {
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) this.showTranslationTooltip(result, selection);
     else this.showTranslationTooltipCentered(result);
+    window.LBAnalytics?.termLookup(this.selectedText, result);
     this.showStatus('Translation shown', 'info');
   } catch (err) {
     LBLog.error('Translation display failed:', err);
