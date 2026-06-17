@@ -3,7 +3,7 @@
   "name": "LanguageBridge - Real-Time Translation for Students",
   "version": "2.0.0",
   "description": "Instant translation and text-to-speech for English learners in 16 languages.",
-  "permissions": ["storage", "activeTab"],
+  "permissions": ["storage", "activeTab", "offscreen"],
   "host_permissions": [
     "https://languagebridge-api.azurewebsites.net/*",
     "https://storage.blob.core.windows.net/*"

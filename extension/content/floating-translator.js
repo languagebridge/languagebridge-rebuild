@@ -1,405 +1,357 @@
 /**
- * LanguageBridge - Floating Translator (Talk to Teacher)
- * Full-featured: student/teacher zones, conversation history, language controls,
- * clear, stop, and auto-sync with toolbar language.
+ * LanguageBridge - Talk to Teacher (face-to-face voice translator)
+ *
+ * Vertical, two-zone layout meant to sit flat between two people: the TOP zone
+ * is rotated 180° for the person across the table. Tap anywhere in a zone to
+ * record, tap again (or STOP) to translate. Up to 45s per turn. Each zone has
+ * its own on-face language picker — no settings menu. Built for a child to use.
  */
 (function () {
-  // State
-  let studentLang = window.LBState?.language || 'dari';
-  let teacherLang = 'english';
-  let conversationHistory = [];
-  let isRecording = false;
-  let activeZone = null;
+  const MAX_RECORD_MS = 45000;
+
+  // Languages: bottom = "me" (student), top = "partner" (teacher/parent).
+  let myLang = window.LBState?.language || 'dari';
+  let partnerLang = 'english';
+
+  let recording = false;
+  let processing = false;
+  let activeZone = null;      // 'top' | 'bottom'
+  let autoStopTimer = null;
+  let countdownTimer = null;
 
   const panel = document.createElement('div');
   panel.id = 'lb-floating-translator';
-  panel.className = 'lb-floating-translator';
-  panel.style.cssText = 'display: none; top: 20px; right: 20px;';
+  panel.className = 'lb-ttt-panel';
+  panel.style.display = 'none';
 
-  function buildLanguageOptions(selectedLang) {
-    return Object.entries(window.LB_LANGUAGES).map(([code, lang]) =>
-      `<option value="${code}" ${code === selectedLang ? 'selected' : ''}>${lang.nativeLabel} ${lang.label}</option>`
-    ).join('');
+  const MIC_SVG =
+    '<svg viewBox="0 0 24 24" fill="currentColor" width="44" height="44">' +
+    '<path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>';
+
+  function zoneHTML(zoneKey) {
+    return (
+      '<div class="lb-ttt-zone lb-ttt-' + zoneKey + '" data-zone="' + zoneKey + '">' +
+        '<button class="lb-ttt-lang-pill" data-zone="' + zoneKey + '" type="button">' +
+          '<span class="lb-ttt-lang-native"></span><span class="lb-ttt-lang-name"></span><span class="lb-ttt-chev">▾</span>' +
+        '</button>' +
+        '<button class="lb-ttt-stage" data-zone="' + zoneKey + '" type="button">' +
+          '<div class="lb-ttt-status">TAP TO TALK</div>' +
+          '<div class="lb-ttt-visual"><span class="lb-ttt-ring"></span><span class="lb-ttt-mic">' + MIC_SVG + '</span></div>' +
+          '<div class="lb-ttt-spinner"></div>' +
+          '<div class="lb-ttt-timer"></div>' +
+        '</button>' +
+        '<button class="lb-ttt-stop" data-zone="' + zoneKey + '" type="button">■ STOP</button>' +
+        '<button class="lb-ttt-micfix" data-zone="' + zoneKey + '" type="button">Turn on microphone</button>' +
+        '<div class="lb-ttt-picker" data-zone="' + zoneKey + '"></div>' +
+      '</div>'
+    );
   }
 
-  panel.innerHTML = `
-    <div class="lb-float-header">
-      <span class="lb-float-drag-handle">\u22EE\u22EE</span>
-      <span class="lb-header-title">Talk to Teacher</span>
-      <button class="lb-float-close" id="lb-float-close">\u00D7</button>
-    </div>
-    <div class="lb-float-body">
-      <button class="lb-speaker-zone lb-student-zone" id="lb-student-zone">
-        <div class="lb-speaker-header">
-          <span class="lb-speaker-icon">\uD83D\uDC66</span>
-          <span class="lb-speaker-label">Student</span>
-        </div>
-        <div class="lb-speaker-content">
-          <div class="lb-speaker-text" id="lb-student-text">Tap to speak in your language</div>
-          <div class="lb-speaker-lang" id="lb-student-lang-label"></div>
-        </div>
-        <svg class="lb-speaker-mic" width="48" height="48" viewBox="0 0 24 24" fill="white">
-          <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
-        </svg>
-      </button>
-      <button class="lb-speaker-zone lb-teacher-zone" id="lb-teacher-zone">
-        <div class="lb-speaker-header">
-          <span class="lb-speaker-icon">\uD83D\uDC69\u200D\uD83C\uDFEB</span>
-          <span class="lb-speaker-label">Teacher</span>
-        </div>
-        <div class="lb-speaker-content">
-          <div class="lb-speaker-text" id="lb-teacher-text">Tap to speak in English</div>
-          <div class="lb-speaker-lang" id="lb-teacher-lang-label">English</div>
-        </div>
-        <svg class="lb-speaker-mic" width="48" height="48" viewBox="0 0 24 24" fill="white">
-          <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
-        </svg>
-      </button>
-    </div>
-    <div class="lb-conversation-controls">
-      <button class="lb-control-btn" id="lb-ttt-stop" title="Stop recording">\u23F9</button>
-      <button class="lb-control-btn" id="lb-ttt-history" title="View conversation">\uD83D\uDCDC</button>
-      <button class="lb-control-btn" id="lb-ttt-clear" title="Clear conversation">\uD83D\uDDD1</button>
-      <button class="lb-control-btn" id="lb-ttt-settings" title="Language settings">\u2699\uFE0F</button>
-    </div>
-    <!-- Language Settings Panel (hidden) -->
-    <div id="lb-ttt-lang-panel" style="display: none; padding: 16px; background: rgba(0,0,0,0.2); border-top: 1px solid rgba(255,255,255,0.1);">
-      <div style="margin-bottom: 12px;">
-        <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 6px; color: rgba(255,255,255,0.8);">Student Language</label>
-        <select id="lb-ttt-student-lang" style="width: 100%; padding: 8px; border-radius: 8px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); color: white; font-size: 14px;">
-        </select>
-      </div>
-      <div>
-        <label style="font-size: 12px; font-weight: 600; display: block; margin-bottom: 6px; color: rgba(255,255,255,0.8);">Teacher Language</label>
-        <select id="lb-ttt-teacher-lang" style="width: 100%; padding: 8px; border-radius: 8px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); color: white; font-size: 14px;">
-        </select>
-      </div>
-    </div>
-    <!-- Conversation History Panel (hidden) -->
-    <div id="lb-ttt-history-panel" class="lb-history-modal" style="display: none;">
-      <div class="lb-history-header">
-        <h3>Conversation</h3>
-        <button class="lb-history-close" id="lb-ttt-history-close">\u00D7</button>
-      </div>
-      <div class="lb-history-body" id="lb-ttt-history-body">
-        <div class="lb-history-empty">No conversation yet. Tap a mic to start.</div>
-      </div>
-    </div>
-  `;
+  panel.innerHTML =
+    zoneHTML('top') +
+    '<div class="lb-ttt-divider"><span class="lb-ttt-brand">LanguageBridge</span>' +
+      '<button class="lb-ttt-close" id="lb-ttt-close" type="button" title="Close">×</button></div>' +
+    zoneHTML('bottom');
 
   document.body.appendChild(panel);
 
-  // Populate language selects
-  const studentSelect = panel.querySelector('#lb-ttt-student-lang');
-  const teacherSelect = panel.querySelector('#lb-ttt-teacher-lang');
-  studentSelect.innerHTML = buildLanguageOptions(studentLang);
-  teacherSelect.innerHTML = buildLanguageOptions(teacherLang);
+  // ── Helpers ────────────────────────────────────────────────────────
+  const zoneEl = (z) => panel.querySelector('.lb-ttt-' + z);
+  const langOf = (z) => (z === 'bottom' ? myLang : partnerLang);
+  const otherZone = (z) => (z === 'bottom' ? 'top' : 'bottom');
 
-  // Style select options for dark background
-  [studentSelect, teacherSelect].forEach(sel => {
-    sel.querySelectorAll('option').forEach(opt => {
-      opt.style.background = '#4a1a45';
-      opt.style.color = 'white';
-    });
-  });
-
-  function updateLabels() {
-    const sLang = window.LB_LANGUAGES[studentLang];
-    const tLang = window.LB_LANGUAGES[teacherLang];
-    const sLabel = panel.querySelector('#lb-student-lang-label');
-    const tLabel = panel.querySelector('#lb-teacher-lang-label');
-    if (sLabel && sLang) sLabel.textContent = `${sLang.nativeLabel} ${sLang.label}`;
-    if (tLabel && tLang) tLabel.textContent = `${tLang.nativeLabel} ${tLang.label}`;
+  function langInfo(code) {
+    return window.LB_LANGUAGES[code] || { label: code, nativeLabel: code, rtl: false };
   }
-  updateLabels();
 
-  // Language change handlers
-  studentSelect.addEventListener('change', () => {
-    studentLang = studentSelect.value;
-    updateLabels();
-    // Also update toolbar language
-    if (window.__lbToolbar) {
-      window.__lbToolbar.userLanguage = studentLang;
-      window.__lbToolbar.updateLanguageDisplay();
-      window.LBState.language = studentLang;
-      chrome.storage.sync.set({ defaultLanguage: studentLang });
+  function renderPill(z) {
+    const info = langInfo(langOf(z));
+    const pill = zoneEl(z).querySelector('.lb-ttt-lang-pill');
+    pill.querySelector('.lb-ttt-lang-native').textContent = info.nativeLabel;
+    pill.querySelector('.lb-ttt-lang-name').textContent = info.label;
+  }
+
+  function buildPicker(z) {
+    const picker = zoneEl(z).querySelector('.lb-ttt-picker');
+    const current = langOf(z);
+    picker.innerHTML = Object.entries(window.LB_LANGUAGES).map(([code, info]) =>
+      '<button class="lb-ttt-picker-opt' + (code === current ? ' selected' : '') + '" data-zone="' + z + '" data-code="' + code + '" type="button">' +
+        '<span class="lb-ttt-lang-native">' + window.escapeHtml(info.nativeLabel) + '</span>' +
+        '<span class="lb-ttt-lang-name">' + window.escapeHtml(info.label) + '</span>' +
+      '</button>'
+    ).join('');
+  }
+
+  function setStatus(z, text, opts) {
+    opts = opts || {};
+    const zEl = zoneEl(z);
+    const statusEl = zEl.querySelector('.lb-ttt-status');
+    statusEl.textContent = text;
+    const info = langInfo(langOf(z));
+    statusEl.setAttribute('dir', opts.translatedText && info.rtl ? 'rtl' : 'auto');
+    statusEl.classList.toggle('lb-ttt-result', !!opts.result);
+  }
+
+  function setZoneMode(z, mode) {
+    // mode: 'idle' | 'recording' | 'processing' | 'speaking'
+    const zEl = zoneEl(z);
+    zEl.classList.remove('recording', 'processing', 'speaking');
+    if (mode !== 'idle') zEl.classList.add(mode);
+  }
+
+  function setOtherDisabled(z, disabled) {
+    zoneEl(otherZone(z)).classList.toggle('disabled', disabled);
+  }
+
+  function showTimer(z, show) {
+    zoneEl(z).querySelector('.lb-ttt-timer').style.display = show ? 'block' : 'none';
+  }
+
+  function showMicFix(z, show) {
+    zoneEl(z).querySelector('.lb-ttt-micfix').style.display = show ? 'block' : 'none';
+  }
+
+  function resetZone(z) {
+    setZoneMode(z, 'idle');
+    showTimer(z, false);
+    showMicFix(z, false);
+    setStatus(z, 'TAP TO TALK');
+  }
+
+  function closeAllPickers() {
+    panel.querySelectorAll('.lb-ttt-picker.open').forEach((p) => p.classList.remove('open'));
+  }
+
+  // ── Language picker ────────────────────────────────────────────────
+  function togglePicker(z) {
+    const picker = zoneEl(z).querySelector('.lb-ttt-picker');
+    const isOpen = picker.classList.contains('open');
+    closeAllPickers();
+    if (!isOpen) { buildPicker(z); picker.classList.add('open'); }
+  }
+
+  function selectLanguage(z, code) {
+    if (!window.LB_LANGUAGES[code]) return;
+    if (z === 'bottom') {
+      myLang = code;
+      window.LBState.language = code;
+      try { chrome.storage.sync.set({ defaultLanguage: code }); } catch (e) { /* noop */ }
+      if (window.__lbToolbar) {
+        window.__lbToolbar.userLanguage = code;
+        window.__lbToolbar.updateLanguageDisplay?.();
+      }
+    } else {
+      partnerLang = code;
+      try { chrome.storage.sync.set({ tttPartnerLang: code }); } catch (e) { /* noop */ }
     }
-  });
-
-  teacherSelect.addEventListener('change', () => {
-    teacherLang = teacherSelect.value;
-    updateLabels();
-  });
-
-  // Sync when toolbar language changes
-  window.addEventListener('lb-language-changed', (e) => {
-    studentLang = window.LBState.language;
-    studentSelect.value = studentLang;
-    updateLabels();
-  });
-
-  // Close
-  panel.querySelector('#lb-float-close').addEventListener('click', () => { panel.style.display = 'none'; });
-
-  // Draggable
-  const header = panel.querySelector('.lb-float-header');
-  let isDragging = false, startX, startY, origLeft, origTop;
-  header.addEventListener('mousedown', (e) => {
-    if (e.target.closest('.lb-float-close')) return;
-    isDragging = true; startX = e.clientX; startY = e.clientY;
-    origLeft = panel.offsetLeft; origTop = panel.offsetTop; e.preventDefault();
-  });
-  document.addEventListener('mousemove', (e) => {
-    if (!isDragging) return;
-    panel.style.left = `${origLeft + (e.clientX - startX)}px`;
-    panel.style.top = `${origTop + (e.clientY - startY)}px`;
-    panel.style.right = 'auto';
-  });
-  document.addEventListener('mouseup', () => { isDragging = false; });
-
-  // Add message to conversation
-  function addMessage(speaker, originalText, translatedText) {
-    const entry = { speaker, originalText, translatedText, time: new Date().toLocaleTimeString() };
-    conversationHistory.push(entry);
-    updateHistoryPanel();
+    renderPill(z);
+    closeAllPickers();
   }
 
-  function updateHistoryPanel() {
-    const body = panel.querySelector('#lb-ttt-history-body');
-    if (!conversationHistory.length) {
-      body.innerHTML = '<div class="lb-history-empty">No conversation yet. Tap a mic to start.</div>';
+  // ── Recording flow ─────────────────────────────────────────────────
+  async function startFlow(z) {
+    if (recording || processing) return;
+    closeAllPickers();
+    showMicFix(z, false);
+
+    const start = await window.LBSTTService.startRecording();
+    if (start.error) {
+      setStatus(z, start.error);
+      if (start.code === 'mic-permission' || start.code === 'no-mic') showMicFix(z, true);
       return;
     }
-    body.innerHTML = conversationHistory.map(e => `
-      <div class="lb-history-entry ${e.translatedText ? 'translated' : 'original'}">
-        <div class="lb-history-entry-header">
-          <span class="lb-history-entry-icon">${e.speaker === 'student' ? '\uD83D\uDC66' : '\uD83D\uDC69\u200D\uD83C\uDFEB'}</span>
-          <span class="lb-history-entry-lang">${e.speaker === 'student' ? 'Student' : 'Teacher'}</span>
-          <span class="lb-history-entry-time">${e.time}</span>
-        </div>
-        <div class="lb-history-entry-text">${window.escapeHtml(e.originalText)}</div>
-        ${e.translatedText ? `<div class="lb-history-entry-text" style="opacity: 0.8; font-style: italic; margin-top: 4px;">\u2192 ${window.escapeHtml(e.translatedText)}</div>` : ''}
-      </div>
-    `).join('');
-    body.scrollTop = body.scrollHeight;
+
+    recording = true;
+    activeZone = z;
+    setOtherDisabled(z, true);
+    setZoneMode(z, 'recording');
+    setStatus(z, 'Listening…  Tap to translate');
+
+    // 45s countdown + auto-stop.
+    const startedAt = Date.now();
+    showTimer(z, true);
+    const tick = () => {
+      const left = Math.max(0, Math.ceil((MAX_RECORD_MS - (Date.now() - startedAt)) / 1000));
+      const t = zoneEl(z).querySelector('.lb-ttt-timer');
+      if (t) t.textContent = left + 's';
+    };
+    tick();
+    countdownTimer = setInterval(tick, 250);
+    autoStopTimer = setTimeout(() => stopFlow(), MAX_RECORD_MS);
   }
 
-  // Translate text via /translate endpoint (not lexicon-lookup \u2014 this is plain translation)
+  async function stopFlow() {
+    if (!recording || processing) return;
+    const z = activeZone;
+    recording = false;
+    processing = true;
+    if (autoStopTimer) { clearTimeout(autoStopTimer); autoStopTimer = null; }
+    if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+    showTimer(z, false);
+
+    const target = otherZone(z);
+    const fromLang = langOf(z);
+    const toLang = langOf(target);
+
+    // Source zone: show we're working on the audio.
+    setZoneMode(z, 'processing');
+    setStatus(z, 'Got it…');
+
+    const audio = await window.LBSTTService.stopRecording();
+    if (audio.error) {
+      finishWithError(z, audio);
+      return;
+    }
+
+    // Silence / loudness diagnostics from the offscreen level analysis.
+    if (audio.peak !== undefined && audio.peak < 0.02) {
+      finishWithError(z, { error: "I didn't hear anything. Check your sound is on and speak toward the mic.", code: 'silence' });
+      return;
+    }
+    const noisy = audio.clipRatio !== undefined && audio.clipRatio > 0.25;
+
+    // Transcribe.
+    const stt = await window.LBSTTService.transcribe(audio.wavBase64, fromLang);
+    if (stt.error) {
+      const msg = stt.code === 'empty'
+        ? (noisy ? "Too much background noise — try somewhere quieter." : "I couldn't make that out. Try again.")
+        : stt.error;
+      finishWithError(z, { error: msg, code: stt.code });
+      return;
+    }
+
+    // Source zone shows what was heard.
+    setZoneMode(z, 'idle');
+    setStatus(z, stt.text, { result: true });
+
+    // Target zone: spinner while translating, then the result + audio.
+    setOtherDisabled(z, false);
+    setZoneMode(target, 'processing');
+    setStatus(target, 'Translating…');
+
+    const tr = await translateText(stt.text, fromLang, toLang);
+    if (tr.error) {
+      setZoneMode(target, 'idle');
+      setStatus(target, tr.error);
+      processing = false;
+      return;
+    }
+
+    setZoneMode(target, 'speaking');
+    setStatus(target, tr.text, { result: true, translatedText: true });
+
+    try {
+      await window.LBTTSService?.generateAndPlay(tr.text, toLang);
+    } catch (e) {
+      LBLog.warn('TTS playback failed (non-fatal):', e);
+    }
+    setZoneMode(target, 'idle');
+    processing = false;
+  }
+
+  function finishWithError(z, res) {
+    setZoneMode(z, 'idle');
+    setOtherDisabled(z, false);
+    setStatus(z, res.error);
+    if (res.code === 'mic-permission' || res.code === 'no-mic') showMicFix(z, true);
+    processing = false;
+    activeZone = null;
+  }
+
   async function translateText(text, fromLanguage, toLanguage) {
     if (!window.LBRateLimiter.check('translate', window.CONFIG.rateLimits.translatePerMinute)) {
-      return { error: 'Translation rate limit reached. Please wait.' };
+      return { error: 'Slow down a moment, then try again.' };
     }
     try {
       const res = await chrome.runtime.sendMessage({
         action: 'api-fetch',
         endpoint: 'translate',
-        body: {
-          text,
-          fromLanguage,
-          toLanguage,
-          studentCode: window.LBState.studentCode,
-        },
+        body: { text, fromLanguage, toLanguage, studentCode: window.LBState.studentCode },
       });
-      if (!res) return { error: 'No response from extension.' };
+      if (!res) return { error: 'No response. Try again.' };
       if (!res.ok) {
-        const errCode = res.data?.error || res.error || '';
-        LBLog.warn('Translate error:', errCode, res.data?.details);
-        if (errCode === 'REQUEST_TIMEOUT') return { error: 'Translation timed out. Try again.' };
-        return { error: res.data?.details || errCode || 'Translation failed.' };
+        const code = res.data?.error || res.error || '';
+        LBLog.warn('Translate error:', code, res.data?.details || '');
+        if (code === 'REQUEST_TIMEOUT') return { error: 'That took too long. Try again.' };
+        return { error: 'Translation failed. Try again.' };
       }
-      const translated = res.data?.translation || res.data?.translatedText || res.data?.text || '';
-      if (!translated) {
-        LBLog.warn('Translate returned empty. Full data:', JSON.stringify(res.data));
-        return { error: 'No translation returned. Try again.' };
-      }
-      return { text: translated };
+      const out = (res.data?.translatedText || res.data?.translation || res.data?.text || '').trim();
+      if (!out) return { error: 'No translation came back. Try again.' };
+      return { text: out };
     } catch (err) {
       LBLog.error('Translate failed:', err);
-      return { error: 'Translation failed.' };
+      return { error: 'Translation failed. Try again.' };
     }
   }
 
-  let isProcessing = false;
+  // ── Event wiring (delegated) ───────────────────────────────────────
+  panel.addEventListener('click', (e) => {
+    const pill = e.target.closest('.lb-ttt-lang-pill');
+    if (pill) { e.stopPropagation(); togglePicker(pill.dataset.zone); return; }
 
-  // Full pipeline: record \u2192 transcribe \u2192 translate \u2192 display \u2192 speak
-  async function processSpeech(zone, textEl, speakerType) {
-    if (isProcessing) return;
-    isProcessing = true;
+    const opt = e.target.closest('.lb-ttt-picker-opt');
+    if (opt) { e.stopPropagation(); selectLanguage(opt.dataset.zone, opt.dataset.code); return; }
 
-    zone.classList.remove('listening');
-    zone.classList.add('translating');
-    isRecording = false;
-    activeZone = null;
+    const stop = e.target.closest('.lb-ttt-stop');
+    if (stop) { e.stopPropagation(); if (recording && activeZone === stop.dataset.zone) stopFlow(); return; }
 
-    const fromLang = speakerType === 'student' ? studentLang : teacherLang;
-    const toLang = speakerType === 'student' ? teacherLang : studentLang;
-    const defaultPrompt = speakerType === 'student' ? 'Tap to speak in your language' : 'Tap to speak in English';
+    const micfix = e.target.closest('.lb-ttt-micfix');
+    if (micfix) { e.stopPropagation(); window.LBSTTService.requestMicPermission(); setStatus(micfix.dataset.zone, 'Opening permission tab… then tap to talk.'); return; }
 
-    function done(message, delay) {
-      zone.classList.remove('translating');
-      isProcessing = false;
-      if (message) {
-        textEl.textContent = message;
-        if (delay) setTimeout(() => { textEl.textContent = defaultPrompt; }, delay);
-      }
+    const stage = e.target.closest('.lb-ttt-stage');
+    if (stage) {
+      const z = stage.dataset.zone;
+      if (zoneEl(z).classList.contains('disabled')) return;
+      if (recording && activeZone === z) stopFlow();
+      else if (!recording && !processing) startFlow(z);
+      return;
     }
 
-    try {
-      // Step 1: Stop recording and get audio blob
-      textEl.textContent = 'Processing audio...';
-      LBLog.info(`TTT Step 1: stopping recording (${speakerType}, ${fromLang} \u2192 ${toLang})`);
-      const audioBlob = await window.LBSTTService?.stopRecording();
-      if (!audioBlob || audioBlob.size < 100) {
-        done('No audio captured. Try again.', 3000);
-        return;
-      }
-      LBLog.info(`TTT Step 1 done: ${(audioBlob.size / 1024).toFixed(1)} KB`);
+    closeAllPickers();
+  });
 
-      // Step 2: Transcribe audio \u2192 text
-      textEl.textContent = 'Recognizing speech...';
-      LBLog.info('TTT Step 2: transcribing...');
-      const sttResult = await window.LBSTTService.transcribe(audioBlob, fromLang);
-      LBLog.info('TTT Step 2 result:', JSON.stringify(sttResult));
-      if (sttResult.error) {
-        done(sttResult.error, 4000);
-        return;
-      }
+  panel.querySelector('#lb-ttt-close').addEventListener('click', () => hide());
 
-      const spokenText = sttResult.text;
-      textEl.textContent = spokenText;
-
-      // Step 3: Translate to the other language
-      const otherTextEl = panel.querySelector(speakerType === 'student' ? '#lb-teacher-text' : '#lb-student-text');
-      otherTextEl.textContent = 'Translating...';
-      LBLog.info(`TTT Step 3: translating "${spokenText.substring(0, 30)}..." (${fromLang} \u2192 ${toLang})`);
-      const translateResult = await translateText(spokenText, fromLang, toLang);
-      LBLog.info('TTT Step 3 result:', JSON.stringify(translateResult));
-      if (translateResult.error) {
-        otherTextEl.textContent = translateResult.error;
-        addMessage(speakerType, spokenText, null);
-        done(null);
-        setTimeout(() => { otherTextEl.textContent = speakerType === 'student' ? 'Tap to speak in English' : 'Tap to speak in your language'; }, 4000);
-        return;
-      }
-
-      const translatedText = translateResult.text;
-      otherTextEl.textContent = translatedText;
-      addMessage(speakerType, spokenText, translatedText);
-      done(null);
-
-      // Step 4: Play translated text as audio
-      LBLog.info(`TTT Step 4: playing TTS for "${translatedText.substring(0, 30)}..." in ${toLang}`);
-      try {
-        await window.LBTTSService?.generateAndPlay(translatedText, toLang);
-      } catch (ttsErr) {
-        LBLog.warn('TTS playback failed (non-fatal):', ttsErr);
-      }
-    } catch (err) {
-      LBLog.error('TTT pipeline error:', err);
-      done('Something went wrong. Try again.', 4000);
-    }
+  // ── Public API + toolbar/shortcut integration ──────────────────────
+  function show() {
+    myLang = window.LBState?.language || myLang;
+    renderPill('top'); renderPill('bottom');
+    resetZone('top'); resetZone('bottom');
+    panel.style.display = 'flex';
+  }
+  function hide() {
+    if (recording) { window.LBSTTService.stopRecording().catch(() => {}); }
+    window.LBTTSService?.stop?.();
+    recording = false; processing = false; activeZone = null;
+    if (autoStopTimer) clearTimeout(autoStopTimer);
+    if (countdownTimer) clearInterval(countdownTimer);
+    panel.style.display = 'none';
   }
 
-  // Student mic zone
-  panel.querySelector('#lb-student-zone').addEventListener('click', async () => {
-    if (isProcessing) return;
-    const zone = panel.querySelector('#lb-student-zone');
-    const textEl = panel.querySelector('#lb-student-text');
+  // Load saved partner language, then paint pills.
+  try {
+    chrome.storage.sync.get(['tttPartnerLang'], (d) => {
+      if (d.tttPartnerLang && window.LB_LANGUAGES[d.tttPartnerLang]) partnerLang = d.tttPartnerLang;
+      renderPill('top'); renderPill('bottom');
+    });
+  } catch (e) { renderPill('top'); renderPill('bottom'); }
 
-    if (isRecording && activeZone === 'student') {
-      await processSpeech(zone, textEl, 'student');
-    } else if (!isRecording) {
-      const result = await window.LBSTTService?.startRecording();
-      if (result?.error) { textEl.textContent = result.error; return; }
-      isRecording = true;
-      activeZone = 'student';
-      zone.classList.add('listening');
-      textEl.textContent = 'Listening... Tap to stop';
-    }
+  window.addEventListener('lb-language-changed', () => {
+    myLang = window.LBState.language;
+    renderPill('bottom');
   });
 
-  // Teacher mic zone
-  panel.querySelector('#lb-teacher-zone').addEventListener('click', async () => {
-    if (isProcessing) return;
-    const zone = panel.querySelector('#lb-teacher-zone');
-    const textEl = panel.querySelector('#lb-teacher-text');
-
-    if (isRecording && activeZone === 'teacher') {
-      await processSpeech(zone, textEl, 'teacher');
-    } else if (!isRecording) {
-      const result = await window.LBSTTService?.startRecording();
-      if (result?.error) { textEl.textContent = result.error; return; }
-      isRecording = true;
-      activeZone = 'teacher';
-      zone.classList.add('listening');
-      textEl.textContent = 'Listening... Tap to stop';
-    }
-  });
-
-  // Stop button
-  panel.querySelector('#lb-ttt-stop').addEventListener('click', async () => {
-    if (isRecording) {
-      await window.LBSTTService?.stopRecording();
-      isRecording = false;
-      isProcessing = false;
-      const zone = panel.querySelector(activeZone === 'student' ? '#lb-student-zone' : '#lb-teacher-zone');
-      zone?.classList.remove('listening', 'translating');
-      panel.querySelector('#lb-student-text').textContent = 'Tap to speak in your language';
-      panel.querySelector('#lb-teacher-text').textContent = 'Tap to speak in English';
-      activeZone = null;
-    }
-    window.LBTTSService?.stop();
-  });
-
-  // History button
-  panel.querySelector('#lb-ttt-history').addEventListener('click', () => {
-    const histPanel = panel.querySelector('#lb-ttt-history-panel');
-    histPanel.style.display = histPanel.style.display === 'none' ? 'flex' : 'none';
-  });
-
-  panel.querySelector('#lb-ttt-history-close').addEventListener('click', () => {
-    panel.querySelector('#lb-ttt-history-panel').style.display = 'none';
-  });
-
-  // Clear button
-  panel.querySelector('#lb-ttt-clear').addEventListener('click', () => {
-    conversationHistory = [];
-    updateHistoryPanel();
-    panel.querySelector('#lb-student-text').textContent = 'Tap to speak in your language';
-    panel.querySelector('#lb-teacher-text').textContent = 'Tap to speak in English';
-  });
-
-  // Settings (language) toggle
-  panel.querySelector('#lb-ttt-settings').addEventListener('click', () => {
-    const langPanel = panel.querySelector('#lb-ttt-lang-panel');
-    langPanel.style.display = langPanel.style.display === 'none' ? 'block' : 'none';
-  });
-
-  // Listen for toggle from toolbar/popup
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.action === 'toggle-floating-translator') {
-      panel.style.display = panel.style.display === 'none' ? 'flex' : 'none';
-      studentLang = window.LBState?.language || studentLang;
-      studentSelect.value = studentLang;
-      updateLabels();
+      panel.style.display === 'none' ? show() : hide();
     }
   });
 
-  // Expose for toolbar's Talk button
   window.FloatingTranslator = {
-    show() {
-      panel.style.display = 'flex';
-      studentLang = window.LBState?.language || studentLang;
-      studentSelect.value = studentLang;
-      updateLabels();
-    },
-    hide() { panel.style.display = 'none'; },
-    setStudentLanguage(lang) {
-      studentLang = lang;
-      studentSelect.value = lang;
-      updateLabels();
-    },
+    show,
+    hide,
+    setStudentLanguage(lang) { if (window.LB_LANGUAGES[lang]) { myLang = lang; renderPill('bottom'); } },
   };
 
-  LBLog.info('Floating translator loaded');
+  LBLog.info('Talk to Teacher (face-to-face) loaded');
 })();

@@ -140,7 +140,7 @@ export async function speechToText(
         'Content-Type': contentType,
         'Accept': 'application/json',
       },
-      timeout: 15_000,
+      timeout: 30_000, // up to ~45s of audio may be sent
       maxBodyLength: MAX_AUDIO_SIZE_BYTES,
       maxContentLength: 1024 * 1024, // 1MB response max
     });
