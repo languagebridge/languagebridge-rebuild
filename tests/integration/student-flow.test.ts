@@ -50,7 +50,7 @@ vi.mock('../../backend/shared/cosmos-client', () => ({
   getEnrollmentsContainer: () => ({
     items: { create: () => Promise.resolve() },
     item: () => ({
-      read: () => Promise.resolve({ resource: { id: 'LB-TEST1', schoolCode: 'greenbriar', gradeBand: '7-8', language: 'dari' } }),
+      read: () => Promise.resolve({ resource: { id: 'LB-TEST7', schoolCode: 'greenbriar', gradeBand: '7-8', language: 'dari' } }),
     }),
   }),
   getAudioCacheMetadataContainer: () => ({
@@ -91,8 +91,8 @@ vi.mock('axios', () => ({
   },
 }));
 
-// Set dev environment so auth passes without a key
-process.env.NODE_ENV = 'development';
+// Allow auth to pass without a key (explicit dev opt-in; NODE_ENV alone no longer bypasses)
+process.env.LB_ALLOW_INSECURE_DEV = 'true';
 
 // Import handlers after mocks are set up
 const { lexiconLookup } = await import('../../backend/azure-functions/lexicon-lookup/index');
@@ -120,7 +120,7 @@ describe('Student flow: highlight → lookup → bridge phrase', () => {
       term: 'photosynthesis',
       language: 'dari',
       
-      studentCode: 'LB-TEST1',
+      studentCode: 'LB-TEST7',
     });
 
     const res = await lexiconLookup(req, mockContext());
@@ -139,7 +139,7 @@ describe('Student flow: highlight → lookup → bridge phrase', () => {
       term: 'photosynthesis',
       language: 'dari',
       
-      studentCode: 'LB-TEST1',
+      studentCode: 'LB-TEST7',
     });
 
     const res = await lexiconLookup(req, mockContext());
@@ -155,7 +155,7 @@ describe('Student flow: highlight → lookup → bridge phrase', () => {
       term: 'photosynthesis',
       language: 'dari',
       
-      studentCode: 'LB-TEST1',
+      studentCode: 'LB-TEST7',
     });
 
     const res = await lexiconLookup(req, mockContext());
@@ -178,7 +178,7 @@ describe('Student flow: validation guards', () => {
       term: 'hello',
       language: 'klingon',
       
-      studentCode: 'LB-TEST1',
+      studentCode: 'LB-TEST7',
     });
     const res = await lexiconLookup(req, mockContext());
     expect(res.status).toBe(400);
@@ -186,7 +186,7 @@ describe('Student flow: validation guards', () => {
 
   it('rejects request with PII in analytics', async () => {
     const req = mockRequest({
-      studentCode: 'LB-TEST1',
+      studentCode: 'LB-TEST7',
       
       language: 'dari',
       eventType: 'session_start',
@@ -205,7 +205,7 @@ describe('Student flow: flag bad audio', () => {
     const req = mockRequest({
       flaggedText: 'photosynthesis',
       language: 'dari',
-      studentCode: 'LB-TEST1',
+      studentCode: 'LB-TEST7',
       flagType: 'pronunciation',
       timestamp: new Date().toISOString(),
     });

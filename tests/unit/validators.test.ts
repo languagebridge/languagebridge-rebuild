@@ -32,19 +32,22 @@ describe('requireFields', () => {
 // ── isValidLanguage ───────────────────────────────────────
 
 describe('isValidLanguage', () => {
-  it('accepts all 21 supported languages', () => {
+  it('accepts all 16 supported languages', () => {
     const langs = [
       'arabic', 'french', 'portuguese', 'ukrainian', 'vietnamese',
       'spanish', 'persian', 'english', 'nepali', 'swahili',
-      'dari', 'pashto', 'urdu', 'burmese', 'uzbek', 'amharic',
-      'somali', 'tagalog', 'kinyarwanda', 'twi', 'tigrinya',
+      'dari', 'pashto', 'urdu', 'burmese', 'somali', 'tagalog',
     ];
     for (const lang of langs) {
       expect(isValidLanguage(lang)).toBe(true);
     }
   });
 
-  it('rejects invalid languages', () => {
+  it('rejects removed and invalid languages', () => {
+    // Dropped 2026-06 — must no longer validate
+    for (const lang of ['kinyarwanda', 'twi', 'uzbek', 'amharic', 'tigrinya']) {
+      expect(isValidLanguage(lang)).toBe(false);
+    }
     expect(isValidLanguage('klingon')).toBe(false);
     expect(isValidLanguage('')).toBe(false);
     expect(isValidLanguage(123)).toBe(false);
@@ -77,10 +80,17 @@ describe('validateApiKey', () => {
     headers: { get: (name: string) => key },
   });
 
-  it('allows requests in dev mode when no key configured', () => {
+  it('allows requests only with explicit LB_ALLOW_INSECURE_DEV opt-in', () => {
+    delete process.env.LB_API_KEY;
+    process.env.LB_ALLOW_INSECURE_DEV = 'true';
+    expect(validateApiKey(makeRequest(null)).valid).toBe(true);
+    delete process.env.LB_ALLOW_INSECURE_DEV;
+  });
+
+  it('does NOT bypass on NODE_ENV=development alone', () => {
     delete process.env.LB_API_KEY;
     process.env.NODE_ENV = 'development';
-    expect(validateApiKey(makeRequest(null)).valid).toBe(true);
+    expect(validateApiKey(makeRequest(null)).valid).toBe(false);
     delete process.env.NODE_ENV;
   });
 
