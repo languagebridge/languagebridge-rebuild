@@ -1,0 +1,29 @@
+/* LanguageBridge Brand Tokens */
+/* Single source of truth — do not hardcode brand colors outside this file */
+
+:root {
+  /* Primary Brand Colors */
+  --lb-color-primary:        #742a69; /* Plum Purple */
+  --lb-color-primary-dark:   #4a1a45; /* Deep Plum */
+  --lb-color-primary-light:  #f5eaf4; /* Lavender Mist */
+  --lb-color-accent-start:   #f37030; /* Orange */
+  --lb-color-accent-end:     #ffc755; /* Gold */
+  --lb-color-accent-light:   #fff3e6; /* Peach Tint */
+
+  /* Surface & Background Colors */
+  --lb-color-surface:        #ffffff; /* White */
+  --lb-color-bg:             #f7f7f7; /* Near White */
+
+  /* Text Colors */
+  --lb-color-text-primary:   #333333; /* Dark Charcoal */
+  --lb-color-text-secondary: #555555; /* Mid Gray */
+
+  /* Gradients */
+  --lb-gradient-header: linear-gradient(135deg, #742a69 0%, #f37030 80%, #ffc755 100%);
+  --lb-gradient-accent: linear-gradient(90deg, #f37030 0%, #ffc755 100%);
+}
+
+/* Utility class for orange-to-gold accent gradient */
+.lb-gradient-accent {
+  background: var(--lb-gradient-accent);
+}
