@@ -37,7 +37,7 @@ _TT.showTranslationTooltip = function (result, selection) {
   const subject = isObj ? result.subject : null;
   const gradeBand = isObj ? result.gradeBand : null;
   const source = isObj ? result.source : null;
-  const displayText = bridgeAnchor || (isObj ? result.translatedText : result) || '';
+  const displayText = cognate || (isObj ? result.translatedText : result) || '';
 
   const tooltip = document.createElement('div');
   tooltip.className = 'lb-translation-tooltip';
@@ -110,37 +110,65 @@ _TT._buildTranslationTab = function (bridgeAnchor, bridgeScaffold, cognate, form
   const tab = document.createElement('div');
   tab.className = 'lb-tooltip-tab-content active';
   tab.setAttribute('data-tab', '0');
+  const self = this;
 
-  if (bridgeAnchor) {
-    const el = document.createElement('div');
-    el.className = 'lb-bridge-anchor';
-    el.textContent = bridgeAnchor;
-    tab.appendChild(el);
-  }
-
-  if (bridgeScaffold && bridgeScaffold !== bridgeAnchor) {
-    const el = document.createElement('div');
-    el.className = 'lb-tooltip-simplified';
-    el.textContent = bridgeScaffold;
-    tab.appendChild(el);
-  }
-
+  // 1) PRIMARY — the native translation (largest, correct direction, with audio).
   if (cognate) {
-    if (!bridgeAnchor) {
-      const label = document.createElement('div');
-      label.className = 'lb-tooltip-simplified';
-      label.style.fontSize = '11px';
-      label.style.opacity = '0.7';
-      label.style.marginBottom = '4px';
-      label.textContent = 'Translation:';
-      tab.appendChild(label);
-    }
+    const label = document.createElement('div');
+    label.className = 'lb-tooltip-field-label';
+    label.textContent = 'Translation';
+    tab.appendChild(label);
+
+    const row = document.createElement('div');
+    row.className = 'lb-cognate-row';
+
     const el = document.createElement('div');
     el.className = 'lb-tooltip-text lb-cognate-display';
     el.setAttribute('dir', textDir);
     el.style.textAlign = textAlign;
     el.textContent = cognate;
-    tab.appendChild(el);
+    row.appendChild(el);
+
+    const audioBtn = document.createElement('button');
+    audioBtn.className = 'lb-cognate-audio-btn';
+    audioBtn.title = 'Listen';
+    audioBtn.innerHTML = '&#128266;';
+    audioBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      audioBtn.textContent = '…';
+      try { await window.LBTTSService?.generateAndPlay(cognate, self.userLanguage); } catch (err) { /* noop */ }
+      audioBtn.innerHTML = '&#128266;';
+    });
+    row.appendChild(audioBtn);
+    tab.appendChild(row);
+  } else {
+    // No native translation available — be honest and invite a flag.
+    const notice = document.createElement('div');
+    notice.className = 'lb-fallback-notice';
+    notice.textContent = 'No translation available yet — please report it below.';
+    tab.appendChild(notice);
+  }
+
+  // 2) SECONDARY — simple-English aid (the bridge gloss). Clearly labeled so it is
+  //    never mistaken for the translation.
+  if (bridgeAnchor || bridgeScaffold) {
+    const label = document.createElement('div');
+    label.className = 'lb-tooltip-field-label';
+    label.textContent = 'In simple English';
+    tab.appendChild(label);
+
+    if (bridgeAnchor) {
+      const el = document.createElement('div');
+      el.className = 'lb-bridge-anchor';
+      el.textContent = bridgeAnchor;
+      tab.appendChild(el);
+    }
+    if (bridgeScaffold && bridgeScaffold !== bridgeAnchor) {
+      const el = document.createElement('div');
+      el.className = 'lb-tooltip-simplified';
+      el.textContent = bridgeScaffold;
+      tab.appendChild(el);
+    }
   }
 
   if (forms && (forms.noun || forms.verb || forms.adjective)) {
@@ -171,16 +199,55 @@ _TT._buildTranslationTab = function (bridgeAnchor, bridgeScaffold, cognate, form
     tab.appendChild(el);
   }
 
-  if (!bridgeAnchor && !cognate && displayText) {
-    const el = document.createElement('div');
-    el.className = 'lb-tooltip-text';
-    el.setAttribute('dir', textDir);
-    el.style.textAlign = textAlign;
-    el.textContent = displayText;
-    tab.appendChild(el);
-  }
+  // One-tap flag, right where the student saw the result.
+  tab.appendChild(this._buildFlagRow());
 
   return tab;
+};
+
+// One-tap flag with reason chips. Maps each reason to the backend flagType
+// ('translation' | 'pronunciation') that drives the improvement/bounty pipeline.
+_TT._buildFlagRow = function () {
+  const self = this;
+  const wrap = document.createElement('div');
+  wrap.className = 'lb-flag-row';
+
+  const q = document.createElement('span');
+  q.className = 'lb-flag-q';
+  q.textContent = 'Was this wrong?';
+  wrap.appendChild(q);
+
+  const chips = [
+    { label: 'Wrong translation', type: 'translation' },
+    { label: 'Bad audio', type: 'pronunciation' },
+    { label: 'Still in English', type: 'translation' },
+  ];
+
+  chips.forEach((c) => {
+    const b = document.createElement('button');
+    b.className = 'lb-flag-chip';
+    b.textContent = c.label;
+    b.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      wrap.querySelectorAll('.lb-flag-chip').forEach((x) => { x.disabled = true; });
+      b.textContent = '\u2026';
+      const r = await self.reportProblem(self.selectedText, c.type);
+      wrap.innerHTML = '';
+      const done = document.createElement('span');
+      done.className = r && r.ok ? 'lb-flag-done' : 'lb-flag-fail';
+      if (r && r.ok) {
+        done.textContent = r.count > 1
+          ? `Thanks \u2014 ${r.count} students reported this`
+          : "Thanks \u2014 reported. We'll fix it.";
+      } else {
+        done.textContent = 'Could not send \u2014 please try again';
+      }
+      wrap.appendChild(done);
+    });
+    wrap.appendChild(b);
+  });
+
+  return wrap;
 };
 
 _TT._buildGlossaryTab = function () {
@@ -312,7 +379,7 @@ _TT._buildGlossaryTab = function () {
         const word = btn.dataset.word;
         btn.innerHTML = '...';
         btn.disabled = true;
-        await this.reportProblem(word);
+        await this.reportProblem(word, 'translation');
         flaggedWords.add(word);
         btn.innerHTML = CHECK_SVG;
         btn.title = 'Flagged';
@@ -340,9 +407,9 @@ _TT._buildGlossaryTab = function () {
   flagAllBtn.addEventListener('click', async () => {
     flagAllBtn.textContent = 'Sending...';
     flagAllBtn.disabled = true;
-    await this.reportProblem(this.selectedText);
-    flagAllBtn.textContent = 'Flagged! Thank you';
-    flagAllBtn.classList.add('lb-flagged');
+    const r = await this.reportProblem(this.selectedText, 'translation');
+    flagAllBtn.textContent = (r && r.ok) ? 'Flagged! Thank you' : 'Could not send — try again';
+    if (r && r.ok) flagAllBtn.classList.add('lb-flagged'); else flagAllBtn.disabled = false;
   });
   glossary.appendChild(flagAllBtn);
 

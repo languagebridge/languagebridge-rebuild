@@ -84,17 +84,27 @@ window.LBTranslationService = {
       const anchor = (data.bridge_anchor || '').toLowerCase().trim();
       const cognateVal = (data.cognate || '').toLowerCase().trim();
       const scaffold = (data.bridge_scaffold || '').toLowerCase().trim();
-      // Check if lexicon returned real translated content (not just echoing the English input back)
-      const hasContent = (anchor && anchor !== term) || (cognateVal && cognateVal !== term) || (scaffold && scaffold !== term);
+      // A cognate that just echoes the English term is NOT a real translation —
+      // treat it as missing so it never gets shown as "the translation".
+      const realCognate = (data.cognate && cognateVal !== term) ? data.cognate : null;
+      // We have something useful only if there's a real native translation.
+      // A bridge anchor/scaffold alone is English help, not a translation, so it
+      // does NOT prevent falling back to /translate to get the native word.
+      const hasContent = !!realCognate;
 
-      // If lexicon returned empty or echoed-back data, fall back to /translate endpoint
+      // If the lexicon had no real native translation, get one from /translate —
+      // but PRESERVE any bridge (English aid) and metadata from the lexicon hit so
+      // the student still gets the simple-English scaffold alongside the translation.
       if (!hasContent) {
-        LBLog.info(`Lexicon returned no bridge data for "${text}" in ${targetLang}, falling back to /translate`);
+        LBLog.info(`Lexicon returned no native cognate for "${text}" in ${targetLang}, fetching via /translate`);
         const fallback = await this._translateFallback(text, targetLang);
         if (fallback) {
-          fallback.audioUrl = data.audio_url;
-          fallback.subject = data.subject;
-          fallback.gradeBand = data.grade_band;
+          fallback.bridgeAnchor = data.bridge_anchor || null;
+          fallback.bridgeScaffold = data.bridge_scaffold || null;
+          fallback.grammaticalForms = data.grammatical_forms || null;
+          fallback.audioUrl = data.audio_url || null;
+          fallback.subject = data.subject || null;
+          fallback.gradeBand = data.grade_band || null;
           window.LBSessionCache?.set(text, targetLang, 'translation', fallback);
           return fallback;
         }
@@ -103,8 +113,8 @@ window.LBTranslationService = {
       const result = {
         term: data.term,
         source: data.source,
-        cognate: data.cognate,
-        bridgeAnchor: data.bridge_anchor,
+        cognate: realCognate,                 // native translation (null if only an English echo)
+        bridgeAnchor: data.bridge_anchor,     // simple-English aid — never shown AS the translation
         bridgeScaffold: data.bridge_scaffold,
         bridgeDefinition: data.bridge_definition,
         grammaticalForms: data.grammatical_forms,
@@ -114,8 +124,7 @@ window.LBTranslationService = {
         subject: data.subject,
         gradeBand: data.grade_band,
         transliterationDifficulty: data.transliteration_difficulty,
-        translatedText: data.bridge_anchor || data.cognate || '',
-        translation: data.bridge_scaffold || data.bridge_anchor || data.cognate || '',
+        translatedText: realCognate || '',    // primary = the native translation
       };
 
       window.LBSessionCache?.set(text, targetLang, 'translation', result);

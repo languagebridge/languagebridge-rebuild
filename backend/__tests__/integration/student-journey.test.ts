@@ -213,7 +213,7 @@ describe('Student Journey Integration', () => {
     expect(cosmosStore.enrollments.has(studentCode)).toBe(true);
   });
 
-  it('Step 3: POST /lexicon-lookup returns bridge definition with backfilled cognate', async () => {
+  it('Step 3: POST /lexicon-lookup returns bridge definition (cognate null when no translator)', async () => {
     const res = await lexiconLookup(makeRequest('POST', {
       term: 'photosynthesis',
       language: 'dari',
@@ -225,8 +225,9 @@ describe('Student Journey Integration', () => {
     expect(body.type).toBe('bridge');
     expect(body.bridge_anchor).toBe('light-feeding');
     expect(body.source).toBe('lexicon');
-    // Cognate should be backfilled from translator mock
-    expect(body.cognate).toBeTruthy();
+    // No Azure Translator configured in this harness, so the cognate is NOT
+    // backfilled — and must be null, never an English echo of the term.
+    expect(body.cognate).toBeNull();
   });
 
   it('Step 4: POST /tts-router generates audio', async () => {

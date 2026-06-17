@@ -141,14 +141,22 @@ export async function lexiconLookup(
       const entry = results[0];
 
       // Backfill cognate via Azure Translator if missing
-      let cognate = entry.cognate;
+      let cognate: string | null = entry.cognate ?? null;
       if (!cognate) {
-        cognate = await translateWithAzure(entry.term, language, context);
-        // Persist the cognate so future lookups don't need to translate again
-        container.item(entry.id, entry.language).patch([
-          { op: 'set', path: '/cognate', value: cognate },
-          { op: 'incr', path: '/usage_count', value: 1 },
-        ]).catch((err: unknown) => { context.warn('Non-critical write failed:', err); });
+        const translated = await translateWithAzure(entry.term, language, context);
+        if (translated) {
+          cognate = translated;
+          // Persist ONLY a real translation so future lookups skip Azure — never
+          // persist an English echo / failed translation.
+          container.item(entry.id, entry.language).patch([
+            { op: 'set', path: '/cognate', value: translated },
+            { op: 'incr', path: '/usage_count', value: 1 },
+          ]).catch((err: unknown) => { context.warn('Non-critical write failed:', err); });
+        } else {
+          container.item(entry.id, entry.language).patch([
+            { op: 'incr', path: '/usage_count', value: 1 },
+          ]).catch((err: unknown) => { context.warn('Non-critical write failed:', err); });
+        }
       } else {
         // Increment usage_count (fire-and-forget — don't block response)
         container.item(entry.id, entry.language).patch([
@@ -196,27 +204,30 @@ export async function lexiconLookup(
     // ── 4b. No bridge definition — fall back to Azure Translator ───
     const cognate = await translateWithAzure(term, language, context);
 
-    // Cache the auto-generated cognate in Lexicon for future lookups
-    const autoId = `${normalizedTerm.replace(/\s+/g, '_')}_${language}_auto`;
-    container.items.upsert({
-      id: autoId,
-      term: normalizedTerm,
-      language,
-      domain: domain ?? 'k12_academic',
-      subject: subjectContext ?? null,
-      cognate,
-      bridge_definition: null,
-      bridge_definition_en: null,
-      audio_blob_path: null,
-      audio_source: null,
-      status: 'auto_generated',
-      version: 1,
-      usage_count: 1,
-      flag_count: 0,
-      created_by: 'system',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    } as LexiconDoc).catch((err: unknown) => { context.warn('Non-critical write failed:', err); });
+    // Cache the auto-generated cognate ONLY if we got a real translation —
+    // never persist an English echo / failed translation (would poison future lookups).
+    if (cognate) {
+      const autoId = `${normalizedTerm.replace(/\s+/g, '_')}_${language}_auto`;
+      container.items.upsert({
+        id: autoId,
+        term: normalizedTerm,
+        language,
+        domain: domain ?? 'k12_academic',
+        subject: subjectContext ?? null,
+        cognate,
+        bridge_definition: null,
+        bridge_definition_en: null,
+        audio_blob_path: null,
+        audio_source: null,
+        status: 'auto_generated',
+        version: 1,
+        usage_count: 1,
+        flag_count: 0,
+        created_by: 'system',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as LexiconDoc).catch((err: unknown) => { context.warn('Non-critical write failed:', err); });
+    }
 
     // Log as missing bridge for future curation
     logAnalytics(context, {
@@ -254,13 +265,13 @@ async function translateWithAzure(
   text: string,
   language: string,
   context: InvocationContext
-): Promise<string> {
+): Promise<string | null> {
   const key = process.env.AZURE_TRANSLATOR_KEY;
   const region = process.env.AZURE_TRANSLATOR_REGION;
 
   if (!key || !region) {
-    context.warn('Azure Translator credentials not set — returning original text');
-    return text;
+    context.warn('Azure Translator credentials not set — no translation available');
+    return null;
   }
 
   const targetLang = LANGUAGE_TO_TRANSLATOR[language] ?? language;
@@ -279,10 +290,10 @@ async function translateWithAzure(
       }
     );
 
-    return response.data?.[0]?.translations?.[0]?.text ?? text;
+    return response.data?.[0]?.translations?.[0]?.text ?? null;
   } catch (err) {
     context.error('Azure Translator error:', err);
-    return text; // Return original on failure — better than nothing
+    return null; // No translation rather than echoing English back to the student
   }
 }
 

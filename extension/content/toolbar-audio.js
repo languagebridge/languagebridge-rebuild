@@ -42,9 +42,17 @@ _TB.readText = async function (text) {
     const selection = window.getSelection();
     if (selection && selection.rangeCount > 0) this.showTranslationTooltip(result, selection);
 
-    // Split into sentences for pause support
-    const fullText = result.cognate || result.bridgeScaffold || result.bridgeAnchor || text;
-    this.sentences = this.splitSentences(fullText);
+    // Only ever speak the NATIVE translation in the native voice. Never feed the
+    // English bridge/scaffold to a foreign TTS voice (that produced garbled audio).
+    const nativeText = result.cognate || '';
+    if (!nativeText) {
+      this.showStatus('No audio for this word yet', 'info');
+      this.isReading = false;
+      this.isTranslating = false;
+      this.updatePlayPauseButton(false);
+      return;
+    }
+    this.sentences = this.splitSentences(nativeText);
     this.currentSentenceIndex = 0;
 
     await this.playSentences();
