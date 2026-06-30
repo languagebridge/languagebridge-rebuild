@@ -129,15 +129,30 @@ _TT._buildTranslationTab = function (bridgeAnchor, bridgeScaffold, cognate, form
     el.textContent = cognate;
     row.appendChild(el);
 
+    const SPEAKER = '&#128266;', PAUSE = '&#9208;';  // 🔊 / ⏸
     const audioBtn = document.createElement('button');
     audioBtn.className = 'lb-cognate-audio-btn';
     audioBtn.title = 'Listen';
-    audioBtn.innerHTML = '&#128266;';
+    audioBtn.innerHTML = SPEAKER;
+    let playing = false;
     audioBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      audioBtn.textContent = '…';
+      // Toggle: click to play, click again to stop — right here, no toolbar needed.
+      if (playing) {
+        window.LBTTSService?.stop();
+        playing = false;
+        audioBtn.innerHTML = SPEAKER;
+        audioBtn.title = 'Listen';
+        return;
+      }
+      playing = true;
+      audioBtn.innerHTML = PAUSE;
+      audioBtn.title = 'Stop';
       try { await window.LBTTSService?.generateAndPlay(cognate, self.userLanguage); } catch (err) { /* noop */ }
-      audioBtn.innerHTML = '&#128266;';
+      // Reset when playback finishes naturally (or after stop()).
+      playing = false;
+      audioBtn.innerHTML = SPEAKER;
+      audioBtn.title = 'Listen';
     });
     row.appendChild(audioBtn);
     tab.appendChild(row);
@@ -250,6 +265,22 @@ _TT._buildFlagRow = function () {
   return wrap;
 };
 
+// Estimate English syllables — used to tier words by complexity when the lexicon
+// has no grade_band for them (multisyllabic = higher grade).
+function _countSyllables(word) {
+  word = (word || '').toLowerCase().replace(/[^a-z]/g, '');
+  if (word.length <= 3) return 1;
+  word = word.replace(/(?:[^laeiouy]es|ed|[^laeiouy]e)$/, '').replace(/^y/, '');
+  const groups = word.match(/[aeiouy]{1,2}/g);
+  return groups ? groups.length : 1;
+}
+function _bandFromSyllables(n) {
+  if (n <= 2) return '3-5';
+  if (n === 3) return '6-8';
+  return '9-12';
+}
+const _VALID_BANDS = new Set(['3-5', '6-8', '9-12']);
+
 _TT._buildGlossaryTab = function () {
   const tab = document.createElement('div');
   tab.className = 'lb-tooltip-tab-content';
@@ -285,41 +316,41 @@ _TT._buildGlossaryTab = function () {
   const FLAG_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>';
   const CHECK_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="#10b981"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
 
-  // Set loading state on a tier button
-  const setTierLoading = (btn, loading) => {
-    const label = btn.querySelector('.lb-tier-label');
-    if (loading) {
-      btn.disabled = true;
-      btn.style.opacity = '0.7';
-      label.innerHTML = `<span class="lb-tooltip-spinner" style="width:12px;height:12px;display:inline-block;vertical-align:middle;margin-right:4px;"></span>${btn.dataset.band}`;
-    } else {
-      btn.disabled = false;
-      btn.style.opacity = '1';
-      label.textContent = TIER_BANDS.find(t => t.band === btn.dataset.band)?.label || btn.dataset.band;
-    }
-  };
-
-  // Load tier
-  const loadTier = async (band) => {
-    const activeBtn = tierSelector.querySelector(`.lb-tier-select-btn[data-band="${band}"]`);
-    setTierLoading(activeBtn, true);
-    wordList.innerHTML = '<div class="lb-tooltip-loading"><div class="lb-tooltip-spinner"></div><span>Loading vocabulary...</span></div>';
-
-    const words = this.selectedText.split(/\s+/)
+  // Candidate words for this selection (computed once).
+  const _glossWords = [...new Set(
+    this.selectedText.split(/\s+/)
       .map(w => w.replace(/[^a-zA-Z'-]/g, '').toLowerCase())
-      .filter(w => w.length > 2 && !STOP_WORDS.has(w));
-    const unique = [...new Set(words)];
+      .filter(w => w.length > 2 && !STOP_WORDS.has(w))
+  )].slice(0, 12);
 
-    wordList.innerHTML = '';
-    let found = false;
-
-    for (const word of unique.slice(0, 12)) {
+  // Fetch each word ONCE; tier switches then just filter this cache (instant).
+  const wordCache = {};
+  const loadAllWords = async () => {
+    for (const word of _glossWords) {
       if (!document.getElementById('lb-translation-tooltip')) return;
       try {
         const res = await window.LBTranslationService.translate(word, this.userLanguage);
+        if (res && !res.error) wordCache[word] = res;
+      } catch (err) { /* skip */ }
+      await new Promise(r => setTimeout(r, 150));
+    }
+  };
+
+  // Render a tier from the cache — instant, no network.
+  const loadTier = (band) => {
+    wordList.innerHTML = '';
+    let found = false;
+
+    for (const word of _glossWords) {
+      try {
+        const res = wordCache[word];
         if (!res || res.error) continue;
 
-        const wordBand = res.gradeBand || '6-8';
+        // Tier by the lexicon grade_band when this word is a known academic term;
+        // otherwise fall back to syllable complexity so every tier gets words
+        // (multisyllabic → higher grade). This fixes the empty 3-5 tier.
+        const lexBand = _VALID_BANDS.has(res.gradeBand) ? res.gradeBand : null;
+        const wordBand = lexBand || _bandFromSyllables(_countSyllables(word));
         if (wordBand !== band) continue;
 
         found = true;
@@ -351,12 +382,9 @@ _TT._buildGlossaryTab = function () {
         wordList.appendChild(row);
         if (res.audioUrl) audioCache[cognateText] = res.audioUrl;
       } catch (err) { /* skip */ }
-      await new Promise(r => setTimeout(r, 200));
     }
 
-    if (!found) wordList.innerHTML = `<div class="lb-glossary-empty">No ${band} vocabulary found. Try another tier.</div>`;
-
-    setTierLoading(activeBtn, false);
+    if (!found) wordList.innerHTML = `<div class="lb-glossary-empty">No words at this grade. Try another tier.</div>`;
 
     // Wire audio buttons
     wordList.querySelectorAll('.lb-en-audio').forEach(btn => {
@@ -413,8 +441,8 @@ _TT._buildGlossaryTab = function () {
   });
   glossary.appendChild(flagAllBtn);
 
-  // Auto-load first tier
-  loadTier(TIER_BANDS[0].band);
+  // Fetch all words once, then show the first tier. Switching tiers is instant after.
+  (async () => { await loadAllWords(); loadTier(TIER_BANDS[0].band); })();
 
   tab.appendChild(glossary);
   return tab;

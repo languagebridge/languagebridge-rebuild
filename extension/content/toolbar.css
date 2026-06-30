@@ -1122,19 +1122,8 @@
     color: rgba(255,255,255,0.5);
   }
 
-  .lb-talk-btn {
-    width: auto;
-    padding: 6px 16px;
-    gap: 6px;
-    display: flex;
-    align-items: center;
-  }
-
-  .lb-talk-btn span {
-    font-size: 13px;
-    white-space: nowrap;
-    font-weight: 600;
-  }
+  /* Talk to Teacher is now an icon-only button — inherit the standard
+     .lb-toolbar-btn sizing so it matches the other toolbar icons. */
 
   .lb-lang-group {
     position: relative;

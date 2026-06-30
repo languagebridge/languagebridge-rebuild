@@ -1,21 +1,22 @@
 /**
- * LanguageBridge - Talk to Teacher (face-to-face voice translator)
+ * LanguageBridge - Talk to Teacher (one-computer, two-person voice translator)
  *
- * Vertical, two-zone layout meant to sit flat between two people: the TOP zone
- * is rotated 180° for the person across the table. Tap anywhere in a zone to
- * record, tap again (or STOP) to translate. Up to 45s per turn. Each zone has
- * its own on-face language picker — no settings menu. Built for a child to use.
+ * Upright, same-orientation conversation UI for two people sharing one screen:
+ * a scrolling chat transcript plus two labeled mic buttons (one per language).
+ * Each person taps THEIR language, speaks, and the app transcribes → translates
+ * → shows it in the transcript and reads it aloud in the other language.
+ * Manual turn-taking (no language auto-detection). Built for a child to use.
  */
 (function () {
   const MAX_RECORD_MS = 45000;
 
-  // Languages: bottom = "me" (student), top = "partner" (teacher/parent).
-  let myLang = window.LBState?.language || 'dari';
-  let partnerLang = 'english';
+  // Two sides. A defaults to English (teacher/partner), B to the student's language.
+  let langA = 'english';
+  let langB = window.LBState?.language || 'dari';
 
   let recording = false;
   let processing = false;
-  let activeZone = null;      // 'top' | 'bottom'
+  let activeSide = null;       // 'A' | 'B'
   let autoStopTimer = null;
   let countdownTimer = null;
 
@@ -25,237 +26,230 @@
   panel.style.display = 'none';
 
   const MIC_SVG =
-    '<svg viewBox="0 0 24 24" fill="currentColor" width="44" height="44">' +
+    '<svg viewBox="0 0 24 24" fill="currentColor" width="26" height="26">' +
     '<path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>';
 
-  function zoneHTML(zoneKey) {
+  function sideHTML(side) {
     return (
-      '<div class="lb-ttt-zone lb-ttt-' + zoneKey + '" data-zone="' + zoneKey + '">' +
-        '<button class="lb-ttt-lang-pill" data-zone="' + zoneKey + '" type="button">' +
-          '<span class="lb-ttt-lang-native"></span><span class="lb-ttt-lang-name"></span><span class="lb-ttt-chev">▾</span>' +
+      '<div class="lb-ttt-side" data-side="' + side + '">' +
+        '<button class="lb-ttt-langchip" data-side="' + side + '" type="button">' +
+          '<span class="lb-ttt-langname"></span><span class="lb-ttt-chev">▾</span>' +
         '</button>' +
-        '<button class="lb-ttt-stage" data-zone="' + zoneKey + '" type="button">' +
-          '<div class="lb-ttt-status">TAP TO TALK</div>' +
-          '<div class="lb-ttt-visual"><span class="lb-ttt-ring"></span><span class="lb-ttt-mic">' + MIC_SVG + '</span></div>' +
-          '<div class="lb-ttt-spinner"></div>' +
-          '<div class="lb-ttt-timer"></div>' +
+        '<button class="lb-ttt-mic" data-side="' + side + '" type="button">' + MIC_SVG +
+          '<span class="lb-ttt-mic-label">Tap to talk</span>' +
         '</button>' +
-        '<button class="lb-ttt-stop" data-zone="' + zoneKey + '" type="button">■ STOP</button>' +
-        '<button class="lb-ttt-micfix" data-zone="' + zoneKey + '" type="button">Turn on microphone</button>' +
-        '<div class="lb-ttt-picker" data-zone="' + zoneKey + '"></div>' +
       '</div>'
     );
   }
 
   panel.innerHTML =
-    zoneHTML('top') +
-    '<div class="lb-ttt-divider"><span class="lb-ttt-brand">LanguageBridge</span>' +
-      '<button class="lb-ttt-close" id="lb-ttt-close" type="button" title="Close">×</button></div>' +
-    zoneHTML('bottom');
+    '<div class="lb-ttt-header">' +
+      '<span class="lb-ttt-title">Talk to Teacher</span>' +
+      '<button class="lb-ttt-close" id="lb-ttt-close" type="button" title="Close">×</button>' +
+    '</div>' +
+    '<div class="lb-ttt-transcript" id="lb-ttt-transcript">' +
+      '<div class="lb-ttt-empty">Tap a language below and start talking.</div>' +
+    '</div>' +
+    '<div class="lb-ttt-statusbar" id="lb-ttt-statusbar"></div>' +
+    '<button class="lb-ttt-stop" id="lb-ttt-stop" type="button">■ Stop &amp; translate</button>' +
+    '<div class="lb-ttt-footer">' + sideHTML('A') + sideHTML('B') + '</div>' +
+    '<div class="lb-ttt-picker" id="lb-ttt-picker"></div>';
 
   document.body.appendChild(panel);
 
   // ── Helpers ────────────────────────────────────────────────────────
-  const zoneEl = (z) => panel.querySelector('.lb-ttt-' + z);
-  const langOf = (z) => (z === 'bottom' ? myLang : partnerLang);
-  const otherZone = (z) => (z === 'bottom' ? 'top' : 'bottom');
+  const $ = (sel) => panel.querySelector(sel);
+  const sideLang = (side) => (side === 'A' ? langA : langB);
+  const otherLang = (side) => (side === 'A' ? langB : langA);
+  const langInfo = (code) => window.LB_LANGUAGES[code] || { label: code, nativeLabel: code, rtl: false };
 
-  function langInfo(code) {
-    return window.LB_LANGUAGES[code] || { label: code, nativeLabel: code, rtl: false };
+  function renderLangChips() {
+    [['A', langA], ['B', langB]].forEach(([side, code]) => {
+      const info = langInfo(code);
+      const chip = panel.querySelector('.lb-ttt-langchip[data-side="' + side + '"] .lb-ttt-langname');
+      if (chip) chip.textContent = info.nativeLabel === info.label ? info.label : `${info.nativeLabel} ${info.label}`;
+    });
   }
 
-  function renderPill(z) {
-    const info = langInfo(langOf(z));
-    const pill = zoneEl(z).querySelector('.lb-ttt-lang-pill');
-    pill.querySelector('.lb-ttt-lang-native').textContent = info.nativeLabel;
-    pill.querySelector('.lb-ttt-lang-name').textContent = info.label;
+  function setStatus(text, kind) {
+    const bar = $('#lb-ttt-statusbar');
+    bar.textContent = text || '';
+    bar.className = 'lb-ttt-statusbar' + (kind ? ' lb-ttt-' + kind : '');
+    bar.style.display = text ? 'block' : 'none';
   }
 
-  function buildPicker(z) {
-    const picker = zoneEl(z).querySelector('.lb-ttt-picker');
-    const current = langOf(z);
-    picker.innerHTML = Object.entries(window.LB_LANGUAGES).map(([code, info]) =>
-      '<button class="lb-ttt-picker-opt' + (code === current ? ' selected' : '') + '" data-zone="' + z + '" data-code="' + code + '" type="button">' +
-        '<span class="lb-ttt-lang-native">' + window.escapeHtml(info.nativeLabel) + '</span>' +
-        '<span class="lb-ttt-lang-name">' + window.escapeHtml(info.label) + '</span>' +
-      '</button>'
-    ).join('');
+  function clearEmpty() {
+    const empty = $('.lb-ttt-empty');
+    if (empty) empty.remove();
   }
 
-  function setStatus(z, text, opts) {
-    opts = opts || {};
-    const zEl = zoneEl(z);
-    const statusEl = zEl.querySelector('.lb-ttt-status');
-    statusEl.textContent = text;
-    const info = langInfo(langOf(z));
-    statusEl.setAttribute('dir', opts.translatedText && info.rtl ? 'rtl' : 'auto');
-    statusEl.classList.toggle('lb-ttt-result', !!opts.result);
+  // Append a conversation bubble. side decides alignment (A left, B right).
+  function appendBubble(side, originalText, translatedText, fromLang, toLang) {
+    clearEmpty();
+    const transcript = $('#lb-ttt-transcript');
+    const wrap = document.createElement('div');
+    wrap.className = 'lb-ttt-bubble lb-ttt-bubble-' + side;
+
+    const orig = document.createElement('div');
+    orig.className = 'lb-ttt-orig';
+    orig.setAttribute('dir', langInfo(fromLang).rtl ? 'rtl' : 'ltr');
+    orig.textContent = originalText;
+
+    const trans = document.createElement('div');
+    trans.className = 'lb-ttt-trans';
+    trans.setAttribute('dir', langInfo(toLang).rtl ? 'rtl' : 'ltr');
+    trans.textContent = translatedText;
+
+    wrap.appendChild(orig);
+    wrap.appendChild(trans);
+    transcript.appendChild(wrap);
+    transcript.scrollTop = transcript.scrollHeight;
+    return wrap;
   }
 
-  function setZoneMode(z, mode) {
-    // mode: 'idle' | 'recording' | 'processing' | 'speaking'
-    const zEl = zoneEl(z);
-    zEl.classList.remove('recording', 'processing', 'speaking');
-    if (mode !== 'idle') zEl.classList.add(mode);
+  // A temporary "working" bubble shown while transcribing/translating.
+  function appendPending(side) {
+    clearEmpty();
+    const transcript = $('#lb-ttt-transcript');
+    const wrap = document.createElement('div');
+    wrap.className = 'lb-ttt-bubble lb-ttt-bubble-' + side + ' lb-ttt-pending';
+    wrap.innerHTML = '<span class="lb-ttt-spinner"></span><span>Translating…</span>';
+    transcript.appendChild(wrap);
+    transcript.scrollTop = transcript.scrollHeight;
+    return wrap;
   }
 
-  function setOtherDisabled(z, disabled) {
-    zoneEl(otherZone(z)).classList.toggle('disabled', disabled);
-  }
-
-  function showTimer(z, show) {
-    zoneEl(z).querySelector('.lb-ttt-timer').style.display = show ? 'block' : 'none';
-  }
-
-  function showMicFix(z, show) {
-    zoneEl(z).querySelector('.lb-ttt-micfix').style.display = show ? 'block' : 'none';
-  }
-
-  function resetZone(z) {
-    setZoneMode(z, 'idle');
-    showTimer(z, false);
-    showMicFix(z, false);
-    setStatus(z, 'TAP TO TALK');
-  }
-
-  function closeAllPickers() {
-    panel.querySelectorAll('.lb-ttt-picker.open').forEach((p) => p.classList.remove('open'));
+  function setRecordingUI(side, on) {
+    panel.querySelectorAll('.lb-ttt-side').forEach((s) => {
+      s.classList.toggle('disabled', on && s.dataset.side !== side);
+    });
+    const mic = panel.querySelector('.lb-ttt-mic[data-side="' + side + '"]');
+    if (mic) mic.classList.toggle('recording', on);
+    $('#lb-ttt-stop').style.display = on ? 'block' : 'none';
   }
 
   // ── Language picker ────────────────────────────────────────────────
-  function togglePicker(z) {
-    const picker = zoneEl(z).querySelector('.lb-ttt-picker');
-    const isOpen = picker.classList.contains('open');
-    closeAllPickers();
-    if (!isOpen) { buildPicker(z); picker.classList.add('open'); }
+  function openPicker(side) {
+    const picker = $('#lb-ttt-picker');
+    const current = sideLang(side);
+    picker.innerHTML = Object.entries(window.LB_LANGUAGES).map(([code, info]) =>
+      '<button class="lb-ttt-picker-opt' + (code === current ? ' selected' : '') + '" data-code="' + code + '" type="button">' +
+        '<span class="lb-ttt-langname">' + window.escapeHtml(info.nativeLabel) + '</span>' +
+        '<span class="lb-ttt-picker-en">' + window.escapeHtml(info.label) + '</span>' +
+      '</button>'
+    ).join('');
+    picker.dataset.side = side;
+    picker.classList.add('open');
   }
+  function closePicker() { $('#lb-ttt-picker').classList.remove('open'); }
 
-  function selectLanguage(z, code) {
+  function selectLanguage(side, code) {
     if (!window.LB_LANGUAGES[code]) return;
-    if (z === 'bottom') {
-      myLang = code;
+    if (side === 'B') {
+      langB = code;
       window.LBState.language = code;
       try { chrome.storage.sync.set({ defaultLanguage: code }); } catch (e) { /* noop */ }
-      if (window.__lbToolbar) {
-        window.__lbToolbar.userLanguage = code;
-        window.__lbToolbar.updateLanguageDisplay?.();
-      }
+      if (window.__lbToolbar) { window.__lbToolbar.userLanguage = code; window.__lbToolbar.updateLanguageDisplay?.(); }
     } else {
-      partnerLang = code;
+      langA = code;
       try { chrome.storage.sync.set({ tttPartnerLang: code }); } catch (e) { /* noop */ }
     }
-    renderPill(z);
-    closeAllPickers();
+    renderLangChips();
+    closePicker();
   }
 
   // ── Recording flow ─────────────────────────────────────────────────
-  async function startFlow(z) {
+  async function startSide(side) {
     if (recording || processing) return;
-    closeAllPickers();
-    showMicFix(z, false);
-
+    closePicker();
     const start = await window.LBSTTService.startRecording();
     if (start.error) {
-      setStatus(z, start.error);
-      if (start.code === 'mic-permission' || start.code === 'no-mic') showMicFix(z, true);
+      setStatus(start.error, 'error');
+      if (start.code === 'mic-permission' || start.code === 'no-mic') showMicFix();
       return;
     }
-
     recording = true;
-    activeZone = z;
-    setOtherDisabled(z, true);
-    setZoneMode(z, 'recording');
-    setStatus(z, 'Listening…  Tap to translate');
+    activeSide = side;
+    setRecordingUI(side, true);
 
-    // 45s countdown + auto-stop.
     const startedAt = Date.now();
-    showTimer(z, true);
     const tick = () => {
       const left = Math.max(0, Math.ceil((MAX_RECORD_MS - (Date.now() - startedAt)) / 1000));
-      const t = zoneEl(z).querySelector('.lb-ttt-timer');
-      if (t) t.textContent = left + 's';
+      setStatus(`Listening… ${left}s  (tap Stop when done)`, 'listening');
     };
     tick();
     countdownTimer = setInterval(tick, 250);
-    autoStopTimer = setTimeout(() => stopFlow(), MAX_RECORD_MS);
+    autoStopTimer = setTimeout(() => stopAndProcess(), MAX_RECORD_MS);
   }
 
-  async function stopFlow() {
+  async function stopAndProcess() {
     if (!recording || processing) return;
-    const z = activeZone;
+    const side = activeSide;
     recording = false;
     processing = true;
     if (autoStopTimer) { clearTimeout(autoStopTimer); autoStopTimer = null; }
     if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
-    showTimer(z, false);
+    setRecordingUI(side, false);
+    setStatus('Got it…', 'listening');
 
-    const target = otherZone(z);
-    const fromLang = langOf(z);
-    const toLang = langOf(target);
-
-    // Source zone: show we're working on the audio.
-    setZoneMode(z, 'processing');
-    setStatus(z, 'Got it…');
+    const fromLang = sideLang(side);
+    const toLang = otherLang(side);
 
     const audio = await window.LBSTTService.stopRecording();
-    if (audio.error) {
-      finishWithError(z, audio);
-      return;
-    }
-
-    // Silence / loudness diagnostics from the offscreen level analysis.
+    if (audio.error) { finishError(audio); return; }
     if (audio.peak !== undefined && audio.peak < 0.02) {
-      finishWithError(z, { error: "I didn't hear anything. Check your sound is on and speak toward the mic.", code: 'silence' });
+      finishError({ error: "I didn't hear anything. Check your sound is on and speak toward the mic.", code: 'silence' });
       return;
     }
     const noisy = audio.clipRatio !== undefined && audio.clipRatio > 0.25;
 
-    // Transcribe.
+    const pending = appendPending(side);
+
     const stt = await window.LBSTTService.transcribe(audio.wavBase64, fromLang);
     if (stt.error) {
+      pending.remove();
       const msg = stt.code === 'empty'
-        ? (noisy ? "Too much background noise — try somewhere quieter." : "I couldn't make that out. Try again.")
+        ? (noisy ? 'Too much background noise — try somewhere quieter.' : "I couldn't make that out. Try again.")
         : stt.error;
-      finishWithError(z, { error: msg, code: stt.code });
+      finishError({ error: msg, code: stt.code });
       return;
     }
-
-    // Source zone shows what was heard.
-    setZoneMode(z, 'idle');
-    setStatus(z, stt.text, { result: true });
-
-    // Target zone: spinner while translating, then the result + audio.
-    setOtherDisabled(z, false);
-    setZoneMode(target, 'processing');
-    setStatus(target, 'Translating…');
 
     const tr = await translateText(stt.text, fromLang, toLang);
-    if (tr.error) {
-      setZoneMode(target, 'idle');
-      setStatus(target, tr.error);
-      processing = false;
-      return;
-    }
+    pending.remove();
+    if (tr.error) { finishError(tr); return; }
 
-    setZoneMode(target, 'speaking');
-    setStatus(target, tr.text, { result: true, translatedText: true });
-
-    try {
-      await window.LBTTSService?.generateAndPlay(tr.text, toLang);
-    } catch (e) {
-      LBLog.warn('TTS playback failed (non-fatal):', e);
-    }
-    setZoneMode(target, 'idle');
+    appendBubble(side, stt.text, tr.text, fromLang, toLang);
+    setStatus('');
     processing = false;
+    activeSide = null;
+
+    try { await window.LBTTSService?.generateAndPlay(tr.text, toLang); } catch (e) { LBLog.warn('TTS failed:', e); }
   }
 
-  function finishWithError(z, res) {
-    setZoneMode(z, 'idle');
-    setOtherDisabled(z, false);
-    setStatus(z, res.error);
-    if (res.code === 'mic-permission' || res.code === 'no-mic') showMicFix(z, true);
+  function finishError(res) {
+    setRecordingUI(activeSide, false);
+    panel.querySelectorAll('.lb-ttt-side').forEach((s) => s.classList.remove('disabled'));
+    setStatus(res.error, 'error');
+    if (res.code === 'mic-permission' || res.code === 'no-mic') showMicFix();
     processing = false;
-    activeZone = null;
+    recording = false;
+    activeSide = null;
+  }
+
+  function showMicFix() {
+    const bar = $('#lb-ttt-statusbar');
+    const btn = document.createElement('button');
+    btn.className = 'lb-ttt-micfix';
+    btn.textContent = 'Turn on microphone';
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.LBSTTService.requestMicPermission();
+      setStatus('Opening permission tab… then tap a language to talk.', 'listening');
+    });
+    bar.appendChild(document.createElement('br'));
+    bar.appendChild(btn);
+    bar.style.display = 'block';
   }
 
   async function translateText(text, fromLanguage, toLanguage) {
@@ -270,9 +264,7 @@
       });
       if (!res) return { error: 'No response. Try again.' };
       if (!res.ok) {
-        const code = res.data?.error || res.error || '';
-        LBLog.warn('Translate error:', code, res.data?.details || '');
-        if (code === 'REQUEST_TIMEOUT') return { error: 'That took too long. Try again.' };
+        LBLog.warn('Translate error:', res.data?.error, res.data?.details || '');
         return { error: 'Translation failed. Try again.' };
       }
       const out = (res.data?.translatedText || res.data?.translation || res.data?.text || '').trim();
@@ -286,60 +278,53 @@
 
   // ── Event wiring (delegated) ───────────────────────────────────────
   panel.addEventListener('click', (e) => {
-    const pill = e.target.closest('.lb-ttt-lang-pill');
-    if (pill) { e.stopPropagation(); togglePicker(pill.dataset.zone); return; }
+    const chip = e.target.closest('.lb-ttt-langchip');
+    if (chip) { e.stopPropagation(); openPicker(chip.dataset.side); return; }
 
     const opt = e.target.closest('.lb-ttt-picker-opt');
-    if (opt) { e.stopPropagation(); selectLanguage(opt.dataset.zone, opt.dataset.code); return; }
+    if (opt) { e.stopPropagation(); selectLanguage($('#lb-ttt-picker').dataset.side, opt.dataset.code); return; }
 
-    const stop = e.target.closest('.lb-ttt-stop');
-    if (stop) { e.stopPropagation(); if (recording && activeZone === stop.dataset.zone) stopFlow(); return; }
+    const stop = e.target.closest('#lb-ttt-stop');
+    if (stop) { e.stopPropagation(); if (recording) stopAndProcess(); return; }
 
-    const micfix = e.target.closest('.lb-ttt-micfix');
-    if (micfix) { e.stopPropagation(); window.LBSTTService.requestMicPermission(); setStatus(micfix.dataset.zone, 'Opening permission tab… then tap to talk.'); return; }
-
-    const stage = e.target.closest('.lb-ttt-stage');
-    if (stage) {
-      const z = stage.dataset.zone;
-      if (zoneEl(z).classList.contains('disabled')) return;
-      if (recording && activeZone === z) stopFlow();
-      else if (!recording && !processing) startFlow(z);
+    const mic = e.target.closest('.lb-ttt-mic');
+    if (mic) {
+      const side = mic.dataset.side;
+      if (panel.querySelector('.lb-ttt-side[data-side="' + side + '"]').classList.contains('disabled')) return;
+      if (recording && activeSide === side) stopAndProcess();
+      else if (!recording && !processing) startSide(side);
       return;
     }
-
-    closeAllPickers();
+    closePicker();
   });
 
-  panel.querySelector('#lb-ttt-close').addEventListener('click', () => hide());
+  $('#lb-ttt-close').addEventListener('click', () => hide());
 
-  // ── Public API + toolbar/shortcut integration ──────────────────────
+  // ── Public API + integration ───────────────────────────────────────
   function show() {
-    myLang = window.LBState?.language || myLang;
-    renderPill('top'); renderPill('bottom');
-    resetZone('top'); resetZone('bottom');
+    langB = window.LBState?.language || langB;
+    renderLangChips();
+    setStatus('');
     panel.style.display = 'flex';
   }
   function hide() {
-    if (recording) { window.LBSTTService.stopRecording().catch(() => {}); }
+    if (recording) window.LBSTTService.stopRecording().catch(() => {});
     window.LBTTSService?.stop?.();
-    recording = false; processing = false; activeZone = null;
+    recording = false; processing = false; activeSide = null;
     if (autoStopTimer) clearTimeout(autoStopTimer);
     if (countdownTimer) clearInterval(countdownTimer);
+    setRecordingUI('A', false); setRecordingUI('B', false);
     panel.style.display = 'none';
   }
 
-  // Load saved partner language, then paint pills.
   try {
     chrome.storage.sync.get(['tttPartnerLang'], (d) => {
-      if (d.tttPartnerLang && window.LB_LANGUAGES[d.tttPartnerLang]) partnerLang = d.tttPartnerLang;
-      renderPill('top'); renderPill('bottom');
+      if (d.tttPartnerLang && window.LB_LANGUAGES[d.tttPartnerLang]) langA = d.tttPartnerLang;
+      renderLangChips();
     });
-  } catch (e) { renderPill('top'); renderPill('bottom'); }
+  } catch (e) { renderLangChips(); }
 
-  window.addEventListener('lb-language-changed', () => {
-    myLang = window.LBState.language;
-    renderPill('bottom');
-  });
+  window.addEventListener('lb-language-changed', () => { langB = window.LBState.language; renderLangChips(); });
 
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.action === 'toggle-floating-translator') {
@@ -350,8 +335,8 @@
   window.FloatingTranslator = {
     show,
     hide,
-    setStudentLanguage(lang) { if (window.LB_LANGUAGES[lang]) { myLang = lang; renderPill('bottom'); } },
+    setStudentLanguage(lang) { if (window.LB_LANGUAGES[lang]) { langB = lang; renderLangChips(); } },
   };
 
-  LBLog.info('Talk to Teacher (face-to-face) loaded');
+  LBLog.info('Talk to Teacher (conversation) loaded');
 })();

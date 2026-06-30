@@ -1,70 +1,66 @@
 // extension/content/services/lb-tts-service.js
 // Text-to-Speech: plays audio from URL. Generates via background proxy if needed.
+// A generation token (_gen) lets stop() cancel playback even while audio is still
+// loading (generate → fetch → decode), so the pause/stop button always works.
 
 window.LBTTSService = {
   audioContext: null,
-  currentSource: null,
+  currentSource: null,   // WebAudio buffer source
+  currentAudio: null,    // HTML5 <audio> fallback
+  _gen: 0,
+  _retrying: false,
 
-  async play(audioUrl) {
+  _stopSources() {
+    if (this.currentSource) { try { this.currentSource.stop(); } catch (e) { /* already stopped */ } this.currentSource = null; }
+    if (this.currentAudio) { try { this.currentAudio.pause(); this.currentAudio.currentTime = 0; } catch (e) { /* noop */ } this.currentAudio = null; }
+  },
+
+  async play(audioUrl, gen) {
+    if (gen === undefined) gen = this._gen;
     try {
-      if (!this.audioContext) {
-        this.audioContext = new AudioContext();
-      }
-
-      // Resume AudioContext if suspended (Chrome blocks audio until user gesture)
+      if (!this.audioContext) this.audioContext = new AudioContext();
       if (this.audioContext.state === 'suspended') {
         LBLog.info('AudioContext suspended, resuming...');
         await this.audioContext.resume();
       }
 
-      if (this.currentSource) {
-        try { this.currentSource.stop(); } catch (e) { /* already stopped */ }
-      }
+      this._stopSources(); // never overlap two clips
 
       // Fetch audio through background proxy to avoid CORS
       const res = await chrome.runtime.sendMessage({ action: 'fetch-audio', url: audioUrl });
-      if (!res || !res.ok) {
-        LBLog.error('Audio fetch failed:', res?.error || 'no response');
-        return;
-      }
+      if (!res || !res.ok) { LBLog.error('Audio fetch failed:', res?.error || 'no response'); return; }
+      if (gen !== this._gen) return; // stopped during fetch
 
       const response = await fetch(res.dataUrl);
       const arrayBuffer = await response.arrayBuffer();
-
-      if (arrayBuffer.byteLength === 0) {
-        LBLog.error('Audio data is empty');
-        return;
-      }
-
-      LBLog.info(`Audio data: ${arrayBuffer.byteLength} bytes, context state: ${this.audioContext.state}`);
+      if (arrayBuffer.byteLength === 0) { LBLog.error('Audio data is empty'); return; }
+      if (gen !== this._gen) return; // stopped during fetch
 
       const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+      if (gen !== this._gen) return; // stopped during decode
 
       const source = this.audioContext.createBufferSource();
       source.buffer = audioBuffer;
       source.playbackRate.value = window.LBState?.readingSpeed || 1.0;
       source.connect(this.audioContext.destination);
       source.start(0);
-
       this.currentSource = source;
       LBLog.info(`Audio playing (${audioBuffer.duration.toFixed(1)}s)`);
 
       return new Promise((resolve) => {
-        source.onended = () => {
-          this.currentSource = null;
-          resolve();
-        };
+        source.onended = () => { if (this.currentSource === source) this.currentSource = null; resolve(); };
       });
     } catch (err) {
       LBLog.error('TTS playback via WebAudio failed, trying HTML5 Audio fallback:', err);
-      // Fallback: try HTML5 Audio with data URL
       try {
         const res = await chrome.runtime.sendMessage({ action: 'fetch-audio', url: audioUrl });
         if (res?.ok && res.dataUrl) {
+          if (gen !== this._gen) return; // stopped during fetch
           const audio = new Audio(res.dataUrl);
           audio.playbackRate = window.LBState?.readingSpeed || 1.0;
+          this.currentAudio = audio;
           await audio.play();
-          return new Promise(resolve => { audio.onended = resolve; });
+          return new Promise(resolve => { audio.onended = () => { if (this.currentAudio === audio) this.currentAudio = null; resolve(); }; });
         }
       } catch (fallbackErr) {
         LBLog.error('HTML5 Audio fallback also failed:', fallbackErr);
@@ -78,23 +74,20 @@ window.LBTTSService = {
       LBLog.warn('TTS rate limit reached');
       return null;
     }
+    const gen = ++this._gen; // this request supersedes any earlier one
     try {
       const res = await chrome.runtime.sendMessage({
         action: 'api-fetch',
         endpoint: 'tts-router',
-        body: {
-          text,
-          language,
-          studentCode: window.LBState.studentCode,
-        },
+        body: { text, language, studentCode: window.LBState.studentCode },
       });
-
+      if (gen !== this._gen) return null; // stopped while generating
       if (!res) { LBLog.warn('TTS: no response from background'); return null; }
       LBLog.info('TTS response:', JSON.stringify(res.data));
 
       const audioUrl = res.data?.audioUrl || res.data?.audio_url;
       if (res.ok && audioUrl) {
-        await this.play(audioUrl);
+        await this.play(audioUrl, gen);
         return res.data;
       }
       // Fallback: if Dari fails, try Persian (closely related)
@@ -105,9 +98,10 @@ window.LBTTSService = {
           endpoint: 'tts-router',
           body: { text, language: 'persian', studentCode: window.LBState.studentCode },
         });
+        if (gen !== this._gen) return null; // stopped while generating fallback
         const fallbackUrl = fallback.data?.audioUrl || fallback.data?.audio_url;
         if (fallback.ok && fallbackUrl) {
-          await this.play(fallbackUrl);
+          await this.play(fallbackUrl, gen);
           return fallback.data;
         }
       }
@@ -117,6 +111,7 @@ window.LBTTSService = {
         this._retrying = true;
         LBLog.info('TTS INTERNAL_ERROR — retrying once...');
         await new Promise(r => setTimeout(r, 500));
+        if (gen !== this._gen) { this._retrying = false; return null; }
         const result = await this.generateAndPlay(text, language);
         this._retrying = false;
         return result;
@@ -132,9 +127,7 @@ window.LBTTSService = {
   },
 
   stop() {
-    if (this.currentSource) {
-      try { this.currentSource.stop(); } catch (e) { /* already stopped */ }
-      this.currentSource = null;
-    }
+    this._gen++;        // invalidate any in-flight generation/playback (cancels load-in-progress)
+    this._stopSources();
   },
 };
