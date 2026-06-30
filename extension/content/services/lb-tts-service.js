@@ -68,55 +68,88 @@ window.LBTTSService = {
     }
   },
 
-  // Generate audio via tts-router (through background proxy) then play it
+  // Split text into <=max-char pieces (backend TTS caps at 500). Breaks on
+  // sentence boundaries; hard-splits any single sentence longer than max.
+  _chunkText(text, max) {
+    text = (text || '').trim();
+    if (!text) return [];
+    if (text.length <= max) return [text];
+    const sentences = text.match(/[^.!?؟۔。]+[.!?؟۔。]*\s*/g) || [text];
+    const chunks = [];
+    let cur = '';
+    const flush = () => { if (cur.trim()) { chunks.push(cur.trim()); cur = ''; } };
+    for (const s of sentences) {
+      if (s.length > max) {
+        flush();
+        let part = '';
+        for (const w of s.split(/\s+/)) {
+          if ((part + ' ' + w).trim().length > max) { if (part) chunks.push(part.trim()); part = w; }
+          else part = part ? part + ' ' + w : w;
+        }
+        if (part) cur = part;
+      } else if ((cur + s).length > max) {
+        flush();
+        cur = s;
+      } else {
+        cur += s;
+      }
+    }
+    flush();
+    return chunks;
+  },
+
+  // Generate audio via tts-router and play it — chunking long text so it never
+  // exceeds the backend's 500-char TTS limit. Chunks play in sequence.
   async generateAndPlay(text, language) {
     if (!window.LBRateLimiter.check('tts', window.CONFIG.rateLimits.ttsPerMinute)) {
       LBLog.warn('TTS rate limit reached');
       return null;
     }
     const gen = ++this._gen; // this request supersedes any earlier one
+    const chunks = this._chunkText(text, 480);
+    if (!chunks.length) return null;
+    let last = null;
+    for (const chunk of chunks) {
+      if (gen !== this._gen) return last; // stopped
+      last = await this._genPlayChunk(chunk, language, gen);
+    }
+    return last;
+  },
+
+  // Generate + play a single (<=500 char) chunk under an existing generation token.
+  async _genPlayChunk(text, language, gen) {
     try {
       const res = await chrome.runtime.sendMessage({
         action: 'api-fetch',
         endpoint: 'tts-router',
         body: { text, language, studentCode: window.LBState.studentCode },
       });
-      if (gen !== this._gen) return null; // stopped while generating
+      if (gen !== this._gen) return null;
       if (!res) { LBLog.warn('TTS: no response from background'); return null; }
-      LBLog.info('TTS response:', JSON.stringify(res.data));
 
       const audioUrl = res.data?.audioUrl || res.data?.audio_url;
-      if (res.ok && audioUrl) {
-        await this.play(audioUrl, gen);
-        return res.data;
-      }
-      // Fallback: if Dari fails, try Persian (closely related)
+      if (res.ok && audioUrl) { await this.play(audioUrl, gen); return res.data; }
+
+      // Dari often fails server-side — fall back to Persian (closely related).
       if (language === 'dari' && res.data?.error === 'AZURE_SERVICE_ERROR') {
-        LBLog.info('Dari TTS failed, falling back to Persian...');
-        const fallback = await chrome.runtime.sendMessage({
+        const fb = await chrome.runtime.sendMessage({
           action: 'api-fetch',
           endpoint: 'tts-router',
           body: { text, language: 'persian', studentCode: window.LBState.studentCode },
         });
-        if (gen !== this._gen) return null; // stopped while generating fallback
-        const fallbackUrl = fallback.data?.audioUrl || fallback.data?.audio_url;
-        if (fallback.ok && fallbackUrl) {
-          await this.play(fallbackUrl, gen);
-          return fallback.data;
-        }
+        if (gen !== this._gen) return null;
+        const fbUrl = fb.data?.audioUrl || fb.data?.audio_url;
+        if (fb.ok && fbUrl) { await this.play(fbUrl, gen); return fb.data; }
       }
 
-      // Retry once on INTERNAL_ERROR
+      // Retry once on INTERNAL_ERROR.
       if (res.data?.error === 'INTERNAL_ERROR' && !this._retrying) {
         this._retrying = true;
-        LBLog.info('TTS INTERNAL_ERROR — retrying once...');
         await new Promise(r => setTimeout(r, 500));
-        if (gen !== this._gen) { this._retrying = false; return null; }
-        const result = await this.generateAndPlay(text, language);
+        const result = (gen === this._gen) ? await this._genPlayChunk(text, language, gen) : null;
         this._retrying = false;
         return result;
       }
-      this._retrying = false;
 
       LBLog.warn('TTS generation returned no audio:', JSON.stringify(res.data));
       return null;
