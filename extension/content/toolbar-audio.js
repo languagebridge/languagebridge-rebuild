@@ -157,11 +157,13 @@ _TB.showWrittenTranslation = async function () {
     this.cachedTranslation = result;
     this.cachedOriginalText = this.selectedText;
 
+    // The 📖 book button opens straight to the Glossary tab (word study);
+    // the ▶ play button opens the Translation tab with audio.
     const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) this.showTranslationTooltip(result, selection);
-    else this.showTranslationTooltipCentered(result);
+    if (selection && selection.rangeCount > 0) this.showTranslationTooltip(result, selection, 'glossary');
+    else this.showTranslationTooltipCentered(result, 'glossary');
     window.LBAnalytics?.termLookup(this.selectedText, result);
-    this.showStatus('Translation shown', 'info');
+    this.showStatus('Glossary shown', 'info');
   } catch (err) {
     LBLog.error('Translation display failed:', err);
     this.showStatus('Error translating text', 'error');

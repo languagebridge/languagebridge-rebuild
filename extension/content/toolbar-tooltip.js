@@ -22,7 +22,7 @@ const TIER_BANDS = [
 
 // ---------- Main Tooltip ----------
 
-_TT.showTranslationTooltip = function (result, selection) {
+_TT.showTranslationTooltip = function (result, selection, defaultTab) {
   this.hideTranslationTooltip();
   const langInfo = window.LB_LANGUAGES[this.userLanguage];
   const isRTL = langInfo?.rtl || false;
@@ -70,12 +70,20 @@ _TT.showTranslationTooltip = function (result, selection) {
   body.appendChild(tab1);
   body.appendChild(tab2);
 
+  // Optionally open straight to the Glossary tab (the \uD83D\uDCD6 book button does this).
+  const glossaryFirst = defaultTab === 1 || defaultTab === 'glossary';
+  if (glossaryFirst) {
+    tab1.classList.remove('active');
+    tab2.classList.add('active');
+    window.LBAnalytics?.glossaryView();
+  }
+
   // --- Tab Navigation (2 tabs) ---
   const pagination = document.createElement('div');
   pagination.className = 'lb-tooltip-pagination';
   [
-    { icon: '\uD83C\uDF0D', label: 'Translation', index: 0, active: true },
-    { icon: '\uD83D\uDCDA', label: 'Glossary',    index: 1, active: false },
+    { icon: '\uD83C\uDF0D', label: 'Translation', index: 0, active: !glossaryFirst },
+    { icon: '\uD83D\uDCDA', label: 'Glossary',    index: 1, active: glossaryFirst },
   ].forEach(tab => {
     const dot = document.createElement('div');
     dot.className = tab.active ? 'lb-pagination-dot active' : 'lb-pagination-dot';
@@ -454,7 +462,7 @@ _TT._buildGlossaryTab = function () {
 
 // ---------- Tooltip Utilities ----------
 
-_TT.showTranslationTooltipCentered = function (result) {
+_TT.showTranslationTooltipCentered = function (result, defaultTab) {
   const fake = {
     rangeCount: 1,
     getRangeAt: () => ({
@@ -465,7 +473,7 @@ _TT.showTranslationTooltipCentered = function (result) {
       }),
     }),
   };
-  this.showTranslationTooltip(result, fake);
+  this.showTranslationTooltip(result, fake, defaultTab);
 };
 
 _TT.hideTranslationTooltip = function () {
