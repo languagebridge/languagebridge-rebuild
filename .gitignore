@@ -1,5 +1,5 @@
-# Documentation (planning docs, not part of the codebase)
-docs/
+# Documentation — planning docs excluded, but frontend guide is tracked
+docs/LANGUAGEBRIDGE-MASTER-BLUEPRINT.md
 
 # Environment & Secrets
 .env
@@ -13,8 +13,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
-package-lock.json
-yarn.lock
 
 # Build artifacts
 dist/

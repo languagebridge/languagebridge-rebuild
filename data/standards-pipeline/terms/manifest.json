@@ -1,0 +1,17 @@
+{
+  "pipeline": "languagebridge_lexicon",
+  "step": "02_term_extraction",
+  "source": "Ohio K-12 Learning Standards",
+  "extracted_at": "2026-03-20T23:00:21.083704+00:00",
+  "total_terms": 12133,
+  "bridge_priority_terms": 6667,
+  "awl_matches": 2738,
+  "latin_derived": 4880,
+  "greek_derived": 897,
+  "high_transliteration_difficulty": 6919,
+  "multi_word_terms": 6100,
+  "output_files": [
+    "ohio_standards_terms.json",
+    "ohio_standards_terms.csv"
+  ]
+}

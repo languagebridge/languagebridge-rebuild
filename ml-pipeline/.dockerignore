@@ -1,0 +1,10 @@
+venv/
+data/
+training/
+notebooks/
+scripts/__pycache__/
+*.pyc
+.git
+**/*.log
+models/
+voices/piper/*.onnx.json

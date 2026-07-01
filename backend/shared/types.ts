@@ -18,21 +18,78 @@
 // ============================================
 
 export const SUPPORTED_LANGUAGES = [
-  'dari',
-  'pashto',
-  'persian',
+  // Tier 1 — Piper TTS (production-ready voices)
   'arabic',
-  'urdu',
-  'somali',
+  'french',
+  'portuguese',
   'ukrainian',
+  'vietnamese',
   'spanish',
+  'persian',
   'english',
-  // Coming soon:
-  // 'nepali',
-  // 'hmong',
+  // Tier 1.5 — Piper TTS (beta, using related language model)
+  'nepali',
+  'swahili',
+  'dari',       // uses Persian Piper
+  'pashto',     // uses Persian Piper
+  'urdu',       // uses Arabic Piper
+  'somali',     // uses Swahili Piper
+  // Tier 2 — Azure TTS only (no local model yet)
+  'burmese',
+  'tagalog',
 ] as const;
 
+// NOTE: kinyarwanda, twi, uzbek, amharic, and tigrinya were removed (2026-06)
+// because their endpoint paths were not working. Re-add here to restore them —
+// TypeScript will flag every place that needs a corresponding entry.
+
 export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
+
+// ============================================
+// PILOT CONFIGURATION
+// School admin provides this. We store it as config, not user data.
+// ============================================
+
+export type GradeBand = 'K-2' | '3-5' | '6-8' | '9-12';
+
+export type PilotSchool = {
+  schoolCode: string;       // e.g. "greenbriar"
+  schoolName: string;       // e.g. "Greenbriar Middle School"
+  pilotId: string;          // e.g. "PCSD-2026"
+  gradeBands: GradeBand[];  // which grade bands this school covers
+};
+
+export type TeacherRouting = {
+  pilotId: string;
+  schoolCode: string;
+  teacherId: string;        // Supabase UUID
+  gradeBands: GradeBand[];  // teacher handles these grade bands
+};
+
+// ============================================
+// ONBOARDING (first install only)
+// ============================================
+
+export type OnboardingSchoolsResponse = {
+  schools: Array<{
+    schoolCode: string;
+    schoolName: string;
+    gradeBands: GradeBand[];
+  }>;
+};
+
+export type OnboardingEnrollRequest = {
+  schoolCode: string;
+  gradeBand: GradeBand;
+  language: SupportedLanguage;
+};
+
+export type OnboardingEnrollResponse = {
+  studentCode: string;      // e.g. "LB-7K2M" — show once, accessible in help menu
+  schoolCode: string;
+  gradeBand: GradeBand;
+  language: SupportedLanguage;
+};
 
 // ============================================
 // REQUEST TYPES (what clients send to backend)
@@ -41,31 +98,121 @@ export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
 export type TTSRequest = {
   text: string;           // Text to convert to audio (max 500 chars)
   language: SupportedLanguage;
-  pilotId: string;        // e.g. 'PCSD-2026'
-  sessionToken: string;   // Anonymous device UUID
-  extensionVersion?: string; // e.g. '2.0.0' (optional, for debugging)
+  studentCode: string;    // Pseudonymous code from onboarding (e.g. "LB-7K2M")
+  extensionVersion?: string;
 };
 
+export type AnalyticsEventType =
+  | 'session_start'
+  | 'session_end'
+  | 'term_lookup'       // student highlighted a word
+  | 'scaffold_view'     // student tapped "More"
+  | 'tts_play'          // student played audio
+  | 'flag_event'
+  | 'glossary_view';
+
 export type AnalyticsWriterRequest = {
-  sessionToken: string;   // Anonymous device UUID
-  pilotId: string;
+  studentCode: string;    // Pseudonymous code from onboarding
   language: SupportedLanguage;
-  eventType: 'session_start' | 'tts_request' | 'flag_event' | 'session_end' | 'glossary_view';
+  eventType: AnalyticsEventType;
   timestamp: string;      // ISO 8601: "2026-03-15T14:30:00Z"
   extensionVersion: string;
+  term?: string;          // which word (sent with term_lookup, scaffold_view, tts_play)
+  subject?: string;       // "science", "math", "ela", "social_studies"
+  source?: 'lexicon' | 'translator_fallback';
+  difficulty?: 'high' | 'medium' | 'low';
   // NEVER ADD: email, name, studentId, schoolId, or any PII
 };
 
+export type FlagType = 'pronunciation' | 'translation';
+// 'pronunciation' = sounds wrong (bad TTS, wrong accent/dialect, robotic voice)
+//                   → interpreter re-records the audio
+// 'translation'   = doesn't make sense (confusing wording, mistranslation)
+//                   → interpreter retranslates the text
+
 export type FlagEventRequest = {
-  word: string;           // The word that was flagged
+  flaggedText: string;    // The full highlighted text the student flagged (up to 500 chars)
   language: SupportedLanguage;
-  sessionToken: string;
-  pilotId: string;
+  studentCode: string;
   timestamp: string;      // ISO 8601
-  audioUrl?: string;      // URL of the audio that was flagged (optional)
+  flagType: FlagType;     // What kind of fix is needed — guides the interpreter
+  // NOTE: We intentionally do NOT accept or store audioUrl or any Azure-generated
+  // content in flags. The bounty pipeline must only contain student-highlighted
+  // text (original input) + target language. Azure translations and audio are
+  // ephemeral placeholders, not our IP to redistribute.
+};
+
+export type LexiconLookupRequest = {
+  term: string;              // Word or phrase to look up
+  language: SupportedLanguage;
+  domain?: 'k12_academic' | 'school_navigation' | 'medical' | 'legal_immigration' | 'social_services';
+  context?: string;          // Subject context for disambiguation (e.g. "science", "social_studies")
+  studentCode: string;
 };
 
 // auth-layer reads the Authorization header directly — no request body type needed
+
+// ============================================
+// TALK TO TEACHER — STT + TRANSLATE
+// ============================================
+//
+// PRIVACY NOTE: Both endpoints are ephemeral. Audio and translated text are
+// never persisted to the database. We pass through to Azure, return the result,
+// and forget it. This is more sensitive data than vocabulary lookups because
+// conversations can include anything a student says to a teacher.
+
+export type SpeechToTextRequest = {
+  audioBase64: string;       // Audio file encoded as base64 (webm/opus, wav, or mp3)
+  audioFormat: 'webm' | 'wav' | 'mp3' | 'ogg';
+  language: SupportedLanguage;
+  studentCode: string;
+};
+
+export type SpeechToTextResponse = {
+  text: string;              // Transcribed text in the source language
+  language: SupportedLanguage;
+  confidence?: number;       // Azure's confidence score (0-1)
+};
+
+export type SpeechToTextErrorResponse = {
+  error:
+    | 'UNAUTHORIZED'
+    | 'RATE_LIMITED'
+    | 'MISSING_FIELDS'
+    | 'INVALID_LANGUAGE'
+    | 'LANGUAGE_NOT_SUPPORTED'  // Some languages don't have STT support
+    | 'AUDIO_TOO_LARGE'
+    | 'TRANSCRIPTION_FAILED'
+    | 'AZURE_SERVICE_ERROR'
+    | 'INTERNAL_ERROR';
+  details: string;
+};
+
+export type TranslateRequest = {
+  text: string;              // Text to translate (max 2000 chars)
+  fromLanguage: SupportedLanguage;
+  toLanguage: SupportedLanguage;
+  studentCode: string;
+};
+
+export type TranslateResponse = {
+  translatedText: string;
+  fromLanguage: SupportedLanguage;
+  toLanguage: SupportedLanguage;
+};
+
+export type TranslateErrorResponse = {
+  error:
+    | 'UNAUTHORIZED'
+    | 'RATE_LIMITED'
+    | 'MISSING_FIELDS'
+    | 'INVALID_LANGUAGE'
+    | 'TEXT_TOO_LONG'
+    | 'TRANSLATION_FAILED'
+    | 'AZURE_SERVICE_ERROR'
+    | 'INTERNAL_ERROR';
+  details: string;
+};
 
 // ============================================
 // RESPONSE TYPES (what backend returns)
@@ -74,6 +221,8 @@ export type FlagEventRequest = {
 export type TTSResponse = {
   audioUrl: string;       // URL to play the audio
   source: 'proprietary' | 'azure_cache' | 'azure_live';
+  backend?: 'piper' | 'azure';  // Which TTS engine produced this audio
+  quality?: 'production' | 'beta' | 'experimental'; // Voice quality tier
   durationMs: number;
   cached: boolean;
   textHash?: string;      // SHA-256 of (text + language) for deduplication
@@ -81,6 +230,7 @@ export type TTSResponse = {
 
 export type TTSErrorResponse = {
   error:
+    | 'UNAUTHORIZED'
     | 'MISSING_FIELDS'
     | 'INVALID_LANGUAGE'
     | 'TEXT_TOO_LONG'
@@ -99,7 +249,7 @@ export type AnalyticsWriterResponse = {
 };
 
 export type AnalyticsWriterErrorResponse = {
-  error: 'PII_VIOLATION' | 'INVALID_EVENT_TYPE' | 'MISSING_FIELDS' | 'INTERNAL_ERROR';
+  error: 'UNAUTHORIZED' | 'RATE_LIMITED' | 'PII_VIOLATION' | 'INVALID_EVENT_TYPE' | 'MISSING_FIELDS' | 'INVALID_STUDENT_CODE' | 'INTERNAL_ERROR';
   details: string;
   prohibitedFields?: string[]; // which fields triggered the PII check
 };
@@ -109,11 +259,12 @@ export type FlagHandlerResponse = {
   flagCount: number;
   status: 'logged' | 'review' | 'bounty' | 'high_priority';
   requiresReview: boolean;
-  bountyValue?: number;   // Phase 3: interpreter marketplace
+  // Phase 3: bountyValue will be set when status='bounty' — interpreter marketplace
+  // Bounty only contains (word + language), never Azure-derived content
 };
 
 export type FlagHandlerErrorResponse = {
-  error: 'MISSING_FIELDS' | 'INVALID_LANGUAGE' | 'INTERNAL_ERROR';
+  error: 'UNAUTHORIZED' | 'RATE_LIMITED' | 'MISSING_FIELDS' | 'INVALID_LANGUAGE' | 'INTERNAL_ERROR';
   details: string;
 };
 
@@ -130,43 +281,89 @@ export type AuthErrorResponse = {
   details: string;
 };
 
+export type LexiconLookupResponse = {
+  term: string;
+  language: SupportedLanguage;
+  type: 'bridge' | 'cognate';
+  cognate: string | null;
+
+  // Bridge phrases — Prentice: display anchor first, scaffold on tap/expand
+  bridge_anchor: string | null;       // Short: "the answer" (always show this)
+  bridge_scaffold: string | null;     // Expanded: "what you get when you work through a problem" (show on tap)
+  bridge_definition: string | null;   // Legacy alias for bridge_scaffold
+  bridge_definition_en: string | null;
+
+  // Grammatical forms — show noun/verb/adj tabs if available
+  grammatical_forms?: {
+    noun: string | null;
+    verb: string | null;
+    adjective: string | null;
+  };
+
+  // Audio
+  audio_url: string | null;
+  audio_source: 'proprietary' | 'azure' | null;
+  tts_backend?: 'piper' | 'azure';
+
+  // Metadata for UI hints
+  subject?: string;
+  grade_band?: string;
+  transliteration_difficulty?: 'high' | 'medium' | 'low';
+  source: 'lexicon' | 'translator_fallback';
+};
+
+export type LexiconLookupErrorResponse = {
+  error: 'UNAUTHORIZED' | 'RATE_LIMITED' | 'MISSING_FIELDS' | 'INVALID_STUDENT_CODE' | 'INVALID_LANGUAGE' | 'TRANSLATOR_ERROR' | 'INTERNAL_ERROR';
+  details: string;
+};
+
 // ============================================
 // COSMOS DB DOCUMENT TYPES
 // ============================================
 
 export type SessionUsageDoc = {
   id: string;             // UUID
-  sessionToken: string;   // Anonymous session UUID
-  pilotId: string;
+  studentCode: string;    // Pseudonymous code (e.g. "LB-7K2M")
+  schoolCode: string;     // Resolved from studentCode at write time
+  gradeBand: GradeBand;   // Resolved from studentCode at write time
   language: SupportedLanguage;
-  eventType: string;
+  eventType: AnalyticsEventType;
   timestamp: string;
   extensionVersion: string;
+  term?: string;
+  subject?: string;
+  source?: 'lexicon' | 'translator_fallback';
+  difficulty?: 'high' | 'medium' | 'low';
   // Never include: student name, email, or any identifying info
 };
 
-export type FlagDoc = {
-  id: string;             // SHA-256 hash of (word + language) for deduplication
-  word: string;
+export type EnrollmentDoc = {
+  id: string;             // The student code itself (e.g. "LB-7K2M")
+  schoolCode: string;
+  gradeBand: GradeBand;
   language: SupportedLanguage;
-  flagCount: number;
+  createdAt: string;
+  // Teacher sees this code and nicknames it on their side
+  // We never store the nickname or the student's real name
+};
+
+export type FlagDoc = {
+  id: string;             // SHA-256 hash of (flaggedText + language) for deduplication
+  flaggedText: string;    // Full highlighted text (up to 500 chars) — student input only, never Azure output
+  language: SupportedLanguage;
+  flagCount: number;                  // Total flags (pronunciation + translation)
+  pronunciationFlagCount: number;     // How many students said it sounds wrong
+  translationFlagCount: number;       // How many students said the words don't make sense
   status: 'logged' | 'review' | 'bounty' | 'high_priority';
-  pilotIds: string[];
-  audioUrl?: string;
+  schoolCodes: string[];
+  contentSource: 'student_input';     // Provenance tag — user-generated, not Azure-derived
   createdAt: string;
   lastFlaggedAt: string;
   requiresReview: boolean;
-};
-
-export type ModelRegistryDoc = {
-  id: string;             // Language code: 'dari', 'pashto', etc.
-  language: SupportedLanguage;
-  modelName: string;      // e.g. 'Kokoro-82M'
-  modelVersion: string;
-  blobPath: string;       // Path in Azure Blob Storage
-  sha256Hash: string;     // Integrity check
-  isActive: boolean;
-  uploadedAt: string;
+  // NOTE: No audioUrl, cognate, or translation fields here. The bounty pipeline
+  // sends ONLY (flaggedText + language + flag type breakdown) to interpreters.
+  // The per-type counts tell the interpreter whether to prioritize re-recording
+  // audio or retranslating text.
 };
 
 export type PilotDoc = {
@@ -205,6 +402,57 @@ export type AudioCacheMetadataDoc = {
 // ============================================
 // FLAG ESCALATION THRESHOLDS
 // ============================================
+
+export type LexiconDoc = {
+  id: string;               // e.g. "photosynthesis_dari_v1"
+  term: string;
+  language: SupportedLanguage;
+  domain: 'k12_academic' | 'school_navigation' | 'medical' | 'legal_immigration' | 'social_services';
+  subject?: string;         // For disambiguation: "science", "social_studies", etc.
+  subjects?: string;        // Pipe-delimited: "math|science|ela"
+  grade_band?: string;      // "K-2", "3-5", "6-8", "9-12"
+  grade_bands?: string;     // Pipe-delimited: "3-5|6-8|9-12"
+  ohio_standard?: string;   // e.g. "SCI.5.LS.1"
+  cognate: string | null;
+
+  // Bridge phrases — two tiers of plain-language definitions
+  bridge_anchor: string | null;      // Shortest form (2-5 words): "the answer"
+  bridge_scaffold: string | null;    // Expanded form (5-15 words): "what you get when you work through a problem"
+  bridge_definition: string | null;  // Legacy: same as bridge_scaffold (for backwards compat)
+  bridge_definition_en: string | null;
+
+  // Grammatical forms — bridges for noun/verb/adjective usage
+  grammatical_forms?: {
+    noun: string | null;
+    verb: string | null;
+    adjective: string | null;
+  };
+
+  // Etymology + transliteration metadata
+  awl_match?: boolean;               // Academic Word List match
+  is_latin_derived?: boolean;
+  is_greek_derived?: boolean;
+  etymology_evidence?: string | null; // e.g. "L-suffix:tion|L-root:duc"
+  transliteration_difficulty?: 'high' | 'medium' | 'low';
+
+  // Audio
+  audio_blob_path: string | null;
+  audio_source: 'proprietary' | 'azure' | null;
+  audio_model?: string;     // e.g. "dari_tts_v1"
+  tts_backend?: 'piper' | 'azure';  // Which TTS system generated audio
+
+  // Quality + lifecycle
+  status: 'auto_generated' | 'pending_review' | 'approved' | 'deprecated';
+  version: number;
+  usage_count: number;
+  flag_count: number;
+  frequency?: number;       // How often this term appears in Ohio standards
+  is_bridge_priority?: boolean;
+
+  created_by: string;       // 'rbern_glossary' | 'bridge_pipeline_v1' | 'translator_fallback' | 'manual'
+  created_at: string;
+  updated_at: string;
+};
 
 export const FLAG_THRESHOLDS = {
   REVIEW: 3,        // Flag goes to review queue

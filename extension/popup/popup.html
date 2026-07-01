@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LanguageBridge</title>
+  <link rel="stylesheet" href="../content/brand-tokens.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      width: 350px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--lb-gradient-header);
+      color: white;
+    }
+
+    .popup-container { padding: 20px; }
+
+    .popup-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .popup-logo { width: 40px; height: 40px; }
+    .popup-title { flex: 1; }
+    .popup-title h1 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+    .popup-title p { font-size: 12px; opacity: 0.8; }
+
+    .popup-section { margin-bottom: 20px; }
+    .popup-section h2 { font-size: 14px; font-weight: 600; margin-bottom: 12px; opacity: 0.9; }
+
+    .toggle-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .toggle-group:hover { background: rgba(255, 255, 255, 0.15); }
+
+    .toggle-label { display: flex; align-items: center; gap: 10px; }
+    .toggle-icon { font-size: 20px; }
+    .toggle-text { font-size: 13px; }
+
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .toggle-switch.active { background: #10b981; }
+
+    .toggle-slider {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.3s;
+    }
+    .toggle-switch.active .toggle-slider { transform: translateX(20px); }
+
+    .quick-actions { display: flex; justify-content: center; gap: 8px; }
+
+    .action-btn {
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: white;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+    .action-btn:hover { background: rgba(255, 255, 255, 0.25); transform: translateY(-2px); }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+    }
+    .stat { text-align: center; }
+    .stat-value { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+    .stat-label { font-size: 11px; opacity: 0.8; }
+
+    .popup-footer {
+      padding-top: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .footer-links { display: flex; gap: 12px; }
+    .footer-link { font-size: 12px; color: white; text-decoration: none; opacity: 0.8; transition: opacity 0.2s; }
+    .footer-link:hover { opacity: 1; }
+    .version { font-size: 11px; opacity: 0.6; }
+  </style>
+</head>
+<body>
+  <div class="popup-container">
+    <div class="popup-header">
+      <img src="../assets/icon48.png" alt="LanguageBridge" class="popup-logo">
+      <div class="popup-title">
+        <h1>LanguageBridge&#8482;</h1>
+        <p>Real-time translation for students</p>
+      </div>
+    </div>
+
+    <div class="popup-section">
+      <h2>Features</h2>
+      <div class="toggle-group" id="toolbar-toggle">
+        <div class="toggle-label">
+          <span class="toggle-icon">&#128214;</span>
+          <span class="toggle-text">Screen Reader Toolbar</span>
+        </div>
+        <div class="toggle-switch" id="toolbar-switch">
+          <div class="toggle-slider"></div>
+        </div>
+      </div>
+      <div class="toggle-group" id="translator-toggle">
+        <div class="toggle-label">
+          <span class="toggle-icon">&#127908;</span>
+          <span class="toggle-text">Floating Translator</span>
+        </div>
+        <div class="toggle-switch" id="translator-switch">
+          <div class="toggle-slider"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="popup-section">
+      <h2>Quick Actions</h2>
+      <div class="quick-actions">
+        <button class="action-btn" id="help-btn">&#10067; Help</button>
+      </div>
+    </div>
+
+    <div class="popup-section">
+      <h2>Usage Today</h2>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-value" id="translations-count">0</div>
+          <div class="stat-label">Translations</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="speech-count">0</div>
+          <div class="stat-label">Voice Uses</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="popup-section">
+      <div class="stats" style="grid-template-columns: 1fr;">
+        <div class="stat">
+          <div class="stat-value" id="student-code" style="font-size: 18px;">—</div>
+          <div class="stat-label">Student Code</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="popup-footer">
+      <div class="footer-links">
+        <a href="#" class="footer-link" id="privacy-link">Privacy</a>
+        <a href="#" class="footer-link" id="support-link">Support</a>
+      </div>
+      <div class="version">v2.0.0</div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

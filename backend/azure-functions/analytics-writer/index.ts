@@ -5,9 +5,10 @@ import {
   AnalyticsWriterResponse,
   AnalyticsWriterErrorResponse,
   SessionUsageDoc,
+  EnrollmentDoc,
 } from '../../shared/types';
-import { getSessionsContainer } from '../../shared/cosmos-client';
-import { checkForPII, requireFields, isValidLanguage } from '../../shared/validators';
+import { getSessionsContainer, getEnrollmentsContainer } from '../../shared/cosmos-client';
+import { checkForPII, requireFields, isValidLanguage, isValidStudentCode, validateApiKey, errorResponse, checkRateLimit } from '../../shared/validators';
 
 /**
  * analytics-writer
@@ -26,9 +27,11 @@ app.http('analytics-writer', {
 
 const VALID_EVENT_TYPES = [
   'session_start',
-  'tts_request',
-  'flag_event',
   'session_end',
+  'term_lookup',
+  'scaffold_view',
+  'tts_play',
+  'flag_event',
   'glossary_view',
 ] as const;
 
@@ -37,6 +40,12 @@ export async function analyticsWriter(
   context: InvocationContext
 ): Promise<HttpResponseInit> {
   context.log('analytics-writer invoked');
+
+  // ── 0. Auth ──────────────────────────────────────────────────
+  const keyCheck = validateApiKey(request);
+  if (!keyCheck.valid) {
+    return error(401, 'UNAUTHORIZED', keyCheck.error);
+  }
 
   // ── 1. Parse body ──────────────────────────────────────────────
   let body: Record<string, unknown>;
@@ -60,8 +69,7 @@ export async function analyticsWriter(
 
   // ── 3. Validate required fields ────────────────────────────────
   const fieldCheck = requireFields(body, [
-    'sessionToken',
-    'pilotId',
+    'studentCode',
     'language',
     'eventType',
     'timestamp',
@@ -71,37 +79,68 @@ export async function analyticsWriter(
     return error(400, 'MISSING_FIELDS', `Missing required fields: ${fieldCheck.missing.join(', ')}`);
   }
 
-  const { sessionToken, pilotId, language, eventType, timestamp, extensionVersion } =
-    body as AnalyticsWriterRequest;
+  const req = body as AnalyticsWriterRequest;
+
+  if (!isValidStudentCode(req.studentCode)) {
+    return error(400, 'INVALID_STUDENT_CODE', 'studentCode is malformed');
+  }
 
   // ── 4. Validate language ───────────────────────────────────────
-  if (!isValidLanguage(language)) {
-    return error(400, 'MISSING_FIELDS', `Language '${language}' is not supported`);
+  if (!isValidLanguage(req.language)) {
+    return error(400, 'MISSING_FIELDS', `Language '${req.language}' is not supported`);
   }
 
   // ── 5. Validate event type ─────────────────────────────────────
-  if (!VALID_EVENT_TYPES.includes(eventType as typeof VALID_EVENT_TYPES[number])) {
-    return error(400, 'INVALID_EVENT_TYPE', `Event type '${eventType}' is not valid`);
+  if (!VALID_EVENT_TYPES.includes(req.eventType as typeof VALID_EVENT_TYPES[number])) {
+    return error(400, 'INVALID_EVENT_TYPE', `Event type '${req.eventType}' is not valid`);
   }
 
-  // ── 6. Write to Cosmos DB ──────────────────────────────────────
+  // ── 5b. Rate limit ──────────────────────────────────────────────
+  // Higher limit — analytics is fire-and-forget, one event per interaction
+  const rateCheck = await checkRateLimit(`analytics:${req.studentCode}`, 300);
+  if (!rateCheck.allowed) {
+    return error(429, 'RATE_LIMITED', `Rate limit exceeded. Retry after ${rateCheck.retryAfterMs}ms`);
+  }
+
+  // ── 6. Look up enrollment to resolve school + grade band ───────
+  let schoolCode = 'unknown';
+  let gradeBand: string = 'unknown';
+  try {
+    const enrollments = getEnrollmentsContainer();
+    const { resource } = await enrollments.item(req.studentCode, req.studentCode).read<EnrollmentDoc>();
+    if (resource) {
+      schoolCode = resource.schoolCode;
+      gradeBand = resource.gradeBand;
+    } else {
+      context.warn(`Unknown studentCode: ${req.studentCode}`);
+    }
+  } catch {
+    context.warn(`Failed to resolve enrollment for ${req.studentCode}`);
+  }
+
+  // ── 7. Write to Cosmos DB ──────────────────────────────────────
   const eventId = randomUUID();
   const serverTimestamp = new Date().toISOString();
 
   const doc: SessionUsageDoc = {
     id: eventId,
-    sessionToken,
-    pilotId,
-    language,
-    eventType,
-    timestamp,
-    extensionVersion,
+    studentCode: req.studentCode,
+    schoolCode,
+    gradeBand: gradeBand as SessionUsageDoc['gradeBand'],
+    language: req.language,
+    eventType: req.eventType,
+    timestamp: req.timestamp,
+    extensionVersion: req.extensionVersion,
+    ...(req.term && { term: req.term }),
+    ...(req.subject && { subject: req.subject }),
+    ...(req.source && { source: req.source }),
+    ...(req.difficulty && { difficulty: req.difficulty }),
   };
 
   try {
     const container = getSessionsContainer();
     await container.items.create(doc);
-    context.log(`Event logged: ${eventId} — ${eventType} for pilot ${pilotId}`);
+    context.log(`Event logged: ${eventId} — ${req.eventType} for ${req.studentCode}`);
   } catch (err) {
     context.log('Cosmos write failed:', err);
     return error(500, 'INTERNAL_ERROR', 'Failed to log event');
@@ -120,11 +159,4 @@ export async function analyticsWriter(
 // HELPERS
 // ============================================
 
-function error(
-  status: number,
-  code: AnalyticsWriterErrorResponse['error'],
-  details: string
-): HttpResponseInit {
-  const body: AnalyticsWriterErrorResponse = { error: code, details };
-  return { status, jsonBody: body };
-}
+const error = errorResponse;

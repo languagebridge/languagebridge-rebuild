@@ -1,0 +1,18 @@
+{
+  "arabic":      { "azure_voice": "ar-SA-HamedNeural",      "piper_model": "ar_JO-kareem-medium",            "backend": "piper", "quality": "production" },
+  "french":      { "azure_voice": "fr-FR-HenriNeural",      "piper_model": "fr_FR-mls-medium",               "backend": "piper", "quality": "production" },
+  "portuguese":  { "azure_voice": "pt-BR-AntonioNeural",    "piper_model": "pt_BR-cadu-medium",              "backend": "piper", "quality": "production" },
+  "ukrainian":   { "azure_voice": "uk-UA-OstapNeural",      "piper_model": "uk_UA-ukrainian_tts-medium",     "backend": "piper", "quality": "production" },
+  "vietnamese":  { "azure_voice": "vi-VN-NamMinhNeural",    "piper_model": "vi_VN-vais1000-medium",          "backend": "piper", "quality": "production" },
+  "spanish":     { "azure_voice": "es-US-AlonsoNeural",     "piper_model": "es_AR-daniela-high",             "backend": "piper", "quality": "production" },
+  "persian":     { "azure_voice": "fa-IR-DilaraNeural",     "piper_model": "fa_IR-amir-medium",              "backend": "piper", "quality": "production" },
+  "english":     { "azure_voice": "en-US-AndrewNeural",     "piper_model": null,                             "backend": "azure", "quality": "production" },
+  "nepali":      { "azure_voice": "ne-NP-SagarNeural",      "piper_model": "ne_NP-chitwan-medium",           "backend": "piper", "quality": "beta" },
+  "swahili":     { "azure_voice": "sw-KE-RafikiNeural",     "piper_model": "sw_CD-lanfrica-medium",          "backend": "piper", "quality": "beta" },
+  "dari":        { "azure_voice": "fa-AF-HasanNeural",      "piper_model": "fa_IR-amir-medium",              "backend": "piper", "quality": "beta" },
+  "pashto":      { "azure_voice": "ps-AF-GulNawazNeural",   "piper_model": "fa_IR-amir-medium",              "backend": "piper", "quality": "experimental" },
+  "urdu":        { "azure_voice": "ur-PK-AsadNeural",       "piper_model": "ar_JO-kareem-medium",            "backend": "piper", "quality": "experimental" },
+  "somali":      { "azure_voice": "so-SO-MuuseNeural",      "piper_model": "sw_CD-lanfrica-medium",          "backend": "piper", "quality": "experimental" },
+  "burmese":     { "azure_voice": "my-MM-ThihaNeural",      "piper_model": null,                             "backend": "azure", "quality": "azure_only" },
+  "tagalog":     { "azure_voice": "fil-PH-AngeloNeural",    "piper_model": null,                             "backend": "azure", "quality": "azure_only" }
+}

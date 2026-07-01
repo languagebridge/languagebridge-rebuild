@@ -22,7 +22,10 @@ function getClient(): CosmosClient {
 }
 
 function getDatabase() {
-  const databaseId = process.env.COSMOS_DB_DATABASE ?? 'languagebridge-prod';
+  const databaseId = process.env.COSMOS_DB_DATABASE;
+  if (!databaseId) {
+    throw new Error('COSMOS_DB_DATABASE must be set — refusing to use a hardcoded default');
+  }
   return getClient().database(databaseId);
 }
 
@@ -38,9 +41,6 @@ export function getFlagsContainer(): Container {
   return getDatabase().container('flags');
 }
 
-export function getModelRegistryContainer(): Container {
-  return getDatabase().container('model_registry');
-}
 
 export function getPilotsContainer(): Container {
   return getDatabase().container('pilots');
@@ -52,4 +52,20 @@ export function getAdminUsersContainer(): Container {
 
 export function getAudioCacheMetadataContainer(): Container {
   return getDatabase().container('audio_cache_metadata');
+}
+
+export function getLexiconContainer(): Container {
+  return getDatabase().container('lexicon');
+}
+
+export function getEnrollmentsContainer(): Container {
+  return getDatabase().container('enrollments');
+}
+
+export function getAnalyticsContainer(): Container {
+  return getDatabase().container('analytics');
+}
+
+export function getRateLimitContainer(): Container {
+  return getDatabase().container('rate_limits');
 }

@@ -1,0 +1,28 @@
+{
+  "indexingMode": "consistent",
+  "automatic": true,
+  "includedPaths": [
+    { "path": "/*" }
+  ],
+  "excludedPaths": [
+    { "path": "/\"_etag\"/?" }
+  ],
+  "compositeIndexes": [
+    [
+      { "path": "/schoolCode", "order": "ascending" },
+      { "path": "/gradeBand", "order": "ascending" },
+      { "path": "/timestamp", "order": "ascending" }
+    ],
+    [
+      { "path": "/schoolCode", "order": "ascending" },
+      { "path": "/gradeBand", "order": "ascending" },
+      { "path": "/eventType", "order": "ascending" },
+      { "path": "/timestamp", "order": "ascending" }
+    ],
+    [
+      { "path": "/schoolCode", "order": "ascending" },
+      { "path": "/studentCode", "order": "ascending" },
+      { "path": "/timestamp", "order": "ascending" }
+    ]
+  ]
+}

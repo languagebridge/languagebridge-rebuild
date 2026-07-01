@@ -8,9 +8,24 @@
       }
     }
   },
+  "extensions": {
+    "http": {
+      "routePrefix": "api"
+    }
+  },
   "extensionBundle": {
     "id": "Microsoft.Azure.Functions.ExtensionBundle",
     "version": "[4.*, 5.0.0)"
   },
-  "functionTimeout": "00:05:00"
+  "functionTimeout": "00:05:00",
+  "cors": {
+    "allowedOrigins": [
+      "chrome-extension://*",
+      "https://app.languagebridge.app",
+      "https://languagebridge.app"
+    ],
+    "allowedMethods": ["GET", "POST", "OPTIONS"],
+    "allowedHeaders": ["Content-Type", "x-lb-api-key", "Authorization"],
+    "maxAge": 86400
+  }
 }
