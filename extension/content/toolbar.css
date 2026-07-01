@@ -1129,18 +1129,25 @@
     position: relative;
   }
 
-  .lb-lang-btn {
+  .lb-lang-group .lb-lang-btn {
     width: auto;
-    padding: 6px 12px;
+    min-width: 0;
+    height: auto;
+    min-height: 32px;
+    max-width: 150px;
+    padding: 6px 10px;
     display: flex;
     align-items: center;
     gap: 6px;
+    line-height: 1.3;
   }
 
   #lb-lang-display {
     font-size: 13px;
     font-weight: 500;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .lb-help-btn {

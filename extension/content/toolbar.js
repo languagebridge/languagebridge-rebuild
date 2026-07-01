@@ -308,7 +308,11 @@ class LanguageBridgeToolbar {
 
   updateLanguageDisplay() {
     const el = this.toolbar?.querySelector('#lb-lang-display');
-    if (el) el.textContent = this.getLanguageName();
+    if (!el) return;
+    // Show just the native label on the compact toolbar button (the dropdown
+    // and status message still show the full "native + English" name).
+    const lang = window.LB_LANGUAGES[this.userLanguage];
+    el.textContent = lang ? lang.nativeLabel : this.userLanguage;
   }
 
   updatePlaceholderForContext() {

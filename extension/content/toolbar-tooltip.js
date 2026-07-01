@@ -326,8 +326,12 @@ _TT._buildGlossaryTab = function () {
   // Fetch each word ONCE; tier switches then just filter this cache (instant).
   const wordCache = {};
   const loadAllWords = async () => {
+    // Wait a tick so showTranslationTooltip finishes inserting the tooltip into
+    // the DOM — otherwise the "still open?" guard below is false on the first
+    // pass and nothing gets fetched.
+    await new Promise(r => setTimeout(r, 0));
     for (const word of _glossWords) {
-      if (!document.getElementById('lb-translation-tooltip')) return;
+      if (!wordList.isConnected) return; // tooltip was closed mid-fetch
       try {
         const res = await window.LBTranslationService.translate(word, this.userLanguage);
         if (res && !res.error) wordCache[word] = res;
