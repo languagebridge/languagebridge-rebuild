@@ -30,21 +30,38 @@ Keep it to that one purpose in the listing — the store rejects "does many unre
 **Summary (132 char max):**
 > Instant translation, read-aloud audio, and teacher voice chat for multilingual students — in 16 languages, on any page.
 
-**Detailed description:**
+**Detailed description** (this is the current live-listing copy — keep it in sync with the actual Chrome Web Store listing):
 ```
-LanguageBridge helps English learners understand their schoolwork in their own language.
+LanguageBridge helps English learners succeed in their classrooms with real-time translation and text-to-speech in 16 languages.
 
-• Translate any text — select a word or sentence on any page and see it in your language, with a listen button.
-• Hear it out loud — natural text-to-speech in 16 languages.
-• Understand hard words — academic terms come with a short simple-English explanation, not just a translation.
-• Talk to your teacher — a two-way voice translator: each person speaks their language and the app translates aloud.
+🌍 FEATURES:
+• Real-time translation — Arabic, Burmese, Dari, French, Nepali, Pashto, Persian, Portuguese, Somali, Spanish, Swahili, Tagalog, Ukrainian, Urdu, Vietnamese, and English
+• Text-to-Speech — Natural voice synthesis in every supported language
+• Academic Vocabulary — Plain-English definitions for hundreds of academic terms, tiered by grade level
+• Talk to Teacher — Two-way voice conversation translator (uses the microphone only while you're actively recording)
+• Google Docs Support — Works on Google Docs and any webpage
 
-Built for K-12 multilingual learners and their teachers.
+🔒 PRIVACY & COMPLIANCE:
+• COPPA Compliant — No personal data collected from children; students are pseudonymous (no names, emails, or IDs)
+• FERPA Compliant — No education records stored
+• OHIO SB 29 Compliant
+• Privacy-First — Only the text you select is sent for translation. In Talk to Teacher, recorded audio is transcribed and immediately discarded — never stored.
+• No Browsing History — The extension does not track your browsing
+• Limited Permissions — Storage (saves your language choice), activeTab (reads the text you select), and microphone (Talk to Teacher only)
 
-Languages: Arabic, Burmese, Dari, English, French, Nepali, Pashto, Persian, Portuguese, Somali, Spanish, Swahili, Tagalog, Ukrainian, Urdu, Vietnamese.
+👨‍🎓 DESIGNED FOR EDUCATION:
+Built specifically for English Language Learner (ELL) students in K-12 classrooms — including newcomers and students with limited or interrupted formal education. Empowers students to understand lessons in real time while building English proficiency.
 
-Privacy: LanguageBridge does not collect names, emails, or any personal information. Selected text and microphone audio are sent to Microsoft Azure only to produce the translation or transcription, and are not stored. See our privacy policy at languagebridge.app/privacy.
+📚 HOW IT WORKS:
+1. Select any text on a webpage or Google Doc
+2. See the translation in your language instantly
+3. Tap the speaker icon to hear it read aloud
+4. Open Talk to Teacher for a two-way spoken conversation
+
+Perfect for students, teachers, and families supporting English learners.
 ```
+
+> **Consistency check:** the "Limited Permissions" line names `storage`, `activeTab`, and the microphone (`offscreen`) — this must match `manifest.json` and the Data-use disclosure (§4). The previous listing's "only storage and activeTab" was inaccurate once Talk to Teacher shipped.
 
 **Category:** Education
 **Language:** English
