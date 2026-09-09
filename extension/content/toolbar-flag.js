@@ -105,8 +105,12 @@ _TF.showHelp = function () {
 window.__lbToolbar = new LanguageBridgeToolbar();
 LBLog.info('Toolbar loaded');
 
-// Session start analytics
-window.LBAnalytics?.sessionStart();
+// Session start analytics — deferred until persisted state has loaded. Firing it
+// synchronously here would race the async storage read: studentCode is still null,
+// so LBAnalytics.send() drops the event (that's why session_start was always 0
+// while session_end, which fires later on unload, logged normally).
+if (window.LBState?.whenReady) window.LBState.whenReady(() => window.LBAnalytics?.sessionStart());
+else window.LBAnalytics?.sessionStart();
 
 // Session end on page unload
 window.addEventListener('beforeunload', () => {

@@ -137,30 +137,18 @@ _TT._buildTranslationTab = function (bridgeAnchor, bridgeScaffold, cognate, form
     el.textContent = cognate;
     row.appendChild(el);
 
-    const SPEAKER = '&#128266;', PAUSE = '&#9208;';  // 🔊 / ⏸
+    const SPEAKER = '&#128266;';  // 🔊
     const audioBtn = document.createElement('button');
     audioBtn.className = 'lb-cognate-audio-btn';
     audioBtn.title = 'Listen';
     audioBtn.innerHTML = SPEAKER;
-    let playing = false;
+    // Play-only: click to listen. A second click cleanly replays because
+    // generateAndPlay supersedes any prior clip via its generation token, so
+    // there is no separate (and currently broken) pause/stop toggle here — use
+    // the toolbar play/pause to stop playback.
     audioBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      // Toggle: click to play, click again to stop — right here, no toolbar needed.
-      if (playing) {
-        window.LBTTSService?.stop();
-        playing = false;
-        audioBtn.innerHTML = SPEAKER;
-        audioBtn.title = 'Listen';
-        return;
-      }
-      playing = true;
-      audioBtn.innerHTML = PAUSE;
-      audioBtn.title = 'Stop';
       try { await window.LBTTSService?.generateAndPlay(cognate, self.userLanguage); } catch (err) { /* noop */ }
-      // Reset when playback finishes naturally (or after stop()).
-      playing = false;
-      audioBtn.innerHTML = SPEAKER;
-      audioBtn.title = 'Listen';
     });
     row.appendChild(audioBtn);
     tab.appendChild(row);
