@@ -4,6 +4,10 @@
 
 window.LBTranslationService = {
   async translate(text, targetLang) {
+    // Extension reloaded/updated while this old page is still open — bail with a
+    // reload prompt instead of throwing "Extension context invalidated".
+    if (!window.LBRuntime || !window.LBRuntime.alive()) { window.LBRuntime && window.LBRuntime.notifyLost(); return { error: 'Reload the page to keep using LanguageBridge.' }; }
+
     // Offline check
     if (!navigator.onLine) {
       return { error: 'You appear to be offline. Check your internet connection.' };
@@ -23,6 +27,14 @@ window.LBTranslationService = {
     // Cache check
     const cached = window.LBSessionCache?.get(text, targetLang, 'translation');
     if (cached) return cached;
+
+    // A sentence/paragraph is not a vocabulary term — translate it as a phrase via
+    // /translate rather than sending a whole highlight to the lexicon as one "term"
+    // (which pollutes the lexicon and mis-treats a paragraph as a single word).
+    if (text.length > 140 || text.trim().split(/\s+/).length > 12) {
+      const phrase = await this._translateFallback(text, targetLang);
+      if (phrase) { window.LBSessionCache?.set(text, targetLang, 'translation', phrase); return phrase; }
+    }
 
     try {
       // Detect subject context from page content/URL
@@ -130,6 +142,7 @@ window.LBTranslationService = {
       window.LBSessionCache?.set(text, targetLang, 'translation', result);
       return result;
     } catch (err) {
+      if (window.LBRuntime && window.LBRuntime.handle(err)) return { error: 'Reload the page to keep using LanguageBridge.' };
       LBLog.error('Translation failed:', err);
       return { error: 'Translation unavailable. Please try again.' };
     }

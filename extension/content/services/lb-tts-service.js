@@ -15,6 +15,90 @@ window.LBTTSService = {
     if (this.currentAudio) { try { this.currentAudio.pause(); this.currentAudio.currentTime = 0; } catch (e) { /* noop */ } this.currentAudio = null; }
   },
 
+  // ── Client-side audio cache ────────────────────────────────────────
+  // First play of a phrase generates + decodes it once; every replay after plays
+  // the decoded buffer with ZERO network calls. Only short (single-chunk) text is
+  // cached; long text streams via generateAndPlay uncached.
+  _audioCache: new Map(),
+  _cacheKey(text, lang) { return `${lang}:${String(text || '').trim().slice(0, 240)}`; },
+  hasCached(text, lang) { return this._audioCache.has(this._cacheKey(text, lang)); },
+
+  async _ensureCtx() {
+    if (!this.audioContext) this.audioContext = new AudioContext();
+    if (this.audioContext.state === 'suspended') await this.audioContext.resume();
+  },
+
+  _playBuffer(buffer) {
+    const gen = ++this._gen;
+    this._stopSources();
+    const source = this.audioContext.createBufferSource();
+    source.buffer = buffer;
+    source.playbackRate.value = window.LBState?.readingSpeed || 1.0;
+    source.connect(this.audioContext.destination);
+    source.start(0);
+    this.currentSource = source;
+    return new Promise((resolve) => {
+      source.onended = () => { if (this.currentSource === source) this.currentSource = null; resolve(); };
+    });
+  },
+
+  // Fetch audio bytes (via background proxy → CORS-safe) and decode to a buffer.
+  async _decodeUrl(audioUrl, gen) {
+    const res = await chrome.runtime.sendMessage({ action: 'fetch-audio', url: audioUrl });
+    if (!res || !res.ok || gen !== this._gen) return null;
+    const response = await fetch(res.dataUrl);
+    const arrayBuffer = await response.arrayBuffer();
+    if (!arrayBuffer.byteLength || gen !== this._gen) return null;
+    return this.audioContext.decodeAudioData(arrayBuffer);
+  },
+
+  // Generate the audio URL for short text via tts-router (Dari → Persian fallback).
+  async _generateUrl(text, language, gen) {
+    const ask = async (lang) => {
+      const res = await chrome.runtime.sendMessage({
+        action: 'api-fetch', endpoint: 'tts-router',
+        body: { text, language: lang, studentCode: window.LBState.studentCode },
+      });
+      if (gen !== this._gen) return null;
+      const url = res && res.data && (res.data.audioUrl || res.data.audio_url);
+      if (res && res.ok && url) return url;
+      if (lang === 'dari' && res && res.data && res.data.error === 'AZURE_SERVICE_ERROR') return ask('persian');
+      return null;
+    };
+    return ask(language);
+  },
+
+  // Play text, caching the decoded audio so replays cost nothing.
+  // Returns { ok, cached }. Pass a known audioUrl to skip generation.
+  async speakCached(text, language, audioUrl) {
+    if (!window.LBRuntime || !window.LBRuntime.alive()) { window.LBRuntime && window.LBRuntime.notifyLost(); return { ok: false, cached: false }; }
+    try {
+      await this._ensureCtx();
+      const key = this._cacheKey(text, language);
+      const hit = this._audioCache.get(key);
+      if (hit) { await this._playBuffer(hit); return { ok: true, cached: true }; }
+
+      const chunks = this._chunkText(text, 480);
+      if (chunks.length !== 1) { await this.generateAndPlay(text, language); return { ok: true, cached: false }; }
+
+      if (!window.LBRateLimiter.check('tts', window.CONFIG.rateLimits.ttsPerMinute)) {
+        LBLog.warn('TTS rate limit reached'); return { ok: false, cached: false };
+      }
+      const gen = ++this._gen;
+      const url = audioUrl || await this._generateUrl(chunks[0], language, gen);
+      if (!url || gen !== this._gen) return { ok: false, cached: false };
+      const buffer = await this._decodeUrl(url, gen);
+      if (!buffer) return { ok: false, cached: false };
+      this._audioCache.set(key, buffer);
+      await this._playBuffer(buffer);
+      return { ok: true, cached: true };
+    } catch (err) {
+      window.LBRuntime && window.LBRuntime.handle(err);
+      LBLog.error('speakCached failed:', err);
+      return { ok: false, cached: false };
+    }
+  },
+
   async play(audioUrl, gen) {
     if (gen === undefined) gen = this._gen;
     try {
@@ -101,6 +185,7 @@ window.LBTTSService = {
   // Generate audio via tts-router and play it — chunking long text so it never
   // exceeds the backend's 500-char TTS limit. Chunks play in sequence.
   async generateAndPlay(text, language) {
+    if (!window.LBRuntime || !window.LBRuntime.alive()) { window.LBRuntime && window.LBRuntime.notifyLost(); return null; }
     if (!window.LBRateLimiter.check('tts', window.CONFIG.rateLimits.ttsPerMinute)) {
       LBLog.warn('TTS rate limit reached');
       return null;

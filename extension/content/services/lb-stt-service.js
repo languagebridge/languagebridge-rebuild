@@ -22,6 +22,7 @@ window.LBSTTService = {
   // Begin microphone capture in the offscreen document.
   // Returns { success: true } or { error, code }.
   async startRecording() {
+    if (!window.LBRuntime || !window.LBRuntime.alive()) { window.LBRuntime && window.LBRuntime.notifyLost(); return { error: 'Reload the page to keep using LanguageBridge.', code: 'context-lost' }; }
     try {
       const r = await this._send({ action: 'ttt-record-start' }, 15000);
       if (r && r.ok) { this.isRecording = true; return { success: true }; }
@@ -68,6 +69,7 @@ window.LBSTTService = {
   // Send WAV audio to the backend for transcription.
   // Returns { text } or { error, code }.
   async transcribe(wavBase64, language) {
+    if (!window.LBRuntime || !window.LBRuntime.alive()) { window.LBRuntime && window.LBRuntime.notifyLost(); return { error: 'Reload the page to keep using LanguageBridge.', code: 'context-lost' }; }
     if (!navigator.onLine) return { error: 'You appear to be offline.', code: 'offline' };
     if (!window.LBState.studentCode) return { error: 'Not enrolled yet. Finish onboarding first.', code: 'not-enrolled' };
     if (!window.LBRateLimiter.check('stt', window.CONFIG.rateLimits.sttPerMinute)) {

@@ -137,18 +137,33 @@ _TT._buildTranslationTab = function (bridgeAnchor, bridgeScaffold, cognate, form
     el.textContent = cognate;
     row.appendChild(el);
 
-    const SPEAKER = '&#128266;';  // 🔊
+    const SPEAKER = '&#128266;';   // 🔊 first listen
+    const REPLAY = '&#8635;';      // ↻ replay (cached)
+    const LOADING = '&#8987;';     // ⏳ generating
     const audioBtn = document.createElement('button');
     audioBtn.className = 'lb-cognate-audio-btn';
     audioBtn.title = 'Listen';
     audioBtn.innerHTML = SPEAKER;
-    // Play-only: click to listen. A second click cleanly replays because
-    // generateAndPlay supersedes any prior clip via its generation token, so
-    // there is no separate (and currently broken) pause/stop toggle here — use
-    // the toolbar play/pause to stop playback.
+    // First tap generates + caches the audio (button greys out while it loads);
+    // after that it's a replay button that plays from the client cache — no
+    // repeated TTS calls. Long text streams uncached.
+    let played = false, busy = false;
     audioBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      try { await window.LBTTSService?.generateAndPlay(cognate, self.userLanguage); } catch (err) { /* noop */ }
+      if (busy) return;
+      busy = true;
+      audioBtn.disabled = true;
+      audioBtn.style.opacity = '0.5';
+      if (!played) audioBtn.innerHTML = LOADING;
+      try {
+        const r = await window.LBTTSService?.speakCached(cognate, self.userLanguage);
+        if (r && r.ok) played = true;
+      } catch (err) { /* noop */ }
+      audioBtn.disabled = false;
+      audioBtn.style.opacity = '1';
+      audioBtn.innerHTML = played ? REPLAY : SPEAKER;
+      audioBtn.title = played ? 'Replay' : 'Listen';
+      busy = false;
     });
     row.appendChild(audioBtn);
     tab.appendChild(row);
@@ -317,7 +332,9 @@ _TT._buildGlossaryTab = function () {
     this.selectedText.split(/\s+/)
       .map(w => w.replace(/[^a-zA-Z'-]/g, '').toLowerCase())
       .filter(w => w.length > 2 && !STOP_WORDS.has(w))
-  )].slice(0, 12);
+  )].slice(0, 12)
+    // Sort by difficulty: most syllables first, so key academic terms rise to the top.
+    .sort((a, b) => _countSyllables(b) - _countSyllables(a) || a.localeCompare(b));
 
   // Fetch each word ONCE; tier switches then just filter this cache (instant).
   const wordCache = {};
@@ -365,7 +382,7 @@ _TT._buildGlossaryTab = function () {
         row.innerHTML = `
           <div class="lb-vocab-pair">
             <div class="lb-vocab-english">
-              <span class="lb-vocab-word">${window.escapeHtml(word)}</span>
+              <span class="lb-vocab-word">${window.escapeHtml(word)}</span>${_countSyllables(word) >= 3 ? `<span class="lb-vocab-syl" style="margin-left:6px;font-size:10px;font-weight:700;color:#8a7885;background:#f2ecef;border-radius:6px;padding:1px 5px;" title="${_countSyllables(word)} syllables">${_countSyllables(word)} syl</span>` : ''}
               <button class="lb-vocab-audio lb-en-audio" data-word="${window.escapeHtml(word)}" data-lang="english" title="Listen in English">&#9654;</button>
             </div>
             <span class="lb-vocab-arrow">\u2192</span>
@@ -386,17 +403,20 @@ _TT._buildGlossaryTab = function () {
 
     if (!found) wordList.innerHTML = `<div class="lb-glossary-empty">No words at this grade. Try another tier.</div>`;
 
-    // Wire audio buttons
+    // Wire audio buttons — speakCached caches decoded audio so replays cost nothing.
+    const PLAY = '&#9654;', WAIT = '&#8987;';
     wordList.querySelectorAll('.lb-en-audio').forEach(btn => {
-      btn.addEventListener('click', async (e) => { e.stopPropagation(); btn.textContent = '...'; await window.LBTTSService?.generateAndPlay(btn.dataset.word, 'english'); btn.innerHTML = '&#9654;'; });
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation(); btn.disabled = true; btn.innerHTML = WAIT;
+        try { await window.LBTTSService?.speakCached(btn.dataset.word, 'english'); } catch (err) { /* noop */ }
+        btn.disabled = false; btn.innerHTML = PLAY;
+      });
     });
     wordList.querySelectorAll('.lb-cognate-audio').forEach(btn => {
       btn.addEventListener('click', async (e) => {
-        e.stopPropagation(); btn.textContent = '...';
-        const cached = audioCache[btn.dataset.word];
-        if (cached) await window.LBTTSService?.play(cached);
-        else { const r = await window.LBTTSService?.generateAndPlay(btn.dataset.word, btn.dataset.lang); if (r?.audioUrl) audioCache[btn.dataset.word] = r.audioUrl; }
-        btn.innerHTML = '&#9654;';
+        e.stopPropagation(); btn.disabled = true; btn.innerHTML = WAIT;
+        try { await window.LBTTSService?.speakCached(btn.dataset.word, btn.dataset.lang, audioCache[btn.dataset.word]); } catch (err) { /* noop */ }
+        btn.disabled = false; btn.innerHTML = PLAY;
       });
     });
 

@@ -40,3 +40,39 @@ window.LBRateLimiter = {
     return true;
   },
 };
+
+// Detects when the extension was reloaded/updated while an old content script is
+// still on the page — chrome.runtime.id goes undefined and sendMessage throws
+// "Extension context invalidated". Shows a one-time reload prompt instead of
+// failing silently or spamming errors. Real users hit this on every auto-update.
+window.LBRuntime = {
+  _notified: false,
+  alive() {
+    try { return !!(chrome.runtime && chrome.runtime.id); } catch (e) { return false; }
+  },
+  handle(err) {
+    const msg = String((err && err.message) || err || '');
+    if (/context invalidated|Extension context|message port closed|receiving end does not exist/i.test(msg)) {
+      this.notifyLost();
+      return true;
+    }
+    return false;
+  },
+  notifyLost() {
+    if (this._notified) return;
+    this._notified = true;
+    try {
+      const bar = document.createElement('div');
+      bar.style.cssText = 'position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:2147483600;background:#742a69;color:#fff;font:600 13px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding:12px 16px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.35);display:flex;align-items:center;gap:12px;';
+      const span = document.createElement('span');
+      span.textContent = 'LanguageBridge updated — reload this page to keep using it.';
+      const btn = document.createElement('button');
+      btn.textContent = 'Reload';
+      btn.style.cssText = 'border:none;border-radius:8px;background:#fff;color:#742a69;font-weight:800;padding:7px 14px;cursor:pointer;';
+      btn.addEventListener('click', () => location.reload());
+      bar.appendChild(span);
+      bar.appendChild(btn);
+      document.body.appendChild(bar);
+    } catch (e) { /* noop */ }
+  },
+};
