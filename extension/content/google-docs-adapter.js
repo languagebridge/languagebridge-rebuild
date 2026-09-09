@@ -14,7 +14,6 @@ window.LBGoogleDocsAdapter = {
       const selection = document.querySelector('.kix-selection-overlay');
       if (!selection) return null;
 
-      // Google Docs renders text in spans with class kix-lineview-text-block
       const editArea = document.querySelector('.kix-appview-editor');
       if (!editArea) return null;
 
