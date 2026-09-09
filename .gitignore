@@ -62,3 +62,11 @@ logs/
 # Azure Functions local settings (contains secrets)
 local.settings.json
 .funcignore
+
+# Generated document/report artifacts (regenerable — see scripts/)
+company/exports/
+backend/scripts/*-report.json
+
+# Large local-only data (never commit)
+data/standards-pipeline/venv/
+ml-pipeline/voices/

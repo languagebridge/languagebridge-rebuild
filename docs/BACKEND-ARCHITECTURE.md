@@ -2,6 +2,8 @@
 
 **LanguageBridge LLC | Confidential | April 2026**
 
+> **⚠ Partly superseded — see [`company/00-CANONICAL-FACTS.md`](../company/00-CANONICAL-FACTS.md) for canonical facts.** This document predates the June 2026 language cull: the product now supports **16 languages** (not 21/22) and runs **9 Azure Functions**. Kinyarwanda, Twi, Uzbek, Amharic, and Tigrinya were removed, and Haitian Creole is not shipped. ML-pipeline history for removed languages is retained below as a historical record.
+
 LanguageBridge is an AI-powered Chrome extension that gives K-12 English Language Learners instant, culturally aware translations of academic vocabulary in their native language. The backend is a serverless API running on Azure Functions, backed by Cosmos DB and Azure Blob Storage.
 
 ---
@@ -10,8 +12,8 @@ LanguageBridge is an AI-powered Chrome extension that gives K-12 English Languag
 
 | Metric | Value |
 |--------|-------|
-| Languages supported | 21 (Haitian Creole in training) |
-| Azure Functions | 8 endpoints |
+| Languages supported | 16 |
+| Azure Functions | 9 endpoints |
 | Cosmos DB containers | 8 |
 | Backend source lines | 2,590 |
 | Test coverage | 77 tests across 8 suites |
@@ -31,7 +33,7 @@ Student (Chrome Extension)
     │
     ├── POST /tts-router ──────────── "Say this out loud"
     │       ├── Proprietary TTS ───── Piper voices (13 languages)
-    │       ├── Azure Speech ──────── Fallback (all 21 languages)
+    │       ├── Azure Speech ──────── Fallback (all 16 languages)
     │       └── Blob Storage ──────── Audio cache with SAS URLs
     │
     ├── POST /flag-handler ────────── "This doesn't sound right"
@@ -51,7 +53,9 @@ Teacher (Dashboard)
 
 ---
 
-## The 8 Functions
+## The Functions
+
+*Note: this section documents the 7 original functions. Two more — `translate` and `speech-to-text` (added for full-sentence translation and Talk to Teacher) — bring the current total to **9**. See `company/00-CANONICAL-FACTS.md`.*
 
 ### 1. Lexicon Lookup
 
@@ -79,7 +83,7 @@ The core endpoint. A student highlights a word, and lexicon-lookup returns a bri
 Converts text to speech with intelligent routing and permanent caching.
 
 - Tries proprietary Piper TTS first (13 languages with custom-trained voices)
-- Falls back to Azure Speech Services (all 21 languages)
+- Falls back to Azure Speech Services (all 16 languages)
 - Caches every generated audio file in Azure Blob Storage — deduplicated by SHA-256 hash of (text + language)
 - Returns a signed URL (1-hour expiry) that the browser plays directly
 - Tracks cache hit counts in Cosmos DB for usage analytics
@@ -88,8 +92,8 @@ Converts text to speech with intelligent routing and permanent caching.
 | Tier | Languages | Engine |
 |------|-----------|--------|
 | Production | Arabic, French, Spanish, Portuguese, Ukrainian, Vietnamese, Persian | Piper (native models) |
-| Beta | Nepali, Swahili, Dari, Pashto, Urdu, Somali, Kinyarwanda, Twi | Piper (related-language models) |
-| Azure-only | Burmese, Uzbek, Amharic, Tagalog, Tigrinya, English | Azure Speech Services |
+| Beta | Nepali, Swahili, Dari, Pashto, Urdu, Somali | Piper (related-language models) |
+| Azure-only | Burmese, Tagalog, English | Azure Speech Services |
 
 ---
 
@@ -219,7 +223,7 @@ School-scoped analytics for teachers and administrators. Ten pre-built queries a
 
 | Container | Document Type | Partition Key | Purpose |
 |-----------|--------------|---------------|---------|
-| `lexicon` | LexiconDoc | language | 127,590 bridge definitions across 21 languages |
+| `lexicon` | LexiconDoc | language | 127,590 bridge definitions across 16 languages |
 | `sessions` | SessionUsageDoc | language | Anonymous analytics events |
 | `flags` | FlagDoc | language | Flagged content with escalation status |
 | `enrollments` | EnrollmentDoc | schoolCode | Student code → school mapping |
@@ -238,15 +242,15 @@ School-scoped analytics for teachers and administrators. Ten pre-built queries a
 
 ---
 
-## Supported Languages (21 live, Haitian Creole in training)
+## Supported Languages (16)
 
 | Tier | Languages | TTS Engine |
 |------|-----------|------------|
 | Production | Arabic, French, Spanish, Portuguese, Ukrainian, Vietnamese, Persian, English | Piper native models |
-| Beta | Nepali, Swahili, Dari, Pashto, Urdu, Somali, Kinyarwanda, Twi | Piper (related-language proxy) |
-| Azure-only | Burmese, Uzbek, Amharic, Tagalog, Tigrinya | Azure Speech Services |
+| Beta | Nepali, Swahili, Dari, Pashto, Urdu, Somali | Piper (related-language proxy) |
+| Azure-only | Burmese, Tagalog | Azure Speech Services |
 
-These 21 languages represent the most common home languages of ELL students in U.S. public schools, covering over 95% of the K-12 English learner population. Haitian Creole is in active training — the French Piper model serves as the base, fine-tuned on Creole data — and will ship as the 22nd supported language post-pilot.
+These 16 languages represent the most common home languages of ELL students in U.S. public schools, covering the large majority of the K-12 English learner population. (Kinyarwanda, Twi, Uzbek, Amharic, and Tigrinya were previously listed but removed in June 2026 because their endpoints were not working; Haitian Creole was explored in training but is not shipped.)
 
 ---
 

@@ -2,6 +2,8 @@
 
 **LanguageBridge LLC | April 2026**
 
+> **⚠ Partly superseded — see [`company/00-CANONICAL-FACTS.md`](../company/00-CANONICAL-FACTS.md) for canonical facts.** This document predates the June 2026 language cull: the product now supports **16 languages** (not 21/22) and runs **9 Azure Functions**. Kinyarwanda, Twi, Uzbek, Amharic, and Tigrinya were removed, and Haitian Creole is not shipped.
+
 LanguageBridge is an AI-powered Chrome extension that gives K-12 English Language Learners instant, culturally aware translations of academic vocabulary in their home language. A student highlights a word on any webpage, and LanguageBridge returns a plain-English bridge definition, a native-script cognate, grammatical forms, and text-to-speech audio — all in under two seconds.
 
 This document describes the backend architecture that powers the product.
@@ -56,9 +58,9 @@ Every student-facing request follows the same pattern: validate API key, check r
 |-------|-----------|
 | Runtime | Azure Functions v4 (Node.js) |
 | Language | TypeScript (strict mode) |
-| Database | Azure Cosmos DB (NoSQL, 9 containers) |
+| Database | Azure Cosmos DB (NoSQL, 8 containers) |
 | Blob Storage | Azure Blob Storage (audio cache) |
-| Translation | Azure Translator (21 languages, Haitian Creole in training) |
+| Translation | Azure Translator (16 languages) |
 | Speech | Azure Speech Services + Piper TTS (proprietary voices) |
 | Auth | Supabase (teacher/admin JWTs) |
 | Deployment | Azure Functions Core Tools via deploy script |
@@ -71,8 +73,8 @@ Every student-facing request follows the same pattern: validate API key, check r
 | Test code | 1,858 lines |
 | Test suites | 9 (8 unit + 1 integration) |
 | Tests | 96 |
-| Azure Functions | 8 endpoints |
-| Cosmos DB containers | 9 |
+| Azure Functions | 9 endpoints |
+| Cosmos DB containers | 8 |
 | Commits on feature branch | 48 |
 
 ---
@@ -133,7 +135,7 @@ The `type` field tells the frontend exactly how to render: `"bridge"` means show
 
 #### `POST /tts-router`
 
-Converts text to speech. Tries proprietary Piper TTS first (13 languages with custom-trained voices), falls back to Azure Speech Services (all 21 languages). Every generated audio file is cached in Blob Storage and deduplicated by SHA-256 hash.
+Converts text to speech. Tries proprietary Piper TTS first (13 languages with custom-trained voices), falls back to Azure Speech Services (all 16 languages). Every generated audio file is cached in Blob Storage and deduplicated by SHA-256 hash.
 
 Returns a signed SAS URL (1-hour read-only expiry) that the browser plays directly.
 
@@ -170,11 +172,11 @@ Ten pre-built analytics queries, school-scoped. Teachers can only query schools 
 
 ## Data Architecture
 
-### Cosmos DB (9 containers)
+### Cosmos DB (8 containers)
 
 | Container | Partition Key | TTL | Purpose |
 |-----------|--------------|-----|---------|
-| `lexicon` | `/language` | — | 127,590 bridge definitions across 21 languages |
+| `lexicon` | `/language` | — | 127,590 bridge definitions across 16 languages |
 | `sessions` | `/language` | — | Anonymous analytics events (composite indexed) |
 | `flags` | `/language` | — | Flagged content with escalation status |
 | `enrollments` | `/schoolCode` | — | Student code to school mapping |
@@ -229,7 +231,7 @@ The bridge definitions themselves are language-agnostic English scaffolds genera
 
 | Source | Count | Content |
 |--------|-------|---------|
-| Ohio Standards Pipeline | ~1,080 terms x 21 languages | Bridge anchor, scaffold, grammatical forms |
+| Ohio Standards Pipeline | ~1,080 terms x 16 languages | Bridge anchor, scaffold, grammatical forms |
 | RBERN Bilingual Glossaries | 127,590 entries across 17 languages | Cognates (translations) |
 | Azure Translator (auto-cached) | Grows with usage | Cognate-only fallback |
 
@@ -246,7 +248,7 @@ POST /tts-router { text: "فتوسنتز", language: "dari" }
     ├─ Proprietary TTS (Piper, 13 languages)
     │   └─ Success → Upload to Blob → Write metadata → Return URL
     │
-    └─ Azure Speech Services fallback (all 21 languages)
+    └─ Azure Speech Services fallback (all 16 languages)
         └─ Success → Upload to Blob → Write metadata → Return URL
 ```
 
@@ -257,8 +259,8 @@ The metadata write is blocking with one retry. Without it, the cache entry is lo
 | Tier | Languages | Engine |
 |------|-----------|--------|
 | Production | Arabic, French, Spanish, Portuguese, Ukrainian, Vietnamese, Persian | Piper (native models) |
-| Beta | Nepali, Swahili, Dari, Pashto, Urdu, Somali, Kinyarwanda, Twi | Piper (related-language proxy) |
-| Azure-only | Burmese, Uzbek, Amharic, Tagalog, Tigrinya, English | Azure Speech Services |
+| Beta | Nepali, Swahili, Dari, Pashto, Urdu, Somali | Piper (related-language proxy) |
+| Azure-only | Burmese, Tagalog, English | Azure Speech Services |
 
 ---
 
@@ -391,16 +393,16 @@ There is no CI/CD pipeline yet — deploys are manual. The deploy script is idem
 
 ---
 
-## Supported Languages (21 live, Haitian Creole in training)
+## Supported Languages (16)
 
-These 21 languages represent the most common home languages of ELL students in U.S. public schools, covering over 95% of the K-12 English learner population. Haitian Creole is in active training — the French Piper model serves as the base, fine-tuned on Creole data — and will ship as the 22nd supported language post-pilot.
+These 16 languages represent the most common home languages of ELL students in U.S. public schools, covering the large majority of the K-12 English learner population. (Kinyarwanda, Twi, Uzbek, Amharic, and Tigrinya were previously listed but removed in June 2026 because their endpoints were not working; Haitian Creole was explored in training but is not shipped.)
 
 | Tier | Languages | Count |
 |------|-----------|-------|
 | Tier 1 (Piper production) | Arabic, French, Portuguese, Ukrainian, Vietnamese, Spanish, Persian, English | 8 |
-| Tier 1.5 (Piper beta) | Nepali, Swahili, Dari, Pashto, Urdu, Somali, Kinyarwanda, Twi | 8 |
-| Tier 2 (Azure-only) | Burmese, Uzbek, Amharic, Tagalog, Tigrinya | 5 |
-| **Total** | | **21 + English** |
+| Tier 1.5 (Piper beta) | Nepali, Swahili, Dari, Pashto, Urdu, Somali | 6 |
+| Tier 2 (Azure-only) | Burmese, Tagalog | 2 |
+| **Total** | | **16 (incl. English)** |
 
 To add a new language: add the language code to the `SUPPORTED_LANGUAGES` array in `backend/shared/types.ts`. TypeScript will enforce it everywhere at compile time — every function, every validator, every type definition updates automatically.
 
@@ -411,7 +413,7 @@ To add a new language: add the language code to the `SUPPORTED_LANGUAGES` array 
 | Service | Resource | Region | Purpose |
 |---------|----------|--------|---------|
 | Azure Functions | `languagebridge-api` | East US | All 8 API endpoints |
-| Cosmos DB | `languagebridge-cosmos` | East US | 9 containers, composite indexed |
+| Cosmos DB | `languagebridge-cosmos` | East US | 8 containers, composite indexed |
 | Blob Storage | `languagebridgece8132` | East US | TTS audio cache |
 | Azure Speech | `microspee` | East US | Text-to-speech generation |
 | Azure Translator | `microtran` | East US | Cognate translation |

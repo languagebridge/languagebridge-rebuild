@@ -1,0 +1,53 @@
+<style>
+  @page { size: Letter; margin: 0.9in 0.85in; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Helvetica Neue", Arial, system-ui, sans-serif;
+    font-size: 10.5pt; line-height: 1.5; color: #1b1b1b; margin: 0;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  h1 {
+    font-size: 20pt; color: #742a69; margin: 0 0 6pt; letter-spacing: -0.3px;
+    page-break-before: always; padding-top: 2pt;
+  }
+  h2 {
+    font-size: 13.5pt; color: #742a69; margin: 15pt 0 5pt;
+    border-bottom: 1px solid #e6d9e1; padding-bottom: 3pt; page-break-after: avoid;
+  }
+  h3 { font-size: 11pt; margin: 12pt 0 2pt; color: #2a1f28; page-break-after: avoid; }
+  p, li { margin: 4pt 0; }
+  ul, ol { padding-left: 18pt; }
+  a { color: #742a69; text-decoration: none; }
+  strong { color: #111; }
+  em { color: #444; }
+  blockquote {
+    border-left: 3px solid #f37030; margin: 8pt 0; padding: 4pt 0 4pt 12pt;
+    color: #555; background: #faf6f4;
+  }
+  code {
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 8.8pt;
+    background: #f2ecef; padding: 0.5pt 3pt; border-radius: 3px; color: #6a3060;
+  }
+  hr { border: 0; border-top: 1px solid #e6d9e1; margin: 12pt 0; }
+  table {
+    border-collapse: collapse; width: 100%; font-size: 9.3pt; margin: 8pt 0;
+    break-inside: avoid;
+  }
+  th, td { border: 1px solid #dccdd6; padding: 4pt 6pt; text-align: left; vertical-align: top; }
+  th { background: #f4eef2; color: #742a69; font-weight: 700; }
+
+  /* Cover */
+  .cover { page-break-after: always; padding-top: 1.1in; }
+  .cover .brand { font-size: 42pt; font-weight: 800; color: #742a69; letter-spacing: -1.2px; line-height: 1; }
+  .cover .sub { font-size: 17pt; color: #333; margin-top: 8pt; font-weight: 500; }
+  .cover .rule { height: 5px; width: 2.4in; margin: 20pt 0; border-radius: 3px;
+    background: linear-gradient(90deg, #742a69 0%, #f37030 75%, #ffc755 100%); }
+  .cover .tagline { font-size: 11pt; color: #444; max-width: 4.6in; line-height: 1.55; }
+  .cover .meta { margin-top: 30pt; font-size: 10.5pt; color: #333; line-height: 1.95; }
+  .cover .conf { position: relative; margin-top: 1.1in; font-size: 8.5pt; color: #999;
+    text-transform: uppercase; letter-spacing: 1.2px; }
+
+  /* Contents */
+  .toc h2 { border: 0; color: #742a69; }
+  .toc ol { font-size: 12pt; line-height: 2.1; color: #222; }
+</style>

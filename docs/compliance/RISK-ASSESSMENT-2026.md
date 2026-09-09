@@ -249,7 +249,7 @@ Each risk has:
 | Aspect | Assessment |
 |---|---|
 | Description | Refugee parents/community members object to Azure-generated translations as inaccurate or culturally inappropriate |
-| Inherent likelihood | 4 (Azure has known weaknesses in Pashto, Twi, Kinyarwanda) |
+| Inherent likelihood | 4 (Azure has known weaknesses in Pashto, Dari, Burmese) |
 | Inherent impact | 3 (reputation damage; parent withdrawal from program) |
 | Inherent score | 12 (High) |
 | **Mitigations** | Bridge definitions are curated, not machine-translated (mitigate scaffolding quality); flag system surfaces specific complaints; community-driven correction is the IP thesis |
