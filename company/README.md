@@ -19,6 +19,7 @@
 | [DPA-TEMPLATE.md](DPA-TEMPLATE.md) | School legal / procurement | Ready-to-send Student Data Privacy Agreement (ETLA Ohio NDPA V1 basis). Draft for legal review. |
 | [SCHOOL-ADMIN-FAQ.md](SCHOOL-ADMIN-FAQ.md) | School administrators | Plain-language answers to procurement and rollout questions. |
 | [BEFORE-YOU-SEND-CHECKLIST.md](BEFORE-YOU-SEND-CHECKLIST.md) | You (deal owner) | The gates to clear before sending the DPA to a district. |
+| [PROVISIONING-AND-LICENSING.md](PROVISIONING-AND-LICENSING.md) | Product / eng | How schools are provisioned (customers only), licenses tracked per school, and demo mode. |
 
 Supporting operational compliance artifacts already live in `docs/compliance/` (incident response, DR, risk assessment, NIST CSF mapping, vulnerability scanning). This set references them; it does not replace them.
 
