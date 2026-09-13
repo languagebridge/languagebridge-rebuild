@@ -183,6 +183,7 @@ The near term is about shipping cleanly; the longer arc turns the flag system an
 - `backend/scripts/` — smoke & analytics tooling · `scripts/` — deploy
 
 **Deeper internal docs**
+- `docs/HISTORY.md` — phase-by-phase build history (why things are shaped the way they are)
 - `docs/LANGUAGEBRIDGE-MASTER-BLUEPRINT.md` — product + system blueprint
 - `docs/BACKEND-ARCHITECTURE.md` — backend deep dive · `docs/TECHNICAL-OVERVIEW.md` — overview
 - `docs/PRD-ADMIN-DATABASE.md`, `docs/PRD-ML-FLYWHEEL.md` — the two roadmap specs

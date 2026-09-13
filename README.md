@@ -13,7 +13,7 @@ LanguageBridge is a Chrome extension that gives K-12 English Language Learners i
 - **Native-speaker audio** they can tap to hear pronunciation
 - **Grammatical forms** (noun/verb/adjective) for academic use
 
-It supports **21 languages** today (Haitian Creole in training as the 22nd), specifically including the refugee/immigrant languages that other tools handle poorly: Dari, Pashto, Twi, Kinyarwanda, Tigrinya, Burmese, Somali, Swahili, Amharic.
+It supports **16 languages** today, specifically including the refugee/immigrant languages that other tools handle poorly: Dari, Pashto, Burmese, Somali, Swahili, Nepali, Urdu, Tagalog.
 
 The product has three features:
 
@@ -39,41 +39,36 @@ LanguageBridge's defensibility comes from a **closed-loop human-in-the-loop ML s
 
 ---
 
-## Where We Are Right Now (April 2026)
+## Where We Are Right Now (September 2026)
 
 ### ✅ Built and live in production
 
 | Component | Status | Where |
 |---|---|---|
-| 10 Azure Functions endpoints | Live at `https://languagebridge-api.azurewebsites.net/api` | `backend/azure-functions/` |
-| 117 tests across 11 suites | All passing | `backend/__tests__/` |
-| Cosmos DB with 9 containers | Live, indexed, distributed rate limiting | `backend/shared/cosmos-client.ts` |
-| 127,590 bridge definitions | Seeded across 21 languages | Cosmos `lexicon` container |
-| Azure TTS for all 21 languages | Working with caching | `backend/azure-functions/tts-router/` |
+| 9 Azure Functions endpoints | Live at `https://languagebridge-api.azurewebsites.net/api` | `backend/azure-functions/` |
+| 11 test suites | All passing | `backend/__tests__/` |
+| Cosmos DB | Live, indexed, distributed rate limiting | `backend/shared/cosmos-client.ts` |
+| 127,590 bridge definitions | Seeded across 16 languages | Cosmos `lexicon` container |
+| Azure TTS for all 16 languages | Working with caching | `backend/azure-functions/tts-router/` |
 | Azure Translator fallback | Auto-caches into lexicon on miss | `backend/azure-functions/lexicon-lookup/` |
-| Speech-to-Text (Talk to Teacher) | Live, supports 18 of 21 languages | `backend/azure-functions/speech-to-text/` |
-| Translate (Talk to Teacher) | Live, all 21 languages | `backend/azure-functions/translate/` |
+| Speech-to-Text (Talk to Teacher) | Live | `backend/azure-functions/speech-to-text/` |
+| Translate (Talk to Teacher) | Live, all 16 languages | `backend/azure-functions/translate/` |
 | Flag system with type (pronunciation/translation) | Live | `backend/azure-functions/flag-handler/` |
-| FERPA/SB-29 compliant analytics | Zero-PII, 16 prohibited fields rejected | `backend/azure-functions/analytics-writer/` |
+| FERPA/SB-29 compliant analytics | Zero-PII | `backend/azure-functions/analytics-writer/` |
 | Onboarding (pseudonymous student codes) | Live, cryptographically unbiased | `backend/azure-functions/onboarding/` |
 | Teacher auth (Supabase JWT) | Live | `backend/azure-functions/auth-layer/` |
 | Dashboard analytics endpoint | API only, no frontend yet | `backend/azure-functions/dashboard/` |
+| Chrome extension | Live, built directly in this repo (`extension/`) — onboarding, glossary, Highlight & Hear, Talk to Teacher (offscreen mic + WAV pipeline), consent, options | `extension/` |
 
-### ⚠️ Built but untested with real users
+Five languages (Kinyarwanda, Twi, Tigrinya, Amharic, Uzbek) were part of an earlier 21-language plan and were **dropped** after proving non-working in production (see commit `dfe4efc`). The 16 languages above are what's actually live.
+
+### ⚠️ Built but untested with real users / needs verification
 
 | Component | What's missing |
 |---|---|
-| Talk to Teacher | Never tested with real microphone input — only unit tests with mocked audio |
+| Talk to Teacher | Rebuilt with a real offscreen-mic + 16kHz WAV pipeline; still needs a manual end-to-end Chrome test with a real speaker |
 | Flag escalation to bounty | Logic works in tests, no real student has triggered the 6+ threshold yet |
-| All 22 languages | Tested via curl, never used by an actual native speaker |
-
-### 🚧 In active development (not by this repo)
-
-| Component | Owner | State |
-|---|---|---|
-| Chrome extension frontend | Prentice Howard (`feat/prentice-extension-rebuild` branch) | 7+ commits in, integrating against live backend |
-| Talk to Teacher UI | Prentice | Just received endpoint docs — not started |
-| Simplified flag UX (one-tap + type icons) | Prentice | Just received breaking-change spec |
+| Language coverage | Tested via curl/smoke-check script, not all 16 confirmed with an actual native speaker |
 
 ### ❌ Not built — post-pilot roadmap
 
@@ -96,7 +91,7 @@ LanguageBridge's defensibility comes from a **closed-loop human-in-the-loop ML s
 ```
 languagebridge-rebuild/
 ├── backend/                    ← Azure Functions backend (THE PRODUCTION SYSTEM)
-│   ├── azure-functions/        ← 10 endpoint handlers
+│   ├── azure-functions/        ← 9 endpoint handlers
 │   │   ├── lexicon-lookup/
 │   │   ├── tts-router/
 │   │   ├── flag-handler/
@@ -104,16 +99,17 @@ languagebridge-rebuild/
 │   │   ├── onboarding/
 │   │   ├── auth-layer/
 │   │   ├── dashboard/
-│   │   ├── speech-to-text/     ← NEW (Talk to Teacher)
-│   │   └── translate/          ← NEW (Talk to Teacher)
+│   │   ├── speech-to-text/     ← Talk to Teacher
+│   │   └── translate/          ← Talk to Teacher
 │   ├── shared/                 ← Cross-cutting infrastructure
 │   │   ├── types.ts            ← API contracts (THE SOURCE OF TRUTH for shapes)
 │   │   ├── cosmos-client.ts    ← Lazy-init Cosmos accessors
 │   │   ├── blob-client.ts      ← Blob Storage with SAS URL signing
 │   │   ├── validators.ts       ← PII checks, rate limiting, API key validation
 │   │   ├── auth-helpers.ts     ← Supabase JWT resolution
-│   │   ├── reporting-queries.ts← 10 dashboard SQL queries
-│   │   └── voice-config.json   ← TTS voice mapping per language
+│   │   ├── env-validation.ts   ← Fails loud at startup if required env vars are missing
+│   │   ├── reporting-queries.ts← Dashboard SQL queries
+│   │   └── voice-config.json   ← TTS voice mapping per language (16 languages)
 │   ├── __tests__/
 │   │   ├── unit/               ← 10 unit test files (one per endpoint + validators)
 │   │   └── integration/        ← Full student-journey integration test
@@ -121,21 +117,29 @@ languagebridge-rebuild/
 │   ├── package.json
 │   └── jest.config.js
 │
-├── extension/                  ← Chrome extension scaffold (Prentice's work happens on his branch)
-├── pwa/                        ← Progressive Web App scaffold (not yet active)
-├── ml-pipeline/                ← Custom Piper voice training (not deployed to prod)
-├── data/                       ← Glossary seed data, Ohio standards pipeline
+├── extension/                  ← Chrome extension (LIVE — Manifest V3, built in this repo)
+│   ├── background.js, offscreen.js, mic-permission.js  ← Talk to Teacher mic pipeline
+│   ├── content/                ← Toolbar, glossary, translation, STT/TTS services, onboarding
+│   ├── options/, popup/        ← Settings and toolbar popup
+│   └── manifest.json
+├── pwa/                        ← Progressive Web App — empty scaffold, untouched since initial commit
+├── ml-pipeline/                ← Custom Piper/Kokoro voice training (not deployed to prod)
+├── data/                       ← Glossary seed data (gitignored — regenerate locally), Ohio standards pipeline
 ├── scripts/
 │   ├── deploy-backend.sh       ← Manual deploy script
 │   ├── seed-lexicon.ts         ← One-time bridge definition seeding
 │   └── load-bridge-glosses.ts  ← Loads RBERN glossaries
 │
 ├── docs/                       ← All design documentation
-│   ├── README.md ← (you are here, but actually at repo root)
-│   ├── BACKEND-ARCHITECTURE.md ← Investor/stakeholder overview
-│   ├── TECHNICAL-OVERVIEW.md   ← Comprehensive technical reference
-│   ├── PRD-ML-FLYWHEEL.md      ← THE DEFINING IP — interpreter marketplace + ML loop
-│   └── PRD-ADMIN-DATABASE.md   ← Customer transparency + internal admin
+│   ├── HISTORY.md                   ← Phase-by-phase build history
+│   ├── BACKEND-ARCHITECTURE.md      ← Investor/stakeholder overview
+│   ├── TECHNICAL-OVERVIEW.md        ← Comprehensive technical reference
+│   ├── ENGINEERING-FIELD-GUIDE.md   ← Engineering onboarding + decision records
+│   ├── PRD-ML-FLYWHEEL.md           ← THE DEFINING IP — interpreter marketplace + ML loop
+│   ├── PRD-ADMIN-DATABASE.md        ← Customer transparency + internal admin
+│   ├── TESTING-UNPACKED-EXTENSION.md← Manual Chrome extension test guide
+│   ├── DPA-V2-DRAFT.md              ← Data Processing Agreement draft
+│   └── compliance/                  ← Compliance documentation
 │
 └── README.md                   ← THIS FILE
 ```
@@ -153,7 +157,7 @@ languagebridge-rebuild/
 | **Distributed rate limiting via Cosmos** | In-memory rate limiters don't work across multiple Azure Functions instances. |
 | **TOS-clean flag pipeline (only student input stored)** | Azure Translator/TTS output never enters bounty system — interpreter marketplace stays our own IP. |
 | **`flagType` field on every flag** | Lets interpreters know whether to fix audio (re-record) or text (retranslate). |
-| **Bridge definitions are language-agnostic English scaffolds** | One Ohio standards term yields scaffolding usable in all 21 languages — efficient curation. |
+| **Bridge definitions are language-agnostic English scaffolds** | One Ohio standards term yields scaffolding usable in all 16 languages — efficient curation. |
 | **Cognates auto-cached on first translator fallback** | First lookup of an unknown term is slow (calls Azure); every subsequent lookup is instant. |
 | **Two-tier voice quality (Piper + Azure)** | Piper for production-quality refugee languages (when trained); Azure as universal fallback. |
 | **Audit log writes are synchronous, not fire-and-forget** | Compliance requires we never lose admin actions, even if it slows requests. |
@@ -168,7 +172,7 @@ languagebridge-rebuild/
 | Language | TypeScript (strict mode) |
 | Database | Azure Cosmos DB (NoSQL, 9 containers, composite indexed) |
 | Blob Storage | Azure Blob Storage (TTS audio cache + planned interpreter audio) |
-| Translation | Azure Translator (21 languages) |
+| Translation | Azure Translator (16 languages) |
 | Speech | Azure Speech Services (TTS + STT) + Piper (post-pilot custom voices) |
 | Auth | Supabase (teacher/admin JWTs) |
 | Testing | Jest + ts-jest |
@@ -177,17 +181,17 @@ languagebridge-rebuild/
 
 ---
 
-## Supported Languages (21 today, 22 with Haitian Creole post-pilot)
+## Supported Languages (16 today)
 
 | Tier | Languages | TTS Engine |
 |---|---|---|
 | **Tier 1 (production)** | Arabic, French, Portuguese, Ukrainian, Vietnamese, Spanish, Persian, English | Azure today, Piper after training |
-| **Tier 2 (beta, related-language model)** | Nepali, Swahili, Dari, Pashto, Urdu, Somali, Kinyarwanda, Twi | Azure today, Piper proxies after training |
-| **Tier 3 (Azure-only)** | Burmese, Uzbek, Amharic, Tagalog, Tigrinya | Azure (no Piper plan) |
+| **Tier 2 (beta, related-language model)** | Nepali, Swahili, Dari, Pashto, Urdu, Somali | Azure today, Piper proxies after training |
+| **Tier 3 (Azure-only)** | Burmese, Tagalog | Azure (no Piper plan) |
+
+Five languages originally planned (Kinyarwanda, Twi, Tigrinya, Amharic, Uzbek) were dropped after proving non-working in production (commit `dfe4efc`) — they are not part of the current lineup.
 
 **Coverage:** 95%+ of Ohio's K-12 ELL population.
-
-**Speech-to-Text caveat:** Azure STT does not support Kinyarwanda, Twi, or Tigrinya. The Talk to Teacher feature works for 18 of 21 languages today.
 
 ---
 
@@ -196,14 +200,14 @@ languagebridge-rebuild/
 ### Local development
 
 ```bash
-# Install dependencies
-npm install
+# Install dependencies across all workspaces (backend, extension, pwa, ml-pipeline)
+npm run install-all
 
-# Run all tests (117 across 11 suites)
-npx jest --config backend/jest.config.js
+# Run backend tests (11 suites)
+npm run test:backend
 
-# Type check
-npx tsc --noEmit --project tsconfig.backend.json
+# Type check the backend
+npm run type-check:backend
 ```
 
 ### Deploy to Azure
@@ -216,7 +220,7 @@ This compiles TypeScript → creates clean staging folder → installs productio
 
 ### Required environment variables
 
-See `backend/shared/config.ts` for the full validated list. At minimum:
+See `backend/shared/env-validation.ts` for the full validated list. At minimum:
 
 ```
 COSMOS_DB_ENDPOINT
@@ -311,30 +315,30 @@ Defensibility compounds — competitors would need our flag data to replicate
 
 ### 1. Highlight & Hear ✅ Production Ready
 
-| Step | Backend | Frontend (Prentice) |
+| Step | Backend | Frontend (`extension/`) |
 |---|---|---|
-| Student highlights word | — | ✅ Working |
-| Lookup bridge + cognate | ✅ `/lexicon-lookup` | ✅ Wired correctly |
-| Get audio URL | ✅ Returned in lookup or via `/tts-router` | ✅ Wired correctly |
-| Play audio | — | ✅ AudioContext + HTML5 fallback |
-| Log analytics | ✅ `/analytics-writer` | ✅ All 7 event types wired |
+| Student highlights word | — | ✅ Working (`content/toolbar.js`) |
+| Lookup bridge + cognate | ✅ `/lexicon-lookup` | ✅ Wired |
+| Get audio URL | ✅ Returned in lookup or via `/tts-router` | ✅ Wired |
+| Play audio | — | ✅ Session audio cache + replay |
+| Log analytics | ✅ `/analytics-writer` | ✅ Wired (`content/lb-analytics.js`) |
 
 ### 2. Academic Glossary ✅ Production Ready
 
 Same endpoints as Highlight & Hear. Rate limit on `/lexicon-lookup` was bumped to 300/min specifically to allow fast sequential glossary browsing without hitting 429s.
 
-### 3. Talk to Teacher ⚠️ Backend Live, Frontend Not Started
+### 3. Talk to Teacher ⚠️ Built, Needs a Real-World Test
 
-| Step | Backend | Frontend |
+| Step | Backend | Frontend (`extension/`) |
 |---|---|---|
-| Capture audio from mic | — | ❌ Not built (MediaRecorder + base64 encoding) |
-| Transcribe student speech | ✅ `/speech-to-text` | ❌ Not wired |
-| Translate to teacher's English | ✅ `/translate` | ❌ Not wired |
-| Teacher reply UI | — | ❌ Not built |
-| Translate teacher to student | ✅ `/translate` | ❌ Not wired |
-| Optionally speak teacher's reply | ✅ `/tts-router` | ❌ Not wired |
+| Capture audio from mic | — | ✅ Built — offscreen document + 16kHz WAV pipeline (`offscreen.js`, `mic-permission.js`) |
+| Transcribe student speech | ✅ `/speech-to-text` | ✅ Wired (`content/services/lb-stt-service.js`) |
+| Translate to teacher's English | ✅ `/translate` | ✅ Wired |
+| Teacher/student reply UI | — | ✅ Face-to-face vertical UI (`content/floating-translator.js`) |
+| Translate teacher to student | ✅ `/translate` | ✅ Wired |
+| Optionally speak teacher's reply | ✅ `/tts-router` | ✅ Wired |
 
-**Blocker:** Has never been tested end-to-end with real human audio. First real Dari speaker into the system will surface unknowns: latency feel, dialect handling, audio format compatibility.
+**Blocker:** Rebuilt end-to-end but has not yet had a manual test with a real speaker in Chrome (see `docs/TESTING-UNPACKED-EXTENSION.md`). First real Dari speaker into the system will surface unknowns: latency feel, dialect handling, audio format compatibility.
 
 ---
 
@@ -375,13 +379,13 @@ If you (Claude, ChatGPT, Cursor, or any future AI assistant) are reading this fo
 
 2. **The team:**
    - **Justin Bernard** — backend dev, CEO, decision maker
-   - **Prentice Howard** — frontend dev, owns the Chrome extension on `feat/prentice-extension-rebuild`
+   - **Prentice Howard** — frontend dev, extension work originates on `feat/prentice-extension-rebuild`
    - **You (AI)** — pair programming partner; default to honest, specific feedback over cheerleading
 
 3. **The branch model:**
    - `main` — production
-   - `feat/v2-lexicon-tts-hardening` — Justin's active backend branch
-   - `feat/prentice-extension-rebuild` — Prentice's active frontend branch
+   - `feat/v2-lexicon-tts-hardening` — Justin's active backend branch; also where the extension's work gets copied in and continues to evolve (school provisioning, glossary tiering, Talk to Teacher rebuild, etc.)
+   - `feat/prentice-extension-rebuild` — Prentice's branch, has unrelated git history from `main` — his work is copied in, not merged, so don't attempt a git merge between them
    - PRs land in `main` after pilot stabilizes
 
 4. **Sacred rules:**
@@ -399,7 +403,7 @@ If you (Claude, ChatGPT, Cursor, or any future AI assistant) are reading this fo
    - Marketplace work before Phase 2 (admin terminal) is in place
 
 6. **What's defensible:**
-   - The 21-language coverage including refugee languages (Pashto, Twi, Kinyarwanda, etc.)
+   - The 16-language coverage including refugee languages (Dari, Pashto, Burmese, Somali, etc.)
    - The flag → interpreter → ML training loop (post-pilot)
    - The classroom-validated training data that competitors can't acquire
    - FERPA/SB-29 compliance as architectural property, not afterthought
