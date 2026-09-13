@@ -69,4 +69,15 @@ backend/scripts/*-report.json
 
 # Large local-only data (never commit)
 data/standards-pipeline/venv/
+data/standards-pipeline/pdfs/
+data/standards-pipeline/extracted/
+data/glossaries/
 ml-pipeline/voices/
+
+# Python bytecode cache
+__pycache__/
+*.pyc
+
+# Sensitive/legal documents (local-only)
+DPA.pdf
+19-CON-01-0493*.pdf
