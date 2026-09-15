@@ -1,0 +1,33 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+
+    "NODE_ENV": "development",
+
+    "COSMOS_DB_ENDPOINT": "REQUIRED-https://<your-cosmos-account>.documents.azure.com:443/",
+    "COSMOS_DB_KEY": "REQUIRED-your-cosmos-primary-key",
+    "COSMOS_DB_DATABASE": "REQUIRED-your-database-name",
+
+    "AZURE_BLOB_CONN_STRING": "REQUIRED-DefaultEndpointsProtocol=https;AccountName=...;AccountKey=...;EndpointSuffix=core.windows.net",
+    "AZURE_STORAGE_ACCOUNT": "REQUIRED-FOR-AUDIO-URLS-your-storage-account-name",
+    "AZURE_STORAGE_KEY": "REQUIRED-FOR-AUDIO-URLS-your-storage-account-key",
+    "AZURE_STORAGE_CONTAINER_AUDIO": "tts-audio-cache",
+
+    "LB_API_KEY": "REQUIRED-any-random-string-you-choose",
+    "LB_ALLOW_INSECURE_DEV": "",
+    "LB_SUPERADMIN_EMAILS": "",
+
+    "AZURE_TTS_KEY": "REQUIRED-FOR-tts-router-AND-speech-to-text-your-speech-key",
+    "AZURE_TTS_REGION": "eastus",
+
+    "AZURE_TRANSLATOR_KEY": "REQUIRED-FOR-translate-AND-lexicon-lookup-fallback-your-translator-key",
+    "AZURE_TRANSLATOR_REGION": "eastus",
+
+    "SUPABASE_URL": "REQUIRED-FOR-auth-layer-AND-dashboard-https://your-project.supabase.co",
+    "SUPABASE_SERVICE_ROLE_KEY": "REQUIRED-FOR-auth-layer-AND-dashboard-your-service-role-key",
+
+    "LB_TTS_SERVICE_URL": ""
+  }
+}
