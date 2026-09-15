@@ -1,0 +1,10 @@
+// extension/config.local.js.example
+//
+// Copy this file to extension/config.local.js and fill in the real key.
+// config.local.js is gitignored — it must never be committed.
+//
+// This is the shared app-level LB_API_KEY (matches the backend's LB_API_KEY /
+// the x-lb-api-key header check in backend/shared/validators.ts). Get the real
+// value from Justin — do not invent one; it must match what the backend expects.
+
+export const LB_API_KEY = 'REPLACE_WITH_REAL_LB_API_KEY';

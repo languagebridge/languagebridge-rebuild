@@ -92,8 +92,8 @@ _TB.playSentences = async function () {
       await window.LBTTSService.generateAndPlay(sentence, this.userLanguage);
     }
 
-    this.currentSentenceIndex++;
     if (this.isPaused) throw new Error('Paused');
+    this.currentSentenceIndex++;
 
     // Natural pause between sentences
     if (this.currentSentenceIndex < total) {

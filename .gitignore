@@ -63,6 +63,9 @@ logs/
 local.settings.json
 .funcignore
 
+# Extension local config (contains the shared LB_API_KEY)
+extension/config.local.js
+
 # Generated document/report artifacts (regenerable — see scripts/)
 company/exports/
 backend/scripts/*-report.json

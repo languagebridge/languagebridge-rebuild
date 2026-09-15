@@ -15,9 +15,9 @@ const STOP_WORDS = new Set([
 ]);
 
 const TIER_BANDS = [
-  { band: '3-5',  label: '3-5 Intermediate',   color: '#10b981' },
-  { band: '6-8',  label: '6-8 Middle School',   color: '#f37030' },
-  { band: '9-12', label: '9-12 High School',    color: '#ffc755' },
+  { band: '3-5',  label: '3-5 Elementary',      color: '#10b981' },
+  { band: '6-8',  label: '6-8 Intermediate',    color: '#f37030' },
+  { band: '9-12', label: '9-12 Advanced',       color: '#ffc755' },
 ];
 
 // ---------- Main Tooltip ----------

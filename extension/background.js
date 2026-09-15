@@ -1,6 +1,9 @@
 // extension/background.js
 // Service Worker (World 1). Handles install, shortcuts, message relay, and API proxy.
-// API key is stored in chrome.storage.local, not hardcoded.
+// API key lives in config.local.js (gitignored, not committed) and is copied
+// into chrome.storage.local on install — never hardcoded here.
+
+import { LB_API_KEY } from './config.local.js';
 
 const API_BASE = 'https://languagebridge-api.azurewebsites.net/api';
 
@@ -14,7 +17,7 @@ async function getApiKey() {
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === 'install') {
     await chrome.storage.local.set({
-      lbApiKey: '02dd1fc2301b6277cd7aed4357ea09990373078409a11942707d760726ec58e3',
+      lbApiKey: LB_API_KEY,
     });
     const token = crypto.randomUUID();
     await chrome.storage.sync.set({ lb_session_token: token });
@@ -24,7 +27,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   const { lbApiKey } = await chrome.storage.local.get('lbApiKey');
   if (!lbApiKey) {
     await chrome.storage.local.set({
-      lbApiKey: '02dd1fc2301b6277cd7aed4357ea09990373078409a11942707d760726ec58e3',
+      lbApiKey: LB_API_KEY,
     });
   }
 });
