@@ -4,6 +4,19 @@ Everything here was checked directly against the code as of the `feat/v2-lexicon
 
 ---
 
+## 0. Get on the right branch first
+
+**This file and its companion template (`backend/local.settings.json.example`) only exist on `feat/v2-lexicon-tts-hardening` — not on `main`.** `main` is this repo's default branch, so a plain `git clone` leaves you on it. If you don't switch branches, neither file exists, `backend/local.settings.json` will be missing, and `func start` will fail immediately with something like *"Missing value for FUNCTIONS_WORKER_RUNTIME... falling back to 'None'"* — that's Core Tools unable to tell what language your functions are written in, because it reads that from `local.settings.json`, which doesn't exist yet.
+
+```bash
+git fetch origin
+git checkout feat/v2-lexicon-tts-hardening
+```
+
+Do this before anything else below.
+
+---
+
 ## ⚠️ Read this before you configure anything
 
 **Local dev, as currently set up in this repo, points at the real production Cosmos DB and Blob Storage — there is no separate dev instance.** The Cosmos account is literally named `languagebridge-cosmos` with database `languagebridge-prod`, and the storage account is `languagbridgeaudio` (same one production uses). This isn't a guess — it's what's in the (gitignored, un-committed) config files on Justin's machine and baked into the root `.env.example`.
@@ -48,7 +61,20 @@ cp backend/local.settings.json.example backend/local.settings.json
 
 `backend/local.settings.json` is already covered by the root `.gitignore` (the bare pattern `local.settings.json` matches it at any depth) — confirmed it has never been committed to this repo's history. You will not accidentally commit real credentials by following this step, but double-check `git status` shows nothing staged before any commit anyway.
 
-Fill in every value marked `REQUIRED-...` in the file — get real values from Justin (Azure Portal access or a shared vault, whatever your team uses; that hand-off isn't something this doc can cover). See the warning above before deciding what those values point at.
+The `.example` template already has two keys filled in for you — `FUNCTIONS_WORKER_RUNTIME: "node"` and `AzureWebJobsStorage: "UseDevelopmentStorage=true"`. Those aren't app secrets; they're what Azure Functions Core Tools itself needs to boot at all (they tell it which language worker to launch). If `local.settings.json` is missing entirely — which is exactly what happens on a fresh clone before step 0/this step — Core Tools can't determine the runtime and fails immediately, before any of the actual function code runs. Copying the template fixes that regardless of whether the app-level secrets below are filled in yet.
+
+Fill in every value marked `REQUIRED-...` in the file — **ask Justin directly for these** (Slack/whatever your credential-sharing channel is), not from anything already in the repo. Specifically ask for:
+
+- `COSMOS_DB_KEY`
+- `AZURE_BLOB_CONN_STRING`
+- `AZURE_STORAGE_KEY`
+- `AZURE_TTS_KEY`
+- `AZURE_TRANSLATOR_KEY` and `AZURE_TRANSLATOR_REGION`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+(As of 2026-09-15, these are placeholder/`ROTATE_ME` or entirely absent even in Justin's own local file — so if he can't hand you a working value immediately, that's expected; he needs to pull current ones from Azure Portal / Supabase Dashboard first.)
+
+See the warning above before deciding what those values point at.
 
 **What's actually required vs. optional**, verified by reading `backend/shared/env-validation.ts` and every place each variable is used:
 
