@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "LanguageBridge - Real-Time Translation for Students",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Instant translation and text-to-speech for English learners in 16 languages.",
   "permissions": ["storage", "activeTab", "offscreen"],
   "host_permissions": [
