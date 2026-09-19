@@ -60,6 +60,15 @@
 
   const state = { language: null, school: null, gradeBand: null, schools: [], isDemo: false };
 
+  // Temporarily skip "Find your school"; students enroll under the demo sandbox. Set false to restore.
+  const SKIP_SCHOOL_STEP = true;
+  function afterLanguage() {
+    if (state.isDemo) return enrollStudent();
+    if (!SKIP_SCHOOL_STEP) return showSchool();
+    state.school = 'LB-DEMO';
+    return showGrade();
+  }
+
   // ── Start machinery (unchanged) ────────────────────────────────────
   let _onboardingStarted = false;
   function startOnboardingOnce() {
@@ -151,7 +160,7 @@
     body.querySelectorAll('.lb-ob-tile').forEach((btn) => {
       btn.addEventListener('mouseenter', () => { btn.style.borderColor = '#742a69'; btn.style.background = '#faf4f8'; });
       btn.addEventListener('mouseleave', () => { btn.style.borderColor = '#ece3e9'; btn.style.background = '#fff'; });
-      btn.addEventListener('click', () => { state.language = btn.dataset.code; state.isDemo ? enrollStudent() : showSchool(); });
+      btn.addEventListener('click', () => { state.language = btn.dataset.code; afterLanguage(); });
     });
     body.querySelector('#lb-ob-demo').addEventListener('click', () => {
       state.isDemo = true; state.school = 'LB-DEMO'; state.gradeBand = '6-8';
@@ -232,7 +241,7 @@
 
     body.innerHTML = headerRow(t('gradeQ'), t('changeLater'))
       + `<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:20px;">${tiles}</div>${progress(2)}`;
-    wireBack(() => showSchool());
+    wireBack(() => (SKIP_SCHOOL_STEP ? showLanguage() : showSchool()));
 
     body.querySelectorAll('.lb-ob-grade').forEach((btn) => {
       btn.addEventListener('mouseenter', () => { btn.style.borderColor = '#742a69'; btn.style.background = '#faf4f8'; });
