@@ -63,6 +63,15 @@ _TT.showTranslationTooltip = function (result, selection, defaultTab) {
 
   // Tab 1: Translation
   const tab1 = this._buildTranslationTab(bridgeAnchor, bridgeScaffold, cognate, forms, subject, gradeBand, source, displayText, textDir, textAlign);
+  if (isObj && result.sourceLanguage && result.sourceLanguage !== 'english') {
+    const from = document.createElement('div');
+    from.className = 'lb-fallback-notice';
+    const fromName = window.LB_LANGUAGES[result.sourceLanguage]?.label || result.sourceLanguage;
+    from.textContent = result.source === 'same_language'
+      ? `Already in ${fromName}`
+      : `Translated from ${fromName}`;
+    tab1.insertBefore(from, tab1.firstChild);
+  }
 
   // Tab 2: Glossary + Flag (merged)
   const tab2 = this._buildGlossaryTab();

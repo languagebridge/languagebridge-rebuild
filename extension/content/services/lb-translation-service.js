@@ -28,6 +28,18 @@ window.LBTranslationService = {
     const cached = window.LBSessionCache?.get(text, targetLang, 'translation');
     if (cached) return cached;
 
+    // A passage written in another language (e.g. Spanish) must be translated FROM that
+    // language, not treated as English. Skips the lexicon, which only knows English terms.
+    const sourceLang = await this._detectSource(text);
+    if (sourceLang && sourceLang !== 'english') {
+      const result = sourceLang === targetLang
+        ? { ...this._textResult(text, 'same_language'), sourceLanguage: sourceLang }
+        : await this._translateFallback(text, targetLang, sourceLang);
+      if (!result) return { error: 'Translation unavailable. Please try again.' };
+      window.LBSessionCache?.set(text, targetLang, 'translation', result);
+      return result;
+    }
+
     // A sentence/paragraph is not a vocabulary term — translate it as a phrase via
     // /translate rather than sending a whole highlight to the lexicon as one "term"
     // (which pollutes the lexicon and mis-treats a paragraph as a single word).
@@ -148,14 +160,45 @@ window.LBTranslationService = {
     }
   },
 
-  async _translateFallback(text, targetLang) {
+  _ISO_TO_LB: {
+    ar: 'arabic', ur: 'urdu', fa: 'persian', uk: 'ukrainian', es: 'spanish', so: 'somali',
+    en: 'english', fr: 'french', pt: 'portuguese', vi: 'vietnamese', ne: 'nepali',
+    sw: 'swahili', my: 'burmese', tl: 'tagalog', fil: 'tagalog', ps: 'pashto',
+  },
+
+  // Returns a supported LanguageBridge language name, or null when unsure. Selections under
+  // 3 words are never re-routed: single vocab terms must keep going through the lexicon.
+  _detectSource(text) {
+    if (text.trim().split(/\s+/).length < 3) return Promise.resolve(null);
+    return new Promise((resolve) => {
+      try {
+        chrome.i18n.detectLanguage(text, (r) => {
+          if (chrome.runtime.lastError || !r || !r.isReliable || !r.languages || !r.languages.length) return resolve(null);
+          const top = r.languages[0];
+          const name = this._ISO_TO_LB[String(top.language || '').toLowerCase().split('-')[0]];
+          resolve(name && window.LB_LANGUAGES[name] && top.percentage >= 60 ? name : null);
+        });
+      } catch (err) { resolve(null); }
+    });
+  },
+
+  _textResult(translated, source) {
+    return {
+      term: translated, source, cognate: translated, bridgeAnchor: null, bridgeScaffold: null,
+      bridgeDefinition: null, grammaticalForms: null, audioUrl: null, audioSource: null,
+      ttsBackend: null, subject: null, gradeBand: null, transliterationDifficulty: null,
+      translatedText: translated, translation: translated,
+    };
+  },
+
+  async _translateFallback(text, targetLang, fromLang = 'english') {
     try {
       const res = await chrome.runtime.sendMessage({
         action: 'api-fetch',
         endpoint: 'translate',
         body: {
           text,
-          fromLanguage: 'english',
+          fromLanguage: fromLang,
           toLanguage: targetLang,
           studentCode: window.LBState.studentCode,
         },
@@ -168,23 +211,7 @@ window.LBTranslationService = {
       if (!translated) return null;
 
       LBLog.info(`Translate fallback: "${text}" → "${translated}" (${targetLang})`);
-      return {
-        term: text,
-        source: 'translator_fallback',
-        cognate: translated,
-        bridgeAnchor: null,
-        bridgeScaffold: null,
-        bridgeDefinition: null,
-        grammaticalForms: null,
-        audioUrl: null,
-        audioSource: null,
-        ttsBackend: null,
-        subject: null,
-        gradeBand: null,
-        transliterationDifficulty: null,
-        translatedText: translated,
-        translation: translated,
-      };
+      return { ...this._textResult(translated, 'translator_fallback'), term: text, sourceLanguage: fromLang };
     } catch (err) {
       LBLog.error('Translate fallback error:', err);
       return null;
