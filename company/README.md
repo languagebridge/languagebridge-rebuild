@@ -11,7 +11,7 @@
 
 | Document | Audience | Purpose |
 |---|---|---|
-| [00-CANONICAL-FACTS.md](00-CANONICAL-FACTS.md) | Everyone (internal) | The single source of truth: entity, product, the 16 languages, subprocessors, the numbers everyone must quote. Start here. |
+| [00-CANONICAL-FACTS.md](00-CANONICAL-FACTS.md) | Everyone (internal) | The single source of truth: entity, product, the 18 languages, subprocessors, the numbers everyone must quote. Start here. |
 | [COMPANY-OVERVIEW.md](COMPANY-OVERVIEW.md) | Sales / partners | The one-pager: what we do, who it's for, why we win. |
 | [PRICING-AND-PACKAGING.md](PRICING-AND-PACKAGING.md) | Schools / districts | Tiered pricing and the justification behind every number. |
 | [COST-MODEL-AND-UNIT-ECONOMICS.md](COST-MODEL-AND-UNIT-ECONOMICS.md) | Internal / finance | What the stack costs us, margins, and how pricing is derived. Do not distribute. |
@@ -29,9 +29,9 @@ Supporting operational compliance artifacts already live in `docs/compliance/` (
 
 These are the known contradictions between older `docs/` files and the current reality. The canonical value is what this set uses.
 
-| Fact | Older docs say | **Canonical (verified 2026-09)** |
+| Fact | Older docs say | **Canonical (languages verified 2026-10; the rest 2026-09)** |
 |---|---|---|
-| Supported languages | 21 (`DPA-V2-DRAFT`, `TECHNICAL-OVERVIEW`, `BACKEND-ARCHITECTURE`) or 22 (`MASTER-BLUEPRINT`) | **16.** Kinyarwanda, Twi, Uzbek, Amharic, Tigrinya were removed (endpoints didn't work). |
+| Supported languages | 21 (`DPA-V2-DRAFT`, `TECHNICAL-OVERVIEW`, `BACKEND-ARCHITECTURE`) or 22 (`MASTER-BLUEPRINT`) | **18.** Kinyarwanda, Twi and Tigrinya were removed (no Azure voice). Amharic and Uzbek were removed with them in June 2026 and restored in October 2026 after passing the live smoke check. |
 | Azure Functions | "7 functions" / "8 endpoints" | **9** (`analytics-writer, auth-layer, dashboard, flag-handler, lexicon-lookup, onboarding, speech-to-text, translate, tts-router`). |
 | Live API resource group | `.env` implies `languagebridge-rg` | **`languagebridge-ce`** (the app `languagebridge-api`). `languagebridge-rg` holds a stale app. |
 | SOC 2 | Ambiguous phrasing near "SOC 2 certified" | LanguageBridge is **not** SOC 2 certified. Its **subprocessors** (Azure, Supabase, Stripe) are. Never claim otherwise. |
@@ -42,7 +42,7 @@ These are the known contradictions between older `docs/` files and the current r
 
 Some capabilities referenced in the DPA and compliance materials are **committed but not yet built**. Represent them accurately in any customer conversation:
 
-- **Built & live:** the extension, the 9-function backend, the 16-language lexicon + audio, anonymous analytics, one signed MVP DPA (Parma City Schools, 2026-03-03).
+- **Built & live:** the extension, the 9-function backend, translation and audio in 18 languages, anonymous analytics, one signed MVP DPA (Parma City Schools, 2026-03-03).
 - **In progress:** `languagebridge.app/teacher` (PWA Talk to Teacher), Chrome Web Store submission.
 - **Committed / roadmap (do not describe as shipped):** the LEA transparency dashboard, the LEA data-export/audit-log tooling, the interpreter marketplace, proprietary TTS voice deployment, and cyber-liability insurance via **The Hartford** (bind before signing a DPA that promises it).
 

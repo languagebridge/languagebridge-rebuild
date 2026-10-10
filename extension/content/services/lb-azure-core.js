@@ -1,5 +1,5 @@
 // extension/content/services/lb-azure-core.js
-// Language map and shared utilities. Single source of truth for all 16 supported languages.
+// Language map and shared utilities. Single source of truth for all 18 supported languages.
 // Keys are the FULL WORD codes that Justin's API expects (e.g. "dari" not "fa").
 
 window.LB_LANGUAGES = {

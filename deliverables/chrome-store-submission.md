@@ -28,14 +28,14 @@ Keep it to that one purpose in the listing — the store rejects "does many unre
 **Name:** `LanguageBridge — Real-Time Translation for Students`
 
 **Summary (132 char max):**
-> Instant translation, read-aloud audio, and teacher voice chat for multilingual students — in 16 languages, on any page.
+> Instant translation, read-aloud audio, and teacher voice chat for multilingual students — in 18 languages, on any page.
 
 **Detailed description** (this is the current live-listing copy — keep it in sync with the actual Chrome Web Store listing):
 ```
-LanguageBridge helps English learners succeed in their classrooms with real-time translation and text-to-speech in 16 languages.
+LanguageBridge helps English learners succeed in their classrooms with real-time translation and text-to-speech in 18 languages.
 
 🌍 FEATURES:
-• Real-time translation — Arabic, Burmese, Dari, French, Nepali, Pashto, Persian, Portuguese, Somali, Spanish, Swahili, Tagalog, Ukrainian, Urdu, Vietnamese, and English
+• Real-time translation — Amharic, Arabic, Burmese, Dari, French, Nepali, Pashto, Persian, Portuguese, Somali, Spanish, Swahili, Tagalog, Ukrainian, Urdu, Uzbek, Vietnamese, and English
 • Text-to-Speech — Natural voice synthesis in every supported language
 • Academic Vocabulary — Plain-English definitions for hundreds of academic terms, tiered by grade level
 • Talk to Teacher — Two-way voice conversation translator (uses the microphone only while you're actively recording)
@@ -114,7 +114,7 @@ Declare **collected** for these categories; everything else = **not collected**:
 
 Shot list, in order:
 1. **Lookup card** — a word selected on a real assignment page, showing the translation + 🔊 listen button.
-2. **Toolbar + language picker** — the toolbar open with the 16-language list.
+2. **Toolbar + language picker** — the toolbar open with the 18-language list.
 3. **Talk to Teacher** — the two-sided conversation mid-exchange (English ↔ a target language).
 4. **Glossary tab** — tiered simple-English scaffolding for an academic term.
 5. **Onboarding** — the language-selection welcome screen.

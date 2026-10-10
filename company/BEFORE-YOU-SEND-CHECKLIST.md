@@ -20,7 +20,7 @@
 - ✅ **Pricing** — approved list pricing (`PRICING-AND-PACKAGING.md`); do not renegotiate per deal.
 - ✅ **Counsel identified** — Bob Ellis.
 - ✅ **Insurance carrier identified** — The Hartford (gate #2 is binding the policy).
-- ✅ **Language/entity facts** — reconciled to 16 languages (`00-CANONICAL-FACTS.md`).
+- ✅ **Language/entity facts** — reconciled to 18 languages (`00-CANONICAL-FACTS.md`).
 
 ---
 

@@ -1,7 +1,7 @@
 # Chrome Web Store — Permission Justifications (paste sheet)
 
 Copy each block into the matching box on the **Privacy practices** tab, then **Save Draft**.
-All text below is reconciled to the actual `manifest.json` and to 16 supported languages.
+All text below is reconciled to the actual `manifest.json` and to 18 supported languages.
 
 ---
 
@@ -16,7 +16,7 @@ LanguageBridge makes English-language schoolwork comprehensible for multilingual
 The "storage" permission allows LanguageBridge to save student preferences locally on their device.
 
 WHAT WE STORE:
-- Preferred home/translation language (one of the 16 supported languages)
+- Preferred home/translation language (one of the 18 supported languages)
 - Text-to-speech speed and volume settings
 - Toolbar visibility preferences
 
