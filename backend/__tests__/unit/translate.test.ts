@@ -59,9 +59,28 @@ describe('translate', () => {
     expect(body.toLanguage).toBe('dari');
   });
 
-  it('short-circuits when source and target map to same code (dari→persian)', async () => {
-    const res = await translate(
+  it('sends Dari to Azure as Dari (prs), not Persian (fa)', async () => {
+    const axios = require('axios');
+    axios.post.mockResolvedValue({ data: [{ translations: [{ text: 'x' }] }] });
+
+    await translate(makeRequest(validBody), ctx());
+    expect(axios.post.mock.calls[0][0]).toContain('from=en&to=prs');
+  });
+
+  it('translates between Dari and Persian instead of returning the text unchanged', async () => {
+    const axios = require('axios');
+    axios.post.mockResolvedValue({ data: [{ translations: [{ text: 'x' }] }] });
+
+    await translate(
       makeRequest({ ...validBody, fromLanguage: 'dari', toLanguage: 'persian', text: 'hello' }),
+      ctx()
+    );
+    expect(axios.post.mock.calls[0][0]).toContain('from=prs&to=fa');
+  });
+
+  it('short-circuits when source and target are the same language', async () => {
+    const res = await translate(
+      makeRequest({ ...validBody, fromLanguage: 'persian', toLanguage: 'persian', text: 'hello' }),
       ctx()
     );
     expect(res.status).toBe(200);
