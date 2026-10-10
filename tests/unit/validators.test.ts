@@ -32,12 +32,12 @@ describe('requireFields', () => {
 // ── isValidLanguage ───────────────────────────────────────
 
 describe('isValidLanguage', () => {
-  it('accepts all 17 supported languages', () => {
+  it('accepts all 18 supported languages', () => {
     const langs = [
       'arabic', 'french', 'portuguese', 'ukrainian', 'vietnamese',
       'spanish', 'persian', 'english', 'nepali', 'swahili',
       'dari', 'pashto', 'urdu', 'burmese', 'somali', 'tagalog',
-      'amharic',
+      'amharic', 'uzbek',
     ];
     for (const lang of langs) {
       expect(isValidLanguage(lang)).toBe(true);
@@ -46,7 +46,7 @@ describe('isValidLanguage', () => {
 
   it('rejects removed and invalid languages', () => {
     // Dropped 2026-06 — must no longer validate
-    for (const lang of ['kinyarwanda', 'twi', 'uzbek', 'tigrinya']) {
+    for (const lang of ['kinyarwanda', 'twi', 'tigrinya']) {
       expect(isValidLanguage(lang)).toBe(false);
     }
     expect(isValidLanguage('klingon')).toBe(false);

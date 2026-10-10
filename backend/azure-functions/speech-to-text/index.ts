@@ -48,6 +48,7 @@ const STT_LANGUAGE_MAP: Record<string, string> = {
   burmese: 'my-MM',
   tagalog: 'fil-PH',
   amharic: 'am-ET',
+  uzbek: 'uz-UZ',
 };
 
 const MAX_AUDIO_SIZE_BYTES = 4 * 1024 * 1024; // 4MB after base64 decode

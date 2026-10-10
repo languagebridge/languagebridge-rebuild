@@ -20,6 +20,7 @@ window.LB_LANGUAGES = {
   burmese:     { code: 'burmese',     label: 'Burmese',      nativeLabel: 'မြန်မာ',        rtl: false },
   tagalog:     { code: 'tagalog',     label: 'Tagalog',      nativeLabel: 'Tagalog',     rtl: false },
   amharic:     { code: 'amharic',     label: 'Amharic',      nativeLabel: 'አማርኛ',        rtl: false },
+  uzbek:       { code: 'uzbek',       label: 'Uzbek',        nativeLabel: 'Oʻzbekcha',   rtl: false },
 };
 
 // XSS prevention utility

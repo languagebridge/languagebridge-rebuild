@@ -2,7 +2,7 @@
 // Settings page. Persists to chrome.storage.sync and broadcasts changes to all
 // open tabs so the toolbar updates live (settings-updated message).
 
-// The 17 supported languages (mirror of LB_LANGUAGES; this page has no content-
+// The 18 supported languages (mirror of LB_LANGUAGES; this page has no content-
 // script globals). english is included here so a user can switch back to it.
 const LANGUAGES = [
   ['dari', 'دری — Dari'], ['pashto', 'پښتو — Pashto'], ['arabic', 'العربية — Arabic'],
@@ -11,7 +11,7 @@ const LANGUAGES = [
   ['french', 'Français — French'], ['portuguese', 'Português — Portuguese'],
   ['vietnamese', 'Tiếng Việt — Vietnamese'], ['nepali', 'नेपाली — Nepali'],
   ['swahili', 'Kiswahili — Swahili'], ['burmese', 'မြန်မာ — Burmese'], ['tagalog', 'Tagalog'],
-  ['amharic', 'አማርኛ — Amharic'],
+  ['amharic', 'አማርኛ — Amharic'], ['uzbek', 'Oʻzbekcha — Uzbek'],
 ];
 
 const DEFAULTS = { defaultLanguage: 'dari', readingSpeed: 1.0 };

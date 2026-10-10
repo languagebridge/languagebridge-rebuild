@@ -27,12 +27,12 @@ const API_KEY = process.env.LB_API_KEY
   || '02dd1fc2301b6277cd7aed4357ea09990373078409a11942707d760726ec58e3';
 const STUDENT_CODE = process.env.LB_STUDENT_CODE || 'LB-TEST7';
 
-// The 17 languages the backend actually accepts (backend/shared/types.ts).
+// The 18 languages the backend actually accepts (backend/shared/types.ts).
 // english is included but skips the "must differ" translation assertion.
 const BACKEND_LANGUAGES = [
   'arabic', 'french', 'portuguese', 'ukrainian', 'vietnamese', 'spanish',
   'persian', 'english', 'nepali', 'swahili', 'dari', 'pashto', 'urdu',
-  'somali', 'burmese', 'tagalog', 'amharic',
+  'somali', 'burmese', 'tagalog', 'amharic', 'uzbek',
 ];
 
 // On-disk glossary dirs (data/glossaries). Kept here only to REPORT drift —

@@ -54,6 +54,7 @@ const TRANSLATOR_LANGUAGE_MAP: Record<string, string> = {
   burmese: 'my',
   tagalog: 'fil',
   amharic: 'am',
+  uzbek: 'uz',
 };
 
 export async function translate(
