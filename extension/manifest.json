@@ -16,11 +16,13 @@
     "matches": ["<all_urls>"],
     "js": [
       "utils/logger.js",
+      "utils/help-content.js",
       "config.js",
       "content/core/lb-state-manager.js",
       "content/services/lb-azure-core.js",
       "content/services/lb-translation-service.js",
       "content/services/lb-tts-service.js",
+      "content/lb-read-along.js",
       "content/services/lb-stt-service.js",
       "content/services/lb-analytics.js",
       "content/session-audio-cache.js",

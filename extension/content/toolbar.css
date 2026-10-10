@@ -621,9 +621,10 @@
   }
 
   /* Flag button in glossary */
+  /* White chip so the red flag reads on the orange/purple card gradient. */
   .lb-vocab-flag {
-    background: rgba(239, 68, 68, 0.15);
-    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: #ffffff;
+    border: 1px solid #ffffff;
     border-radius: 6px;
     padding: 4px 6px;
     cursor: pointer;
@@ -634,15 +635,15 @@
   }
 
   .lb-vocab-flag:hover:not(:disabled) {
-    background: rgba(239, 68, 68, 0.35);
+    background: #ffe3e3;
     transform: scale(1.1);
   }
 
   .lb-vocab-flag:disabled {
-    opacity: 0.7;
+    opacity: 1;
     cursor: default;
-    background: rgba(16, 185, 129, 0.15);
-    border-color: rgba(16, 185, 129, 0.3);
+    background: #ffffff;
+    border-color: #ffffff;
   }
 
   /* Tier and Subject Metadata */
@@ -1150,8 +1151,13 @@
     text-overflow: ellipsis;
   }
 
-  .lb-help-btn {
-    color: #ffc755;
+  /* Solid chip: the help button sits on the gold end of the toolbar gradient,
+     where a gold or white icon disappears. */
+  .lb-help-btn,
+  .lb-help-btn:hover {
+    background: #ffffff;
+    border-color: #ffffff;
+    color: var(--lb-color-primary, #742a69);
   }
 
   /* Bridge anchor in tooltip */
@@ -1432,3 +1438,24 @@
   .lb-flag-chip:disabled { opacity: 0.5; cursor: default; }
   .lb-flag-done { font-size: 13px; font-weight: 600; color: #d8ffd8; }
   .lb-flag-fail { font-size: 13px; font-weight: 600; color: #ffd8d8; }
+
+/* Read-along glow — the word being spoken lights up in brand gold with an
+   orange halo. Drawn with box-shadow (no padding) so the text never reflows. */
+.lb-ra-word {
+  border-radius: 4px;
+  transition: background-color 0.12s ease, box-shadow 0.12s ease, color 0.12s ease;
+}
+
+.lb-ra-word.lb-ra-glow {
+  color: var(--lb-color-primary-dark, #4a1a45);
+  background-color: var(--lb-color-accent-end, #ffc755);
+  box-shadow:
+    0 0 0 3px var(--lb-color-accent-end, #ffc755),
+    0 0 14px 6px rgba(243, 112, 48, 0.85),
+    0 0 26px 10px rgba(255, 199, 85, 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lb-ra-word { transition: none; }
+}
+

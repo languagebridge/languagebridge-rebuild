@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LanguageBridge Help</title>
+  <link rel="stylesheet" href="../content/brand-tokens.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--lb-color-bg);
+      color: var(--lb-color-text-primary);
+      line-height: 1.5;
+    }
+    .help-header {
+      background: var(--lb-gradient-header);
+      color: white;
+      padding: 28px 20px;
+    }
+    .help-header-inner, main { max-width: 640px; margin: 0 auto; }
+    .help-header-inner { display: flex; align-items: center; gap: 14px; }
+    .help-header img { width: 48px; height: 48px; }
+    .help-header h1 { font-size: 22px; font-weight: 600; }
+    .help-header p { font-size: 14px; opacity: 0.9; }
+    main { padding: 24px 20px 48px; }
+    .help-card {
+      background: var(--lb-color-surface);
+      border-radius: 14px;
+      padding: 22px;
+      margin-bottom: 18px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    }
+    .help-card h2 { font-size: 18px; color: var(--lb-color-primary); margin-bottom: 14px; }
+    .help-tip { margin-bottom: 14px; }
+    .help-tip:last-child { margin-bottom: 0; }
+    .help-tip-title { font-weight: 700; color: var(--lb-color-primary); }
+    .help-tip-text, .help-card p { font-size: 15px; color: var(--lb-color-text-secondary); }
+    .help-card p + p { margin-top: 10px; }
+    .help-note {
+      background: var(--lb-color-accent-light);
+      border-left: 4px solid var(--lb-color-accent-start);
+    }
+    .help-email {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      background: var(--lb-color-primary);
+      color: white;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .help-email:hover { background: var(--lb-color-primary-dark); }
+    .help-email:focus-visible { outline: 3px solid var(--lb-color-accent-start); outline-offset: 2px; }
+  </style>
+</head>
+<body>
+  <header class="help-header">
+    <div class="help-header-inner">
+      <img src="../assets/icon48.png" alt="">
+      <div>
+        <h1>LanguageBridge&#8482; Help</h1>
+        <p>How to use it, and where to get help</p>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="help-card help-note">
+      <h2>Don't see the toolbar?</h2>
+      <p>LanguageBridge works on school webpages, articles, and Google Docs. Chrome does not let it run on a new empty tab, the Chrome Web Store, or Chrome's own settings and reader pages.</p>
+      <p>Open the page you are reading for class. If the toolbar still does not show, reload that page.</p>
+    </section>
+
+    <section class="help-card">
+      <h2>How to use LanguageBridge</h2>
+      <div id="tips"></div>
+    </section>
+
+    <section class="help-card" id="support">
+      <h2>Need more help?</h2>
+      <p><strong>Students:</strong> ask your teacher first. They can help you set up LanguageBridge or pass the problem on to us.</p>
+      <p><strong>Teachers and families:</strong> email us and we will write back.</p>
+      <a class="help-email" href="mailto:support@languagebridge.app">Email support@languagebridge.app</a>
+    </section>
+  </main>
+
+  <script src="../utils/help-content.js"></script>
+  <script src="help.js"></script>
+</body>
+</html>

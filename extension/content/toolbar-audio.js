@@ -6,8 +6,11 @@
 
 const _TB = LanguageBridgeToolbar.prototype;
 
+// The closing punctuation is optional so a last sentence without any is still
+// read (it used to be dropped silently). A "." between two digits is a decimal
+// point, not a sentence end: "3.5" stays whole so the voice reads it as a number.
 _TB.splitSentences = function (text) {
-  return (text.match(/[^.!?\u061F]+[.!?\u061F]+/g) || [text])
+  return (text.match(/(?:[^.!?\u061F]|(?<=\p{Nd})\.(?=\p{Nd}))+[.!?\u061F]*/gu) || [text])
     .map(s => s.trim()).filter(s => s.length > 0);
 };
 
@@ -87,7 +90,7 @@ _TB.playSentences = async function () {
 
     // Use cached audio if single sentence, otherwise generate per-sentence
     if (this.cachedTranslation?.audioUrl && total === 1) {
-      await window.LBTTSService.play(this.cachedTranslation.audioUrl);
+      await window.LBTTSService.play(this.cachedTranslation.audioUrl, undefined, sentence);
     } else {
       await window.LBTTSService.generateAndPlay(sentence, this.userLanguage);
     }
