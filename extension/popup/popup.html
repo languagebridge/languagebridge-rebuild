@@ -112,6 +112,16 @@
     .footer-link { font-size: 12px; color: white; text-decoration: none; opacity: 0.8; transition: opacity 0.2s; }
     .footer-link:hover { opacity: 1; }
     .version { font-size: 11px; opacity: 0.6; }
+
+    .page-note {
+      margin-bottom: 20px;
+      padding: 10px 12px;
+      background: rgba(0, 0, 0, 0.28);
+      border-left: 3px solid var(--lb-color-accent-end);
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.45;
+    }
   </style>
 </head>
 <body>
@@ -122,6 +132,10 @@
         <h1>LanguageBridge&#8482;</h1>
         <p>Real-time translation for students</p>
       </div>
+    </div>
+
+    <div class="page-note" id="page-note" role="status" hidden>
+      LanguageBridge can't run on this page. Open or reload the page you are reading for class. Your settings are saved.
     </div>
 
     <div class="popup-section">
@@ -181,7 +195,7 @@
         <a href="#" class="footer-link" id="privacy-link">Privacy</a>
         <a href="#" class="footer-link" id="support-link">Support</a>
       </div>
-      <div class="version">v2.0.0</div>
+      <div class="version" id="version"></div>
     </div>
   </div>
 

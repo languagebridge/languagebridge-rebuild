@@ -14,5 +14,7 @@
   "urdu":        { "azure_voice": "ur-PK-AsadNeural",       "piper_model": "ar_JO-kareem-medium",            "backend": "piper", "quality": "experimental" },
   "somali":      { "azure_voice": "so-SO-MuuseNeural",      "piper_model": "sw_CD-lanfrica-medium",          "backend": "piper", "quality": "experimental" },
   "burmese":     { "azure_voice": "my-MM-ThihaNeural",      "piper_model": null,                             "backend": "azure", "quality": "azure_only" },
-  "tagalog":     { "azure_voice": "fil-PH-AngeloNeural",    "piper_model": null,                             "backend": "azure", "quality": "azure_only" }
+  "tagalog":     { "azure_voice": "fil-PH-AngeloNeural",    "piper_model": null,                             "backend": "azure", "quality": "azure_only" },
+  "amharic":     { "azure_voice": "am-ET-AmehaNeural",      "piper_model": null,                             "backend": "azure", "quality": "azure_only" },
+  "uzbek":       { "azure_voice": "uz-UZ-SardorNeural",     "piper_model": null,                             "backend": "azure", "quality": "azure_only" }
 }

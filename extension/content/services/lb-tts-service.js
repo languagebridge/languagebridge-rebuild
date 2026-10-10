@@ -2,6 +2,8 @@
 // Text-to-Speech: plays audio from URL. Generates via background proxy if needed.
 // A generation token (_gen) lets stop() cancel playback even while audio is still
 // loading (generate → fetch → decode), so the pause/stop button always works.
+// Each clip that starts is reported to LBReadAlong (with the text it speaks) so
+// the matching words on screen can glow in time with the audio.
 
 window.LBTTSService = {
   audioContext: null,
@@ -13,6 +15,7 @@ window.LBTTSService = {
   _stopSources() {
     if (this.currentSource) { try { this.currentSource.stop(); } catch (e) { /* already stopped */ } this.currentSource = null; }
     if (this.currentAudio) { try { this.currentAudio.pause(); this.currentAudio.currentTime = 0; } catch (e) { /* noop */ } this.currentAudio = null; }
+    window.LBReadAlong?.stop();
   },
 
   // ── Client-side audio cache ────────────────────────────────────────
@@ -28,18 +31,46 @@ window.LBTTSService = {
     if (this.audioContext.state === 'suspended') await this.audioContext.resume();
   },
 
-  _playBuffer(buffer) {
-    const gen = ++this._gen;
-    this._stopSources();
+  // Seconds of near-silence at the start and end of a clip. TTS audio is padded,
+  // and counting the padding as speech would make the read-along glow run late.
+  _speechBounds(buffer) {
+    if (buffer._lbBounds) return buffer._lbBounds;
+    const data = buffer.getChannelData(0);
+    const THRESHOLD = 0.02, STEP = 32;
+    let first = 0, last = data.length - 1;
+    while (first < data.length && Math.abs(data[first]) < THRESHOLD) first += STEP;
+    while (last > first && Math.abs(data[last]) < THRESHOLD) last -= STEP;
+    const bounds = first >= data.length
+      ? { lead: 0, tail: 0 }
+      : { lead: first / buffer.sampleRate, tail: (data.length - 1 - last) / buffer.sampleRate };
+    buffer._lbBounds = bounds;
+    return bounds;
+  },
+
+  // Start a decoded buffer and tell the read-along what is being spoken.
+  // Resolves when the clip ends (or is stopped).
+  _startSource(buffer, text) {
     const source = this.audioContext.createBufferSource();
+    const rate = window.LBState?.readingSpeed || 1.0;
     source.buffer = buffer;
-    source.playbackRate.value = window.LBState?.readingSpeed || 1.0;
+    source.playbackRate.value = rate;
     source.connect(this.audioContext.destination);
     source.start(0);
     this.currentSource = source;
+    if (text) window.LBReadAlong?.start({ text, duration: buffer.duration, rate, ...this._speechBounds(buffer) });
     return new Promise((resolve) => {
-      source.onended = () => { if (this.currentSource === source) this.currentSource = null; resolve(); };
+      source.onended = () => {
+        // A replaced clip ends late; only the current one may clear the glow.
+        if (this.currentSource === source) { this.currentSource = null; window.LBReadAlong?.stop(); }
+        resolve();
+      };
     });
+  },
+
+  _playBuffer(buffer, text) {
+    ++this._gen;
+    this._stopSources();
+    return this._startSource(buffer, text);
   },
 
   // Fetch audio bytes (via background proxy → CORS-safe) and decode to a buffer.
@@ -76,7 +107,7 @@ window.LBTTSService = {
       await this._ensureCtx();
       const key = this._cacheKey(text, language);
       const hit = this._audioCache.get(key);
-      if (hit) { await this._playBuffer(hit); return { ok: true, cached: true }; }
+      if (hit) { await this._playBuffer(hit, text); return { ok: true, cached: true }; }
 
       const chunks = this._chunkText(text, 480);
       if (chunks.length !== 1) { await this.generateAndPlay(text, language); return { ok: true, cached: false }; }
@@ -90,7 +121,7 @@ window.LBTTSService = {
       const buffer = await this._decodeUrl(url, gen);
       if (!buffer) return { ok: false, cached: false };
       this._audioCache.set(key, buffer);
-      await this._playBuffer(buffer);
+      await this._playBuffer(buffer, text);
       return { ok: true, cached: true };
     } catch (err) {
       window.LBRuntime && window.LBRuntime.handle(err);
@@ -99,7 +130,8 @@ window.LBTTSService = {
     }
   },
 
-  async play(audioUrl, gen) {
+  // `text` (optional) is what the clip says, for the read-along glow.
+  async play(audioUrl, gen, text) {
     if (gen === undefined) gen = this._gen;
     try {
       if (!this.audioContext) this.audioContext = new AudioContext();
@@ -123,17 +155,8 @@ window.LBTTSService = {
       const audioBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
       if (gen !== this._gen) return; // stopped during decode
 
-      const source = this.audioContext.createBufferSource();
-      source.buffer = audioBuffer;
-      source.playbackRate.value = window.LBState?.readingSpeed || 1.0;
-      source.connect(this.audioContext.destination);
-      source.start(0);
-      this.currentSource = source;
       LBLog.info(`Audio playing (${audioBuffer.duration.toFixed(1)}s)`);
-
-      return new Promise((resolve) => {
-        source.onended = () => { if (this.currentSource === source) this.currentSource = null; resolve(); };
-      });
+      return this._startSource(audioBuffer, text);
     } catch (err) {
       LBLog.error('TTS playback via WebAudio failed, trying HTML5 Audio fallback:', err);
       try {
@@ -144,7 +167,13 @@ window.LBTTSService = {
           audio.playbackRate = window.LBState?.readingSpeed || 1.0;
           this.currentAudio = audio;
           await audio.play();
-          return new Promise(resolve => { audio.onended = () => { if (this.currentAudio === audio) this.currentAudio = null; resolve(); }; });
+          if (text) window.LBReadAlong?.start({ text, duration: audio.duration, rate: audio.playbackRate });
+          return new Promise(resolve => {
+            audio.onended = () => {
+              if (this.currentAudio === audio) { this.currentAudio = null; window.LBReadAlong?.stop(); }
+              resolve();
+            };
+          });
         }
       } catch (fallbackErr) {
         LBLog.error('HTML5 Audio fallback also failed:', fallbackErr);
@@ -158,7 +187,8 @@ window.LBTTSService = {
     text = (text || '').trim();
     if (!text) return [];
     if (text.length <= max) return [text];
-    const sentences = text.match(/[^.!?؟۔。]+[.!?؟۔。]*\s*/g) || [text];
+    // A "." between digits is a decimal point — never split a number across chunks.
+    const sentences = text.match(/(?:[^.!?؟۔。]|(?<=\p{Nd})\.(?=\p{Nd}))+[.!?؟۔。]*\s*/gu) || [text];
     const chunks = [];
     let cur = '';
     const flush = () => { if (cur.trim()) { chunks.push(cur.trim()); cur = ''; } };
@@ -213,7 +243,7 @@ window.LBTTSService = {
       if (!res) { LBLog.warn('TTS: no response from background'); return null; }
 
       const audioUrl = res.data?.audioUrl || res.data?.audio_url;
-      if (res.ok && audioUrl) { await this.play(audioUrl, gen); return res.data; }
+      if (res.ok && audioUrl) { await this.play(audioUrl, gen, text); return res.data; }
 
       // Dari often fails server-side — fall back to Persian (closely related).
       if (language === 'dari' && res.data?.error === 'AZURE_SERVICE_ERROR') {
@@ -224,7 +254,7 @@ window.LBTTSService = {
         });
         if (gen !== this._gen) return null;
         const fbUrl = fb.data?.audioUrl || fb.data?.audio_url;
-        if (fb.ok && fbUrl) { await this.play(fbUrl, gen); return fb.data; }
+        if (fb.ok && fbUrl) { await this.play(fbUrl, gen, text); return fb.data; }
       }
 
       // Retry once on INTERNAL_ERROR.

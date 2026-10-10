@@ -63,6 +63,15 @@ _TT.showTranslationTooltip = function (result, selection, defaultTab) {
 
   // Tab 1: Translation
   const tab1 = this._buildTranslationTab(bridgeAnchor, bridgeScaffold, cognate, forms, subject, gradeBand, source, displayText, textDir, textAlign);
+  if (isObj && result.sourceLanguage && result.sourceLanguage !== 'english') {
+    const from = document.createElement('div');
+    from.className = 'lb-fallback-notice';
+    const fromName = window.LB_LANGUAGES[result.sourceLanguage]?.label || result.sourceLanguage;
+    from.textContent = result.source === 'same_language'
+      ? `Already in ${fromName}`
+      : `Translated from ${fromName}`;
+    tab1.insertBefore(from, tab1.firstChild);
+  }
 
   // Tab 2: Glossary + Flag (merged)
   const tab2 = this._buildGlossaryTab();
@@ -135,6 +144,7 @@ _TT._buildTranslationTab = function (bridgeAnchor, bridgeScaffold, cognate, form
     el.setAttribute('dir', textDir);
     el.style.textAlign = textAlign;
     el.textContent = cognate;
+    window.LBReadAlong?.attach(el, cognate); // words glow as the audio reads them
     row.appendChild(el);
 
     const SPEAKER = '&#128266;';   // 🔊 first listen
@@ -324,8 +334,8 @@ _TT._buildGlossaryTab = function () {
   const audioCache = {};
   const flaggedWords = new Set();
 
-  const FLAG_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="#ef4444"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>';
-  const CHECK_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="#10b981"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+  const FLAG_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="#c81e1e"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>';
+  const CHECK_SVG = '<svg width="14" height="14" viewBox="0 0 24 24" fill="#047857"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
 
   // Candidate words for this selection (computed once).
   const _glossWords = [...new Set(
@@ -408,6 +418,7 @@ _TT._buildGlossaryTab = function () {
     wordList.querySelectorAll('.lb-en-audio').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation(); btn.disabled = true; btn.innerHTML = WAIT;
+        window.LBReadAlong?.focus(btn.parentElement.querySelector('.lb-vocab-word'));
         try { await window.LBTTSService?.speakCached(btn.dataset.word, 'english'); } catch (err) { /* noop */ }
         btn.disabled = false; btn.innerHTML = PLAY;
       });
@@ -415,6 +426,7 @@ _TT._buildGlossaryTab = function () {
     wordList.querySelectorAll('.lb-cognate-audio').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation(); btn.disabled = true; btn.innerHTML = WAIT;
+        window.LBReadAlong?.focus(btn.parentElement.querySelector('.lb-vocab-word'));
         try { await window.LBTTSService?.speakCached(btn.dataset.word, btn.dataset.lang, audioCache[btn.dataset.word]); } catch (err) { /* noop */ }
         btn.disabled = false; btn.innerHTML = PLAY;
       });
@@ -489,6 +501,8 @@ _TT.hideTranslationTooltip = function () {
   if (tooltip) {
     if (tooltip._dragController) tooltip._dragController.abort();
     tooltip.remove();
+    // Card-scoped messages ("Glossary shown") must not outlive the card.
+    if (!this.isReading && !this.isPaused) this.showStatus('Active', 'info');
   }
 };
 
