@@ -37,7 +37,7 @@ Students never create accounts and we never hold their identity. That is the cen
 | Area | State |
 |---|---|
 | Backend: 10 HTTP functions in 9 function folders | Live at `https://languagebridge-api.azurewebsites.net/api` |
-| Languages | **16 live.** Amharic and Uzbek are added in code (18 total) but the backend has not been redeployed, so the live API still rejects them |
+| Languages | **18 live.** All 18 passed the live translation and audio smoke check on 10 October 2026. The published extension (2.0.4) does not yet offer Amharic or Uzbek in its picker |
 | Lexicon | Seeded from RBERN glossaries plus about 1,080 bridge glosses *(counts not re-checked)* |
 | Audio | **All live audio is Azure Speech.** The proprietary voice service is not configured on the live app (`LB_TTS_SERVICE_URL` is not set) |
 | Chrome extension | Version 2.0.4 in the repo. QA fixes and the read-along glow from 10 October are merged in code but **not yet tested in Chrome** |
@@ -60,7 +60,7 @@ The source of truth is `SUPPORTED_LANGUAGES` in `backend/shared/types.ts`. The e
 |---|---|---|---|---|---|
 | Arabic | `arabic` | `ar` | `ar-SA-HamedNeural` | `ar-SA` | Live |
 | Burmese | `burmese` | `my` | `my-MM-ThihaNeural` | `my-MM` | Live |
-| Dari | `dari` | `fa` | `fa-AF-HasanNeural` | `fa-IR` | Live; translation and STT use Persian |
+| Dari | `dari` | `prs` | `fa-IR-FaridNeural` (Persian) | `fa-IR` | Live; translated as Dari, audio and STT use Persian |
 | English | `english` | `en` | `en-US-AndrewNeural` | `en-US` | Live |
 | French | `french` | `fr` | `fr-FR-HenriNeural` | `fr-FR` | Live |
 | Nepali | `nepali` | `ne` | `ne-NP-SagarNeural` | `ne-NP` | Live |
@@ -74,12 +74,13 @@ The source of truth is `SUPPORTED_LANGUAGES` in `backend/shared/types.ts`. The e
 | Ukrainian | `ukrainian` | `uk` | `uk-UA-OstapNeural` | `uk-UA` | Live |
 | Urdu | `urdu` | `ur` | `ur-PK-AsadNeural` | `ur-IN` | Live |
 | Vietnamese | `vietnamese` | `vi` | `vi-VN-NamMinhNeural` | `vi-VN` | Live |
-| Amharic | `amharic` | `am` | `am-ET-AmehaNeural` | `am-ET` | In code, not deployed |
-| Uzbek | `uzbek` | `uz` | `uz-UZ-SardorNeural` | `uz-UZ` | In code, not deployed |
+| Amharic | `amharic` | `am` | `am-ET-AmehaNeural` | `am-ET` | Live since 10 Oct 2026; STT untested |
+| Uzbek | `uzbek` | `uz` | `uz-UZ-SardorNeural` | `uz-UZ` | Live since 10 Oct 2026; STT untested |
 
 Notes:
 
-- **Dari audio** has failed on the backend and the extension falls back to the Persian voice. The last full smoke check (July 2026) passed 16 of 16 for translation and 15 of 16 for audio, with Dari the failure.
+- **Smoke check, 10 October 2026:** 18 of 18 for translation and 18 of 18 for audio. It does not cover speech recognition.
+- **Dari.** Azure has no Dari voice or Dari speech recognition, so both use Persian. Until October 2026 the config named a voice Azure does not offer (`fa-AF-HasanNeural`), so every Dari audio request failed and the extension retried as Persian; that retry is still in the extension as a safety net. Translation uses Azure's Dari (`prs`), which gives noticeably different wording from Persian (`fa`). A Dari speaker has not yet reviewed it.
 - **Removed and not coming back as-is:** Kinyarwanda, Twi and Tigrinya. Azure has no voice or speech recognition for any of them, and no translation for Twi.
 - **Requested by districts, not supported:** Haitian Creole, Kinyarwanda and Hmong have Azure translation but no Azure voice. They need our own voices; see [section 16](#16-roadmap-and-open-decisions).
 
@@ -208,7 +209,7 @@ Audio is served through signed URLs that expire after one hour.
 - **Bridge glosses:** about 1,080 short simple-English anchors of one to three words that fit inside the sentence ("light-feeding" for photosynthesis). They are not dictionary definitions.
 - **Cached machine translations**, added automatically the first time a term misses.
 
-Known data problems: about 319 of the bridge entries are science-only and some give a common word a narrow science meaning. The source for "producer" was corrected in June but the live database was not updated. Lexicon rows for the three removed languages are still in the database and unreachable.
+Known data problems: about 319 of the bridge entries are science-only and some give a common word a narrow science meaning. The source for "producer" was corrected in June but the live database was not updated. Lexicon rows for the three removed languages are still in the database and unreachable. Dari terms that missed the glossary before October 2026 were machine-translated as Persian and cached under `dari`; they are still served until cleared.
 
 ---
 
@@ -374,7 +375,7 @@ A 200 with `translatedText` proves the Translator credentials work. It does not 
 
 | Command (repo root) | Runs | Result on 10 Oct 2026 |
 |---|---|---|
-| `npm run test:backend` | Jest, `backend/__tests__/` | 11 suites, 120 tests |
+| `npm run test:backend` | Jest, `backend/__tests__/` | 11 suites, 122 tests |
 | `npx vitest run` | Vitest, `tests/unit` and `tests/integration` | 3 files, 39 tests |
 | `npm run test:ml` | pytest, `ml-pipeline/tests/` | 8 tests in the voice-router file |
 | `npm run type-check:backend` | TypeScript | Clean |
@@ -486,7 +487,7 @@ Change these only with the reason in view.
 6. **The language correction.** Documents claimed 21 or 22 languages. In June 2026 five that did not work were removed, leaving 16.
 7. **The extension joins the repo.** Prentice Howard's extension was copied in and has been developed here since. The old `feat/prentice-extension-rebuild` branch has unrelated history; do not merge it.
 8. **Company documents.** The canonical company set in `company/` was written in September 2026.
-9. **October 2026.** Amharic and Uzbek restored in code, the QA bug sheet worked through, the read-along glow added, and these documents consolidated.
+9. **October 2026.** Amharic and Uzbek restored and live (18 languages), Dari given a working voice and real Dari translation, the QA bug sheet worked through, the read-along glow added, and these documents consolidated.
 
 Commit-level detail is in `git log` and in `docs/dev-notes/`.
 
@@ -496,7 +497,7 @@ Commit-level detail is in `git log` and in `docs/dev-notes/`.
 
 | When | What | Spec |
 |---|---|---|
-| Now | Deploy the backend; smoke-test Amharic and Uzbek; test the extension changes in Chrome; next Web Store release | `docs/dev-notes/` |
+| Now | Test the extension changes in Chrome; next Web Store release (brings Amharic and Uzbek to students); test Talk to Teacher in Amharic, Uzbek and Dari; Dari speaker review | `docs/dev-notes/` |
 | Next | Licence record and enforcement at enrolment (seats, term, status, demo) | `company/PROVISIONING-AND-LICENSING.md` |
 | During pilot | Admin terminal for flag triage, and an audit log | `docs/PRD-ADMIN-DATABASE.md` |
 | After pilot | Interpreter marketplace; corrections flow back into the lexicon | `docs/PRD-ML-FLYWHEEL.md` |

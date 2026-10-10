@@ -36,3 +36,7 @@ Corrections the old docs needed:
 - **Cleanup list.** Section 17 lists 12 leftover or mismatched items (phantom npm workspaces, the empty `pwa/`, the duplicate `backend/tests/`, a client/server rate-limit mismatch for audio, and others). None are fixed here.
 - **Review for accuracy.** Read sections 5, 9 and 11 against what you know of the code and flag anything wrong. From now on, a pull request that changes a function, route, limit, container, environment variable or language should update the master document in the same pull request.
 - The field guide page published in September is out of date.
+
+## Update, later the same day
+
+After PRs #2 and #4 were merged and deployed, `main` was merged into this branch and the master document was corrected: 18 languages live, the Dari row (translator `prs`, voice `fa-IR-FaridNeural`), the 10 October smoke-check result, the Jest count (122), and the roadmap's "now" row.

@@ -21,7 +21,7 @@ It is a Chrome extension (`extension/`) and a web app at languagebridge.app, bot
 
 ```bash
 npm install                 # repo root
-npm run test:backend        # 120 backend tests, no credentials needed
+npm run test:backend        # backend tests, no credentials needed
 npx vitest run              # root unit and integration tests
 ```
 
