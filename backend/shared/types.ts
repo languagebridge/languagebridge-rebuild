@@ -37,11 +37,14 @@ export const SUPPORTED_LANGUAGES = [
   // Tier 2 — Azure TTS only (no local model yet)
   'burmese',
   'tagalog',
+  'amharic',
 ] as const;
 
-// NOTE: kinyarwanda, twi, uzbek, amharic, and tigrinya were removed (2026-06)
-// because their endpoint paths were not working. Re-add here to restore them —
+// NOTE: kinyarwanda, twi, uzbek, and tigrinya were removed (2026-06) because
+// their endpoint paths were not working. Re-add here to restore them —
 // TypeScript will flag every place that needs a corresponding entry.
+// amharic was removed with them and restored 2026-10: Azure covers it natively
+// (Translator `am`, TTS + STT `am-ET`).
 
 export type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
 

@@ -19,6 +19,7 @@ window.LB_LANGUAGES = {
   swahili:     { code: 'swahili',     label: 'Swahili',      nativeLabel: 'Kiswahili',   rtl: false },
   burmese:     { code: 'burmese',     label: 'Burmese',      nativeLabel: 'မြန်မာ',        rtl: false },
   tagalog:     { code: 'tagalog',     label: 'Tagalog',      nativeLabel: 'Tagalog',     rtl: false },
+  amharic:     { code: 'amharic',     label: 'Amharic',      nativeLabel: 'አማርኛ',        rtl: false },
 };
 
 // XSS prevention utility

@@ -164,6 +164,7 @@ window.LBTranslationService = {
     ar: 'arabic', ur: 'urdu', fa: 'persian', uk: 'ukrainian', es: 'spanish', so: 'somali',
     en: 'english', fr: 'french', pt: 'portuguese', vi: 'vietnamese', ne: 'nepali',
     sw: 'swahili', my: 'burmese', tl: 'tagalog', fil: 'tagalog', ps: 'pashto',
+    am: 'amharic',
   },
 
   // Returns a supported LanguageBridge language name, or null when unsure. Selections under

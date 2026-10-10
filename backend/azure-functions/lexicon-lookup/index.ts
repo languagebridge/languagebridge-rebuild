@@ -52,6 +52,7 @@ const LANGUAGE_TO_TRANSLATOR: Record<string, string> = {
   swahili: 'sw',
   burmese: 'my',
   tagalog: 'fil',
+  amharic: 'am',
 };
 
 export async function lexiconLookup(

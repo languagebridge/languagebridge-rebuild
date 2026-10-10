@@ -25,11 +25,12 @@
     nepali: '#dc143c',
     burmese: 'linear-gradient(#fecb00 0 33%,#34b233 33% 66%,#ea2839 66% 100%)',
     tagalog: 'linear-gradient(#0038a8 0 50%,#ce1126 50% 100%)',
+    amharic: 'linear-gradient(#078930 0 33%,#fcdd09 33% 66%,#da121a 66% 100%)',
     english: '#00247d',
   };
   // Order: underserved/RTL first, English last (included, never the default).
   const LANG_ORDER = ['arabic', 'dari', 'pashto', 'persian', 'urdu', 'somali', 'swahili',
-    'ukrainian', 'spanish', 'french', 'portuguese', 'vietnamese', 'nepali', 'burmese', 'tagalog', 'english'];
+    'ukrainian', 'spanish', 'french', 'portuguese', 'vietnamese', 'nepali', 'burmese', 'tagalog', 'amharic', 'english'];
 
   // UI strings. English is authoritative; other languages fall back until a
   // reviewed bundle is added (see company/PROVISIONING-AND-LICENSING.md notes).
