@@ -36,7 +36,7 @@ const TRANSLATOR_API_VERSION = '3.0';
 
 // Language code mapping: our codes → Azure Translator codes
 const LANGUAGE_TO_TRANSLATOR: Record<string, string> = {
-  dari: 'fa',
+  dari: 'prs',   // Dari proper, not Persian ('fa')
   pashto: 'ps',
   persian: 'fa',
   arabic: 'ar',

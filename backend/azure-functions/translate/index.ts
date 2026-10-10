@@ -47,7 +47,7 @@ const TRANSLATOR_LANGUAGE_MAP: Record<string, string> = {
   english: 'en',
   nepali: 'ne',
   swahili: 'sw',
-  dari: 'fa',       // Uses Persian (Dari is mutually intelligible)
+  dari: 'prs',      // Azure Translator has Dari as its own language
   pashto: 'ps',
   urdu: 'ur',
   somali: 'so',
@@ -113,7 +113,7 @@ export async function translate(
     return error(400, 'INVALID_LANGUAGE', `Translator mapping missing for language`);
   }
   if (fromCode === toCode) {
-    // Short-circuit: same language (e.g. dari→persian both map to 'fa')
+    // Short-circuit: source and target are the same language
     return { status: 200, jsonBody: { translatedText: text, fromLanguage, toLanguage } as TranslateResponse };
   }
 
