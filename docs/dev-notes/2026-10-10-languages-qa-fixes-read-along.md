@@ -1,6 +1,6 @@
 # Dev notes — 10 Oct 2026
 
-**Branch:** `feat/v2-lexicon-tts-hardening` · **Commits:** `f5dc163`, `94411cf`, `8a34223`
+**Branch:** `feat/v2-lexicon-tts-hardening` · **Commits:** `f5dc163`, `94411cf`, `8a34223`, plus the CI dependency fix · **PR:** #2
 
 Three things changed: two languages were restored, the seven items on the QA bug sheet were worked through, and the translation card now highlights each word as it is read aloud.
 
@@ -105,7 +105,23 @@ Meta's MMS text-to-speech models for Haitian Creole (`facebook/mms-tts-hat`) and
 - Output is 16 kHz.
 - Loading them with the venv's `transformers` 4.40 prints a "weights not used / newly initialized" warning. It is cosmetic: the audio is identical with the weights mapped by hand.
 
-## 6. Still to do
+## 6. CI fix: dependency audit
+
+The first CI run on the pull request failed at the "Security audit" step (`npm audit --audit-level=high`) before lint or tests ran. It was not caused by the code changes: new advisories had been published against existing dependencies (1 critical, 36 high).
+
+What changed:
+
+- Non-breaking updates in `package-lock.json` for `axios`, `handlebars`, `js-yaml`, `nanoid`, `postcss`, `source-map-js`, `browserslist` and `brace-expansion`.
+- **Jest upgraded from 29 to 30** in `backend/package.json` (`jest`, `@jest/globals`, `@types/jest`). The remaining high-severity flags all came from `braces`, which Jest 29 pulls in and which has no patched release. `ts-jest` 29.4 supports Jest 30, so it stays.
+
+Result: 0 high, 0 critical. 22 moderate advisories remain, all in test tooling; the production dependency audit (`npm audit --omit=dev`) is clean. Lint, type-check, build, Jest (120) and Vitest (39) pass on a clean `npm ci`.
+
+Two things to know:
+
+- `npm audit fix` crashes on this repo (`Cannot read properties of null (reading 'edgesOut')`). Use `npm update <package>` for targeted fixes instead. The root `package.json` lists `extension`, `pwa` and `ml-pipeline` as workspaces, but none of them has a `package.json`; that is a likely cause and is on the cleanup list.
+- This check will fail again whenever a new advisory lands on a dev tool. If that becomes a nuisance, the option is to gate CI on production dependencies only (`--omit=dev`). Not changed here.
+
+## 7. Still to do
 
 Manual testing in Chrome (reload the unpacked extension, then reload the page):
 
