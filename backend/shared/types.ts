@@ -30,7 +30,7 @@ export const SUPPORTED_LANGUAGES = [
   // Tier 1.5 — Piper TTS (beta, using related language model)
   'nepali',
   'swahili',
-  'dari',       // uses Persian Piper
+  'dari',       // uses Persian Piper; Azure has no Dari voice, so its Azure voice is Persian too
   'pashto',     // uses Persian Piper
   'urdu',       // uses Arabic Piper
   'somali',     // uses Swahili Piper

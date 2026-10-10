@@ -9,7 +9,7 @@
   "english":     { "azure_voice": "en-US-AndrewNeural",     "piper_model": null,                             "backend": "azure", "quality": "production" },
   "nepali":      { "azure_voice": "ne-NP-SagarNeural",      "piper_model": "ne_NP-chitwan-medium",           "backend": "piper", "quality": "beta" },
   "swahili":     { "azure_voice": "sw-KE-RafikiNeural",     "piper_model": "sw_CD-lanfrica-medium",          "backend": "piper", "quality": "beta" },
-  "dari":        { "azure_voice": "fa-AF-HasanNeural",      "piper_model": "fa_IR-amir-medium",              "backend": "piper", "quality": "beta" },
+  "dari":        { "azure_voice": "fa-IR-FaridNeural",      "piper_model": "fa_IR-amir-medium",              "backend": "piper", "quality": "beta" },
   "pashto":      { "azure_voice": "ps-AF-GulNawazNeural",   "piper_model": "fa_IR-amir-medium",              "backend": "piper", "quality": "experimental" },
   "urdu":        { "azure_voice": "ur-PK-AsadNeural",       "piper_model": "ar_JO-kareem-medium",            "backend": "piper", "quality": "experimental" },
   "somali":      { "azure_voice": "so-SO-MuuseNeural",      "piper_model": "sw_CD-lanfrica-medium",          "backend": "piper", "quality": "experimental" },
