@@ -1,6 +1,6 @@
 # LanguageBridge — Company Document Set
 
-**The canonical, uniform source of truth for LanguageBridge LLC.** These documents are reverse-engineered from the working system and reconciled against the engineering reality (see `docs/ENGINEERING-FIELD-GUIDE.md`). When any older document in `docs/` disagrees with a fact here, **this set wins** — and the older doc should be updated.
+**The canonical, uniform source of truth for LanguageBridge LLC.** These documents are reverse-engineered from the working system and reconciled against the engineering reality (see `docs/MASTER-DOCUMENT.md`). When any older document in `docs/` disagrees with a fact here, **this set wins** — and the older doc should be updated.
 
 **Maintained by:** Justin Bernard, CEO / Founder / Data Security Officer · justin@languagebridge.app · (216) 800-6020
 **Last reconciled:** September 2026
