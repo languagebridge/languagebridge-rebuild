@@ -8,7 +8,7 @@ Plain-language answers for EL directors, curriculum leaders, IT, and business of
 A Chrome extension that lets multilingual students understand English schoolwork in their own language — with a plain-English explanation, their home-language translation, and audio — plus a two-way voice tool to talk with their teacher.
 
 **Which languages?**
-Sixteen: Arabic, Burmese, Dari, English, French, Nepali, Pashto, Persian, Portuguese, Somali, Spanish, Swahili, Tagalog, Ukrainian, Urdu, and Vietnamese. We prioritize languages mainstream tools serve poorly (Dari, Pashto, Somali, Burmese, Ukrainian).
+Eighteen: Amharic, Arabic, Burmese, Dari, English, French, Nepali, Pashto, Persian, Portuguese, Somali, Spanish, Swahili, Tagalog, Ukrainian, Urdu, Uzbek, and Vietnamese. We prioritize languages mainstream tools serve poorly (Dari, Pashto, Somali, Burmese, Ukrainian).
 
 **What does it cost?**
 We price per **English-learner** student per year — not your whole enrollment — starting at $12 and dropping with volume, with a free one-semester pilot to start. Building and district licenses are available. See [PRICING-AND-PACKAGING.md](PRICING-AND-PACKAGING.md). It's designed to be fundable from Title III.

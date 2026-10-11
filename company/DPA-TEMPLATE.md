@@ -2,7 +2,7 @@
 
 > **Status:** Template, ready to send to an LEA — **pending final review and sign-off by Bob Ellis (counsel)** before first execution.
 > **Template basis:** ETLA Ohio NDPA V1 (the same SDPC-standard template Ohio districts use, and the basis of the signed Parma City Schools MVP DPA).
-> **Canonical:** written to match what the deployed system actually does. Language count and features reconciled to [00-CANONICAL-FACTS.md](00-CANONICAL-FACTS.md) — **16 supported languages**. Supersedes `docs/DPA-V2-DRAFT.md`.
+> **Canonical:** written to match what the deployed system actually does. Language count and features reconciled to [00-CANONICAL-FACTS.md](00-CANONICAL-FACTS.md) — **18 supported languages**. Supersedes `docs/DPA-V2-DRAFT.md`.
 > Placeholders in _[brackets]_ are completed per deal. Items marked ⚠ are committed-but-not-yet-built — confirm before promising them to a specific LEA.
 
 | Field | Value |
@@ -45,7 +45,7 @@ NOW THEREFORE, for good and valuable consideration, the parties agree as follows
 2. **Academic Glossary** — a searchable K-12 vocabulary library organized by subject and grade band.
 3. **Talk to Teacher** — the student speaks in their home language; speech is transcribed and translated to English for the teacher; the teacher's English reply is translated back with optional audio. Enables real-time communication without an interpreter present.
 
-**Supported languages (16):** Arabic, Burmese, Dari, English, French, Nepali, Pashto, Persian, Portuguese, Somali, Spanish, Swahili, Tagalog, Ukrainian, Urdu, Vietnamese. Additional languages may be added on prior written notice to the LEA.
+**Supported languages (18):** Amharic, Arabic, Burmese, Dari, English, French, Nepali, Pashto, Persian, Portuguese, Somali, Spanish, Swahili, Tagalog, Ukrainian, Urdu, Uzbek, Vietnamese. Additional languages may be added on prior written notice to the LEA.
 
 **Technical implementation:**
 - **Distribution:** Chrome Web Store, and/or Google Workspace admin-console push by LEA IT.

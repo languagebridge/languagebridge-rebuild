@@ -1,6 +1,6 @@
 // Talk to Teacher (PWA) — supported languages.
 // Mirrors the extension's LB_LANGUAGES and the backend's SUPPORTED_LANGUAGES
-// (backend/shared/types.ts). All 16 have Azure STT coverage, so every one of
+// (backend/shared/types.ts). All 18 have Azure STT coverage, so every one of
 // them works as a *spoken* input side in Talk to Teacher.
 //
 // Note: Dari uses the Persian voice/STT model server-side (they share script +

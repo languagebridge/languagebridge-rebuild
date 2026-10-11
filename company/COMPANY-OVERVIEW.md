@@ -14,7 +14,7 @@ A student highlights any word on any page and, in one action, gets:
 2. the **cognate in their home-language script**, and
 3. **native-speaker audio**.
 
-Plus an **Academic Glossary** of K-12 vocabulary by subject and grade band, and **Talk to Teacher** — a two-way voice translator so a student and teacher can actually talk, on one device, with no interpreter in the room. Sixteen languages, all delivered through a Chrome extension that works on any Chromebook.
+Plus an **Academic Glossary** of K-12 vocabulary by subject and grade band, and **Talk to Teacher** — a two-way voice translator so a student and teacher can actually talk, on one device, with no interpreter in the room. Eighteen languages, all delivered through a Chrome extension that works on any Chromebook.
 
 ## Why we win
 

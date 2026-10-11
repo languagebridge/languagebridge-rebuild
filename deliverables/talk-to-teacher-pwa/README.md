@@ -6,7 +6,7 @@ changes. This is a drop-in `/teacher` route.
 
 One computer, two people: each taps **their** language, speaks, and the app transcribes →
 translates → shows it in the transcript and reads it aloud in the other language. Manual
-turn-taking, kid-friendly errors, all 16 supported languages.
+turn-taking, kid-friendly errors, all 18 supported languages.
 
 ---
 
@@ -32,7 +32,7 @@ holds the key — same design as your alpha demo's Netlify proxy.
 src/
   TalkToTeacher.tsx     ← the component (the /teacher screen)
   TalkToTeacher.css     ← styling (self-contained, no Tailwind needed)
-  languages.ts          ← the 16 supported languages
+  languages.ts          ← the 18 supported languages
   lib/
     audioWav.ts         ← mic capture + 16 kHz WAV transcode + level diagnostics
     api.ts              ← speech-to-text / translate / tts-router client (calls the proxy)
@@ -94,7 +94,7 @@ No dependencies beyond **React 18+**. TypeScript. All browser-native otherwise.
 - `POST /translate` → `{ text, fromLanguage, toLanguage, studentCode }` → `{ translatedText }`
 - `POST /tts-router` → `{ text, language, studentCode }` → `{ audioUrl }`
 
-All 16 languages have Azure STT coverage, so every one works as a spoken input side.
+All 18 languages have Azure STT coverage, so every one works as a spoken input side.
 **Dari note:** Dari STT and TTS both route through **Persian** server-side (shared script,
 ~80% mutually intelligible). `lib/api.ts` also retries Dari TTS as Persian if the backend
 returns `AZURE_SERVICE_ERROR`, matching the extension. So Dari works end-to-end.

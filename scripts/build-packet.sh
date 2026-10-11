@@ -33,7 +33,7 @@ cat > "$TMP/combined.md" <<EOF
   <div class="brand">LanguageBridge</div>
   <div class="sub">District Information Packet</div>
   <div class="rule"></div>
-  <div class="tagline">Academic translation, read-aloud audio, and two-way classroom communication for K-12 English learners — in 16 languages, on any Chromebook.</div>
+  <div class="tagline">Academic translation, read-aloud audio, and two-way classroom communication for K-12 English learners — in 18 languages, on any Chromebook.</div>
   <div class="meta">
     <strong>LanguageBridge LLC</strong><br>
     856 Eastlawn Dr, Highland Heights, OH 44143<br>

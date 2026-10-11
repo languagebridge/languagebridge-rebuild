@@ -2,7 +2,7 @@
 
 **The single source of truth.** Every other document, deck, DPA, and questionnaire answer must match these values. If something you're writing disagrees with this page, this page is right.
 
-**Last reconciled:** September 2026 · **Owner:** Justin Bernard
+**Last reconciled:** October 2026 (languages); September 2026 (everything else) · **Owner:** Justin Bernard
 
 ---
 
@@ -28,13 +28,15 @@ LanguageBridge makes grade-level English schoolwork comprehensible for K-12 mult
 
 **Three features:** (1) Highlight & Hear vocabulary lookup with a plain-English "bridge" scaffold, native-language cognate, and audio; (2) an Academic Glossary; (3) Talk to Teacher, a two-way voice translator for real-time student↔teacher conversation.
 
-## 3. The 16 supported languages (canonical)
+## 3. The 18 supported languages (canonical)
 
-Arabic · Burmese · Dari · English · French · Nepali · Pashto · Persian · Portuguese · Somali · Spanish · Swahili · Tagalog · Ukrainian · Urdu · Vietnamese
+Amharic · Arabic · Burmese · Dari · English · French · Nepali · Pashto · Persian · Portuguese · Somali · Spanish · Swahili · Tagalog · Ukrainian · Urdu · Uzbek · Vietnamese
 
-- **15 are fully native** for translation + audio.
-- **Dari** works via **Persian** for both speech synthesis and recognition (shared script, ~80% mutual intelligibility).
-- **Do not list** Kinyarwanda, Twi, Uzbek, Amharic, or Tigrinya as supported — they were removed. Older docs that list 21–22 languages are stale.
+- All 18 passed the live translation and audio check on 10 October 2026.
+- **17 are fully native** for translation + audio.
+- **Dari** is translated as Dari, but its audio and speech recognition use **Persian** (shared script, ~80% mutual intelligibility). No Dari voice is available yet.
+- **Amharic and Uzbek** were removed in June 2026 and restored in October 2026.
+- **Do not list** Kinyarwanda, Twi, or Tigrinya as supported — they were removed. Haitian Creole and Hmong are not supported either. Older docs that list 21–22 languages are stale.
 
 ## 4. The technology (customer-safe summary)
 
