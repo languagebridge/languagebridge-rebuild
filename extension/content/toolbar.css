@@ -1151,10 +1151,14 @@
     text-overflow: ellipsis;
   }
 
-  /* Solid chip: the help button sits on the gold end of the toolbar gradient,
+  /* 
+    Help button and collapse button styling.
+    Solid chip: the help button sits on the gold end of the toolbar gradient,
      where a gold or white icon disappears. */
   .lb-help-btn,
-  .lb-help-btn:hover {
+  .lb-help-btn:hover,
+  .lb-collapse-btn,
+  .lb-collapse-btn:hover {
     background: #ffffff;
     border-color: #ffffff;
     color: var(--lb-color-primary, #742a69);
