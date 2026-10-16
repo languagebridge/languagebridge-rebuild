@@ -3,6 +3,17 @@
 // Includes offline detection and null-response guards.
 
 window.LBTranslationService = {
+  // Subject from the page title/URL. Shared by lookups and flags (flags use it to
+  // keep senses apart). Returns 'science' | 'math' | 'social_studies' | 'ela' | null.
+  detectSubject() {
+    const pageText = (document.title + ' ' + window.location.href).toLowerCase();
+    if (/science|biology|chemistry|physics|photosynthesis|cell|atom/.test(pageText)) return 'science';
+    if (/math|algebra|geometry|calculus|equation|fraction/.test(pageText)) return 'math';
+    if (/history|government|geography|social.studies|civics/.test(pageText)) return 'social_studies';
+    if (/english|reading|writing|literature|essay|grammar/.test(pageText)) return 'ela';
+    return null;
+  },
+
   async translate(text, targetLang) {
     // Extension reloaded/updated while this old page is still open — bail with a
     // reload prompt instead of throwing "Extension context invalidated".
@@ -49,13 +60,7 @@ window.LBTranslationService = {
     }
 
     try {
-      // Detect subject context from page content/URL
-      const pageText = (document.title + ' ' + window.location.href).toLowerCase();
-      let context = null;
-      if (/science|biology|chemistry|physics|photosynthesis|cell|atom/.test(pageText)) context = 'science';
-      else if (/math|algebra|geometry|calculus|equation|fraction/.test(pageText)) context = 'math';
-      else if (/history|government|geography|social.studies|civics/.test(pageText)) context = 'social_studies';
-      else if (/english|reading|writing|literature|essay|grammar/.test(pageText)) context = 'ela';
+      const context = this.detectSubject();
 
       const res = await chrome.runtime.sendMessage({
         action: 'api-fetch',

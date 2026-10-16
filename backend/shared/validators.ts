@@ -75,6 +75,70 @@ function scanForPII(obj: unknown, found: Set<string>, depth = 0): void {
 }
 
 // ============================================
+// FLAG CONTEXT SCRUBBING (flywheel Phase 1)
+// Free text that we DO store (the sentence around a flagged term, a misheard
+// transcript) is redacted and trimmed here before it is written. Like the scan
+// above, this is defense-in-depth: it removes common identifiers, not all of them.
+// ============================================
+
+const MAX_CONTEXT_CHARS = 200;
+const CONTEXT_WINDOW_WORDS = 8;
+
+/**
+ * Redact identifiers from free text:
+ *   emails, phones, SSNs                → [redacted]
+ *   any run of 3+ digits (ids, streets) → [number]
+ *   capitalized words mid-sentence      → [name]   (Latin script only; keeps `keep`)
+ */
+export function redactPII(text: string, keep: string[] = []): string {
+  const keepSet = new Set(keep.map((k) => k.toLowerCase()));
+  let out = text.replace(/\s+/g, ' ').trim();
+  for (const { re } of PII_VALUE_PATTERNS) {
+    out = out.replace(new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g'), '[redacted]');
+  }
+  out = out.replace(/\d{3,}/g, '[number]');
+
+  // A capitalized word that does not start a sentence is most likely a name.
+  // Classroom proper nouns ("Ohio") are lost too — acceptable; the sense is in the
+  // surrounding words, and a missed name is the worse failure.
+  const tokens = out.split(' ');
+  let sentenceStart = true;
+  for (let i = 0; i < tokens.length; i++) {
+    const tok = tokens[i];
+    const bare = tok.replace(/^[^\p{L}]+|[^\p{L}]+$/gu, '');
+    if (bare && !sentenceStart && /^\p{Lu}/u.test(bare) && bare !== 'I' && !keepSet.has(bare.toLowerCase())) {
+      tokens[i] = tok.replace(bare, '[name]');
+    }
+    if (bare) sentenceStart = /[.!?]["')\]]*$/.test(tok);
+  }
+  return tokens.join(' ');
+}
+
+/**
+ * Scrub the sentence around a flagged term for storage: redact, then keep only
+ * CONTEXT_WINDOW_WORDS either side of the term, capped at MAX_CONTEXT_CHARS.
+ * Returns null when nothing useful is left.
+ */
+export function scrubFlagContext(context: unknown, term: string): string | null {
+  if (typeof context !== 'string' || context.trim().length === 0) return null;
+  const termWords = term.toLowerCase().split(/\s+/).filter(Boolean);
+  const words = redactPII(context, termWords).split(' ');
+
+  const lower = words.map((w) => w.toLowerCase().replace(/[^\p{L}\p{N}'-]/gu, ''));
+  let hit = -1;
+  for (let i = 0; i + termWords.length <= lower.length; i++) {
+    if (termWords.every((t, j) => lower[i + j] === t)) { hit = i; break; }
+  }
+
+  const window = hit === -1
+    ? words.slice(0, CONTEXT_WINDOW_WORDS * 2 + termWords.length)
+    : words.slice(Math.max(0, hit - CONTEXT_WINDOW_WORDS), hit + termWords.length + CONTEXT_WINDOW_WORDS);
+  let out = window.join(' ');
+  if (out.length > MAX_CONTEXT_CHARS) out = out.slice(0, MAX_CONTEXT_CHARS).replace(/\s+\S*$/, '');
+  return out.length > 0 ? out : null;
+}
+
+// ============================================
 // LANGUAGE VALIDATION
 // ============================================
 

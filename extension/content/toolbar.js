@@ -231,7 +231,7 @@ class LanguageBridgeToolbar {
     textInput.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         const text = textInput.value.trim();
-        if (text) { this.selectedText = text; window.LBState.selectedText = text; this.showStatus('Text ready', 'info'); }
+        if (text) { this.selectedText = text; this.selectedContext = null; window.LBState.selectedText = text; this.showStatus('Text ready', 'info'); }
       }
     });
 
@@ -239,7 +239,7 @@ class LanguageBridgeToolbar {
       this.lastPasteTime = Date.now();
       setTimeout(() => {
         const text = textInput.value.trim();
-        if (text) { this.selectedText = text; window.LBState.selectedText = text; this.showStatus('Text ready', 'info'); }
+        if (text) { this.selectedText = text; this.selectedContext = null; window.LBState.selectedText = text; this.showStatus('Text ready', 'info'); }
       }, 10);
     });
   }
@@ -298,10 +298,29 @@ class LanguageBridgeToolbar {
       }
 
       this.selectedText = selected;
+      this.selectedContext = this.getSelectionContext(selected);
       window.LBState.selectedText = selected;
       this.expand();
       this.showStatus('Text selected \u2014 press Play or Book icon', 'info');
     }, 300);
+  }
+
+  // The sentence around a selection, sent with flags so reviewers can tell senses
+  // apart ("table" in math vs at lunch). The backend redacts and trims it to a
+  // short window before storing; nothing is sent unless the student flags.
+  getSelectionContext(selected) {
+    try {
+      const sel = window.getSelection();
+      const node = sel && sel.anchorNode;
+      const block = node && (node.nodeType === 1 ? node : node.parentElement)?.closest('p,li,td,th,h1,h2,h3,h4,div,span');
+      const text = (block?.textContent || '').replace(/\s+/g, ' ').trim();
+      if (!text || text.length <= selected.length) return null;
+      const at = text.toLowerCase().indexOf(selected.toLowerCase());
+      if (at === -1) return text.slice(0, 400);
+      return text.slice(Math.max(0, at - 180), at + selected.length + 180);
+    } catch (e) {
+      return null;
+    }
   }
 
   // --- Language Helpers ---

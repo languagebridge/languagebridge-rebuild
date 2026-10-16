@@ -7,16 +7,19 @@ import {
   EnrollmentDoc,
   PilotSchool,
   GradeBand,
+  SUPPORTED_LANGUAGES,
 } from '../../shared/types';
 import { getEnrollmentsContainer, getPilotsContainer } from '../../shared/cosmos-client';
+import { isValidVariant, variantsFor } from '../../shared/variants';
 import { requireFields, isValidLanguage, validateApiKey, checkRateLimit, errorResponse } from '../../shared/validators';
 
 /**
  * onboarding
  *
- * Two routes:
- *   GET  /onboarding/schools  — returns list of pilot schools + grade bands
- *   POST /onboarding/enroll   — creates a student code and enrollment record
+ * Three routes:
+ *   GET  /onboarding/schools   — returns list of pilot schools + grade bands
+ *   POST /onboarding/enroll    — creates a student code and enrollment record
+ *   GET  /onboarding/variants  — dialect choices per language (no student data)
  *
  * Called once per student at first install.
  */
@@ -34,6 +37,39 @@ app.http('onboarding-enroll', {
   route: 'onboarding/enroll',
   handler: enroll,
 });
+
+app.http('onboarding-variants', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'onboarding/variants',
+  handler: getVariants,
+});
+
+/**
+ * Dialect choices for the "Which sounds most like home?" picker. Static data,
+ * served so clients never keep their own copy of shared/variants.ts.
+ * ?language=spanish narrows to one language.
+ */
+export async function getVariants(
+  request: HttpRequest,
+  _context: InvocationContext
+): Promise<HttpResponseInit> {
+  const keyCheck = validateApiKey(request);
+  if (!keyCheck.valid) {
+    return error(401, 'UNAUTHORIZED', keyCheck.error);
+  }
+  const language = request.query.get('language');
+  if (language && !isValidLanguage(language)) {
+    return error(400, 'INVALID_LANGUAGE', `Language '${language}' is not supported`);
+  }
+  const pick = (lang: string) => variantsFor(lang).map((v) => ({ tag: v.tag, label: v.studentLabel }));
+  const variants = language
+    ? { [language]: pick(language) }
+    : Object.fromEntries(
+        SUPPORTED_LANGUAGES.filter((lang) => variantsFor(lang).length > 0).map((lang) => [lang, pick(lang)])
+      );
+  return { status: 200, jsonBody: { variants } };
+}
 
 function generateStudentCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 chars, no I/O/0/1
@@ -131,6 +167,13 @@ export async function enroll(
     return error(400, 'INVALID_GRADE_BAND', `Grade band '${req.gradeBand}' is not valid`);
   }
 
+  // Optional dialect — a language preference, never a country of origin. An
+  // unknown value is rejected rather than silently stored.
+  if (req.variant !== undefined && req.variant !== null && !isValidVariant(req.language, req.variant)) {
+    return error(400, 'INVALID_VARIANT', `Variant '${req.variant}' is not valid for ${req.language}`);
+  }
+  const variant = req.variant ?? null;
+
   // Verify school exists
   try {
     const pilots = getPilotsContainer();
@@ -154,6 +197,7 @@ export async function enroll(
       schoolCode: req.schoolCode,
       gradeBand: req.gradeBand as GradeBand,
       language: req.language,
+      variant,
       createdAt: new Date().toISOString(),
     };
     try {

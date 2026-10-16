@@ -6,20 +6,36 @@
 
 const _TF = LanguageBridgeToolbar.prototype;
 
-// flagType: 'translation' (default) or 'pronunciation'. The backend REQUIRES
+// flagType: 'translation' | 'pronunciation' | 'recognition'. The backend REQUIRES
 // flagType — without it the flag is rejected. Returns { ok, count } so callers
 // can show honest confirmation (never "thank you" on a failed flag).
-_TF.reportProblem = async function (flagText, flagType) {
+// opts (all optional): { language, surface, context, intendedText, quiet }
+//   language — override the student's language (Talk to Teacher flags the
+//              language that was spoken / translated into)
+//   surface  — 'lookup' | 'passage' | 'talk_to_teacher' | 'audio'
+//   context  — surrounding sentence; defaults to the current selection's sentence
+//   quiet    — skip the toolbar status line (caller shows its own confirmation)
+const LB_FLAG_TYPES = ['translation', 'pronunciation', 'recognition'];
+
+_TF.reportProblem = async function (flagText, flagType, opts = {}) {
   const text = flagText || this.selectedText || window.LBState.selectedText;
-  const type = flagType === 'pronunciation' ? 'pronunciation' : 'translation';
-  if (!text) { this.showStatus('Select text to flag', 'error'); return { ok: false }; }
+  const type = LB_FLAG_TYPES.includes(flagType) ? flagType : 'translation';
+  const language = opts.language || this.userLanguage;
+  const status = (msg, kind) => { if (!opts.quiet) this.showStatus(msg, kind); };
+  if (!text) { status('Select text to flag', 'error'); return { ok: false }; }
 
   // Avoid duplicate flags for the same text+type within a session.
   this._flagged = this._flagged || new Set();
-  const dedupeKey = `${this.userLanguage}::${type}::${text.toLowerCase().trim()}`;
+  const dedupeKey = `${language}::${type}::${text.toLowerCase().trim()}`;
   if (this._flagged.has(dedupeKey)) {
     return { ok: true, count: 0, alreadyFlagged: true };
   }
+
+  const surface = opts.surface || (text.trim().split(/\s+/).length > 3 ? 'passage' : 'lookup');
+  const context = opts.context !== undefined
+    ? opts.context
+    : (text === this.selectedText ? this.selectedContext : null);
+  const subject = window.LBTranslationService?.detectSubject?.() || null;
 
   try {
     const res = await chrome.runtime.sendMessage({
@@ -27,27 +43,31 @@ _TF.reportProblem = async function (flagText, flagType) {
       endpoint: 'flag-handler',
       body: {
         flaggedText: text.slice(0, 500),
-        language: this.userLanguage,
+        language,
         studentCode: window.LBState.studentCode,
         timestamp: new Date().toISOString(),
         flagType: type,
+        surface,
+        ...(context && { context: context.slice(0, 500) }),
+        ...(opts.intendedText && { intendedText: opts.intendedText.slice(0, 200) }),
+        ...(subject && { subject }),
       },
     });
 
     if (res?.ok && res.data) {
       this._flagged.add(dedupeKey);
       const count = res.data.flagCount || 1;
-      this.showStatus(`Reported — thank you (${count} flagged this)`, 'success');
+      status(`Reported — thank you (${count} flagged this)`, 'success');
       window.LBAnalytics?.flagEvent(text);
       return { ok: true, count };
     }
 
     LBLog.warn('Flag rejected:', res?.data?.error, res?.data?.details);
-    this.showStatus('Could not send report — please try again', 'error');
+    status('Could not send report — please try again', 'error');
     return { ok: false };
   } catch (err) {
     LBLog.warn('Flag failed:', err);
-    this.showStatus('Could not send report — please try again', 'error');
+    status('Could not send report — please try again', 'error');
     return { ok: false };
   }
 };

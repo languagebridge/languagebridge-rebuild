@@ -250,12 +250,14 @@ _TT._buildFlagRow = function () {
 
   const q = document.createElement('span');
   q.className = 'lb-flag-q';
-  q.textContent = 'Was this wrong?';
+  q.textContent = 'Something wrong?';
   wrap.appendChild(q);
 
+  // flywheel/SPEC.md §2: wrong meaning / wrong sound / misheard. "Misheard" only
+  // applies to speech, so it lives in Talk to Teacher, not on the lookup card.
   const chips = [
-    { label: 'Wrong translation', type: 'translation' },
-    { label: 'Bad audio', type: 'pronunciation' },
+    { label: 'Wrong meaning', type: 'translation' },
+    { label: 'Wrong sound', type: 'pronunciation' },
     { label: 'Still in English', type: 'translation' },
   ];
 

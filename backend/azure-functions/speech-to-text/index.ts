@@ -1,5 +1,6 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import axios from 'axios';
+import { isValidVariant, resolveAlongChain } from '../../shared/variants';
 import {
   SpeechToTextRequest,
   SpeechToTextResponse,
@@ -27,21 +28,21 @@ app.http('speech-to-text', {
   handler: speechToText,
 });
 
-// Azure Speech-to-Text language codes (different from our supported language names)
-// Note: Not all 21 languages are supported by Azure STT. Unsupported languages
-// return LANGUAGE_NOT_SUPPORTED.
+// Azure Speech-to-Text locale per core language. A dialect (shared/variants.ts)
+// overrides this where Azure publishes a locale for it (es-HN, ar-SY, ...).
+// Unsupported languages return LANGUAGE_NOT_SUPPORTED.
 const STT_LANGUAGE_MAP: Record<string, string> = {
   arabic: 'ar-SA',
   french: 'fr-FR',
   portuguese: 'pt-BR',
   ukrainian: 'uk-UA',
   vietnamese: 'vi-VN',
-  spanish: 'es-ES',
+  spanish: 'es-US',     // US Spanish — our students are mostly Latin American, not from Spain
   persian: 'fa-IR',
   english: 'en-US',
   nepali: 'ne-NP',
   swahili: 'sw-KE',
-  dari: 'fa-IR',       // Uses Persian STT
+  dari: 'fa-IR',       // Azure has NO Dari recognizer — Iranian Persian is the closest. A known gap our own recordings must close
   pashto: 'ps-AF',
   urdu: 'ur-IN',
   somali: 'so-SO',
@@ -79,7 +80,7 @@ export async function speechToText(
     return error(400, 'MISSING_FIELDS', `Missing required fields: ${fieldCheck.missing.join(', ')}`);
   }
 
-  const { audioBase64, audioFormat, language, studentCode } = body as SpeechToTextRequest;
+  const { audioBase64, audioFormat, language, studentCode, variant } = body as SpeechToTextRequest;
 
   if (!isValidStudentCode(studentCode)) {
     return error(400, 'INVALID_STUDENT_CODE', 'studentCode is malformed');
@@ -95,7 +96,9 @@ export async function speechToText(
   if (!isValidLanguage(language)) {
     return error(400, 'INVALID_LANGUAGE', `Language '${language}' is not supported`);
   }
-  const sttLanguageCode = STT_LANGUAGE_MAP[language];
+  const sttLanguageCode =
+    resolveAlongChain(language, isValidVariant(language, variant) ? variant : null, (v) => v.sttLocale) ??
+    STT_LANGUAGE_MAP[language];
   if (!sttLanguageCode) {
     return error(400, 'LANGUAGE_NOT_SUPPORTED', `Azure Speech-to-Text does not support '${language}'. Supported: ${Object.keys(STT_LANGUAGE_MAP).join(', ')}`);
   }

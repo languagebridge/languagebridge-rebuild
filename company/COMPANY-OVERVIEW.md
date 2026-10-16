@@ -25,7 +25,7 @@ Plus an **Academic Glossary** of K-12 vocabulary by subject and grade band, and 
 | Ellevation | ELL progress tracking | Roster/reporting, not real-time content comprehension |
 | TransACT | Translated school documents | Static PDFs, not interactive, no audio |
 
-Our moat is the **quality flywheel**: students flag translations that sound wrong → verified bilingual interpreters correct them → corrections improve the lexicon and train proprietary voices → the product gets better in exactly the languages and dialects competitors can't reach, because they don't have classrooms full of native speakers. See `docs/PRD-ML-FLYWHEEL.md`.
+Our moat is the **Lexicon flywheel**: teachers and students flag a wrong meaning, wrong sound or misheard word → paid native-speaker linguists correct it → two independent reviewers approve → the corrected entry is served ahead of Azure for every school using that language. The result is a human-verified classroom lexicon for low-resource languages, tagged by subject and grade band, that no off-the-shelf dataset provides. See `flywheel/SPEC.md`.
 
 ## Who it's for
 

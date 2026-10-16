@@ -86,6 +86,7 @@ export type OnboardingEnrollRequest = {
   schoolCode: string;
   gradeBand: GradeBand;
   language: SupportedLanguage;
+  variant?: string | null;  // Optional "which sounds most like home" — a language preference, never a country of origin
 };
 
 export type OnboardingEnrollResponse = {
@@ -102,6 +103,7 @@ export type OnboardingEnrollResponse = {
 export type TTSRequest = {
   text: string;           // Text to convert to audio (max 500 chars)
   language: SupportedLanguage;
+  variant?: string | null;  // BCP 47 dialect tag, e.g. 'es-HN' (shared/variants.ts). Omitted = core language
   studentCode: string;    // Pseudonymous code from onboarding (e.g. "LB-7K2M")
   extensionVersion?: string;
 };
@@ -128,22 +130,35 @@ export type AnalyticsWriterRequest = {
   // NEVER ADD: email, name, studentId, schoolId, or any PII
 };
 
-export type FlagType = 'pronunciation' | 'translation';
-// 'pronunciation' = sounds wrong (bad TTS, wrong accent/dialect, robotic voice)
-//                   → interpreter re-records the audio
-// 'translation'   = doesn't make sense (confusing wording, mistranslation)
-//                   → interpreter retranslates the text
+export const FLAG_TYPES = ['translation', 'pronunciation', 'recognition'] as const;
+export type FlagType = typeof FLAG_TYPES[number];
+// 'translation'   = wrong meaning (mistranslation, still in English, confusing wording)
+//                   → fixed by a corrected target term / phrase in the Lexicon
+// 'pronunciation' = wrong sound (bad TTS, wrong accent/dialect)
+//                   → fixed by a phonetic transcription (SSML phoneme / custom lexicon)
+// 'recognition'   = misheard (speech-to-text heard something else, so the input was wrong)
+//                   → fixed by a per-language/subject recognition phrase list
+// See flywheel/SPEC.md §2. The three are stored together as flags but are fixed
+// in three different places — never merge their counts.
+
+export type SeatRole = 'student' | 'teacher';
+export type FlagSurface = 'lookup' | 'passage' | 'talk_to_teacher' | 'audio';
 
 export type FlagEventRequest = {
-  flaggedText: string;    // The full highlighted text the student flagged (up to 500 chars)
-  language: SupportedLanguage;
+  flaggedText: string;    // The highlighted text (up to 500 chars). For 'recognition', the misheard transcript (up to 200)
+  language: SupportedLanguage;  // Target language — for 'recognition', the language that was SPOKEN
   studentCode: string;
   timestamp: string;      // ISO 8601
-  flagType: FlagType;     // What kind of fix is needed — guides the interpreter
-  // NOTE: We intentionally do NOT accept or store audioUrl or any Azure-generated
-  // content in flags. The bounty pipeline must only contain student-highlighted
-  // text (original input) + target language. Azure translations and audio are
-  // ephemeral placeholders, not our IP to redistribute.
+  flagType: FlagType;
+  // ── Optional context (flywheel Phase 1). Older clients omit these. ──
+  context?: string;       // Surrounding sentence. Scrubbed + trimmed server-side before storage
+  intendedText?: string;  // 'recognition' only: what the speaker actually meant to say (optional)
+  subject?: string;       // "math" | "science" | "ela" | "social_studies" — drives sense grouping
+  variant?: string | null; // Dialect of `language`. Defaults to the enrollment's variant when languages match
+  seatRole?: SeatRole;    // Defaults to 'student'
+  surface?: FlagSurface;  // Where in the product the flag was raised
+  // NOTE: no audio, no audioUrl, no identity. Grade band and school are resolved
+  // server-side from the enrollment, never trusted from the client.
 };
 
 export type LexiconLookupRequest = {
@@ -151,6 +166,7 @@ export type LexiconLookupRequest = {
   language: SupportedLanguage;
   domain?: 'k12_academic' | 'school_navigation' | 'medical' | 'legal_immigration' | 'social_services';
   context?: string;          // Subject context for disambiguation (e.g. "science", "social_studies")
+  variant?: string | null;   // Dialect, e.g. 'es-HN' — prefers variant entries, falls back to core
   studentCode: string;
 };
 
@@ -169,6 +185,7 @@ export type SpeechToTextRequest = {
   audioBase64: string;       // Audio file encoded as base64 (webm/opus, wav, or mp3)
   audioFormat: 'webm' | 'wav' | 'mp3' | 'ogg';
   language: SupportedLanguage;
+  variant?: string | null;  // BCP 47 dialect tag, e.g. 'es-HN' (shared/variants.ts). Omitted = core language
   studentCode: string;
 };
 
@@ -196,6 +213,7 @@ export type TranslateRequest = {
   text: string;              // Text to translate (max 2000 chars)
   fromLanguage: SupportedLanguage;
   toLanguage: SupportedLanguage;
+  toVariant?: string | null;  // Dialect of the target language; selects Lexicon overrides
   studentCode: string;
 };
 
@@ -261,14 +279,14 @@ export type AnalyticsWriterErrorResponse = {
 export type FlagHandlerResponse = {
   flagId: string;
   flagCount: number;
-  status: 'logged' | 'review' | 'bounty' | 'high_priority';
+  status: FlagDoc['status'];
   requiresReview: boolean;
   // Phase 3: bountyValue will be set when status='bounty' — interpreter marketplace
   // Bounty only contains (word + language), never Azure-derived content
 };
 
 export type FlagHandlerErrorResponse = {
-  error: 'UNAUTHORIZED' | 'RATE_LIMITED' | 'MISSING_FIELDS' | 'INVALID_LANGUAGE' | 'INTERNAL_ERROR';
+  error: 'UNAUTHORIZED' | 'RATE_LIMITED' | 'MISSING_FIELDS' | 'INVALID_LANGUAGE' | 'INVALID_FLAG_TYPE' | 'PII_VIOLATION' | 'TEXT_TOO_LONG' | 'INTERNAL_ERROR';
   details: string;
 };
 
@@ -314,7 +332,19 @@ export type LexiconLookupResponse = {
   grade_band?: string;
   transliteration_difficulty?: 'high' | 'medium' | 'low';
   source: 'lexicon' | 'translator_fallback';
+
+  // Provenance (flywheel Phase 1, additive). Clients may show a "verified" badge
+  // for 'human_verified'; usage logs record entry_id so we can count what fired.
+  entry_id?: string | null;
+  provenance?: LexiconProvenance;
+  variant?: string | null;  // Variant of the entry served (null = core)
 };
+
+// Where a served translation came from — ranked best first.
+//   human_verified — passed the two-approval review gate (status 'approved')
+//   glossary       — seeded from a published glossary (RBERN) or the bridge pipeline
+//   machine        — Azure Translator output cached on a lookup miss
+export type LexiconProvenance = 'human_verified' | 'glossary' | 'machine';
 
 export type LexiconLookupErrorResponse = {
   error: 'UNAUTHORIZED' | 'RATE_LIMITED' | 'MISSING_FIELDS' | 'INVALID_STUDENT_CODE' | 'INVALID_LANGUAGE' | 'TRANSLATOR_ERROR' | 'INTERNAL_ERROR';
@@ -346,29 +376,62 @@ export type EnrollmentDoc = {
   schoolCode: string;
   gradeBand: GradeBand;
   language: SupportedLanguage;
+  variant?: string | null;
   createdAt: string;
   // Teacher sees this code and nicknames it on their side
   // We never store the nickname or the student's real name
 };
 
+// A flag document is a CANDIDATE: every report of the same text, in the same
+// language and subject, increments one document. The subject is part of the key
+// because it is the best sense signal we have at capture time ("table" in math
+// and "table" at lunch are two candidates). See flywheel/DATA-MODEL.md.
 export type FlagDoc = {
-  id: string;             // SHA-256 hash of (flaggedText + language) for deduplication
-  flaggedText: string;    // Full highlighted text (up to 500 chars) — student input only, never Azure output
+  id: string;             // SHA-256 of `${text}::${language}` (+ `::${subject}`, + `::${variant}` when known)
+  flaggedText: string;    // Normalized text (lower-cased, trimmed). Never contains detected PII
   language: SupportedLanguage;
-  flagCount: number;                  // Total flags (pronunciation + translation)
-  pronunciationFlagCount: number;     // How many students said it sounds wrong
-  translationFlagCount: number;       // How many students said the words don't make sense
-  status: 'logged' | 'review' | 'bounty' | 'high_priority';
-  schoolCodes: string[];
-  contentSource: 'student_input';     // Provenance tag — user-generated, not Azure-derived
+  subject?: string | null;
+  variant?: string | null;            // Part of the key — a Honduran fix is a different candidate from a core one
+  flagCount: number;                  // Total flags across all types
+  pronunciationFlagCount: number;     // "wrong sound"
+  translationFlagCount: number;       // "wrong meaning"
+  recognitionFlagCount?: number;      // "misheard" (absent on docs created before Phase 1)
+  status: 'logged' | 'review' | 'bounty' | 'high_priority' | 'in_review' | 'resolved' | 'dismissed';
+  schoolCodes: string[];              // Distinct schools reporting — internal only, NEVER shown to contributors
+  gradeBands?: GradeBand[];           // Distinct grade bands reporting
+  seatRoles?: SeatRole[];
+  surfaces?: FlagSurface[];
+  contexts?: FlagContextSample[];     // Up to FLAG_CONTEXT_SAMPLE_CAP scrubbed samples
+  contentSource: 'student_input' | 'speech_recognition';
   createdAt: string;
   lastFlaggedAt: string;
   requiresReview: boolean;
-  // NOTE: No audioUrl, cognate, or translation fields here. The bounty pipeline
-  // sends ONLY (flaggedText + language + flag type breakdown) to interpreters.
-  // The per-type counts tell the interpreter whether to prioritize re-recording
-  // audio or retranslating text.
+  resolution?: {                      // Set by the admin flag queue
+    action: 'dismissed' | 'in_review' | 'resolved';
+    note: string | null;
+    entryId: string | null;           // Lexicon entry that fixed it, when resolved
+    by: string;                       // Admin user id (never shown to contributors)
+    at: string;
+  };
+  resolutionHistory?: Array<NonNullable<FlagDoc['resolution']>>;  // Every admin action, oldest first
 };
+
+// Admin flag queue (internal, super-admin only). School codes are reduced to a
+// count — the queue is cross-district and must not leak which school reported what.
+export type FlagQueueItem = Omit<FlagDoc, 'schoolCodes' | 'resolutionHistory'> & { schoolCount: number };
+export type FlagQueueAction = 'in_review' | 'resolved' | 'dismissed' | 'reopen';
+
+export type FlagContextSample = {
+  text: string;           // Scrubbed window around the term (≤ 200 chars)
+  flagType: FlagType;
+  intendedText?: string | null;  // recognition only, scrubbed
+  gradeBand: GradeBand | null;
+  seatRole: SeatRole;
+  surface: FlagSurface | null;
+  at: string;
+};
+
+export const FLAG_CONTEXT_SAMPLE_CAP = 10;
 
 export type PilotDoc = {
   id: string;             // e.g. 'PCSD-2026'
@@ -445,6 +508,18 @@ export type LexiconDoc = {
   audio_model?: string;     // e.g. "dari_tts_v1"
   tts_backend?: 'piper' | 'azure';  // Which TTS system generated audio
 
+  // Dialect. null/absent = core language entry, shared by every variant. A variant
+  // entry is stored only where the variant genuinely differs (shared/variants.ts).
+  variant?: string | null;
+
+  // Override layer (Dual Codex, flywheel Phase 2). Absent on plain glossary rows.
+  //   phrase     — whole classroom phrase, substituted as a unit ("line up for lunch")
+  //   fixed_term — non-inflecting term / proper noun, sent as Azure dynamic dictionary
+  //   term       — a single word with stored inflected forms (post-translation substitution)
+  entry_kind?: 'phrase' | 'fixed_term' | 'term';
+  sense_key?: string;       // e.g. "table#math" — entries are keyed by English SENSE, not spelling
+  sense_gloss?: string;     // Short English gloss shown to contributors ("rows and columns of numbers")
+
   // Quality + lifecycle
   status: 'auto_generated' | 'pending_review' | 'approved' | 'deprecated';
   version: number;
@@ -453,7 +528,15 @@ export type LexiconDoc = {
   frequency?: number;       // How often this term appears in Ohio standards
   is_bridge_priority?: boolean;
 
-  created_by: string;       // 'rbern_glossary' | 'bridge_pipeline_v1' | 'translator_fallback' | 'manual'
+  // Authorship trail — required on every 'approved' entry (TRAINING-DATA-POLICY §2).
+  // Contributor IDs only (e.g. "C-007"), never names.
+  authored_by?: string;
+  reviewed_by?: string[];   // Two distinct reviewers, neither the author
+  ai_assisted?: boolean;
+  approved_at?: string;
+  source_flag_id?: string;  // Flag candidate this entry resolved, if any
+
+  created_by: string;       // 'rbern_glossary' | 'bridge_pipeline_v1' | 'translator_fallback' | 'manual' | 'flywheel_publish'
   created_at: string;
   updated_at: string;
 };

@@ -13,6 +13,30 @@ async function getApiKey() {
   return lbApiKey || '';
 }
 
+// Attach the student's dialect ("which sounds most like home", set in Settings)
+// to API calls in their own language, so every content script gets the right
+// voice, recognizer and Lexicon entries without passing it around. Calls in any
+// other language (e.g. the English side of Talk to Teacher) are left alone, and
+// an explicit variant in the body always wins. Exported for tests.
+const VARIANT_FIELD = {
+  'lexicon-lookup': ['language', 'variant'],
+  'tts-router': ['language', 'variant'],
+  'speech-to-text': ['language', 'variant'],
+  'flag-handler': ['language', 'variant'],
+  'onboarding/enroll': ['language', 'variant'],
+  'translate': ['toLanguage', 'toVariant'],
+};
+
+export async function withVariant(endpoint, body) {
+  const fields = VARIANT_FIELD[endpoint];
+  if (!fields || !body || typeof body !== 'object') return body;
+  const [langField, variantField] = fields;
+  if (body[variantField]) return body;
+  const { defaultLanguage, languageVariant } = await chrome.storage.sync.get(['defaultLanguage', 'languageVariant']);
+  if (!languageVariant || !defaultLanguage || body[langField] !== defaultLanguage) return body;
+  return { ...body, [variantField]: languageVariant };
+}
+
 // On first install: store API key and generate session token
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason === 'install') {
@@ -114,12 +138,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     const timeout = msg.endpoint === 'speech-to-text' ? 35000 : 15000;
     const timer = setTimeout(() => controller.abort(), timeout);
 
-    getApiKey().then(apiKey => {
+    Promise.all([getApiKey(), withVariant(msg.endpoint, msg.body)]).then(([apiKey, body]) => {
       const url = `${API_BASE}/${msg.endpoint}`;
       return fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-lb-api-key': apiKey },
-        body: JSON.stringify(msg.body),
+        body: JSON.stringify(body),
         signal: controller.signal,
       });
     })

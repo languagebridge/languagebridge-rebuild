@@ -102,9 +102,41 @@
 
     wrap.appendChild(orig);
     wrap.appendChild(trans);
+    wrap.appendChild(buildFlagRow(originalText, fromLang, toLang));
     transcript.appendChild(wrap);
     transcript.scrollTop = transcript.scrollHeight;
     return wrap;
+  }
+
+  // One-tap report under each bubble (flywheel/SPEC.md §2).
+  //   "Misheard me"   → recognition, in the language that was SPOKEN
+  //   "Wrong meaning" → translation, in the language it was translated INTO
+  // The backend redacts Talk to Teacher text and stores no audio.
+  function buildFlagRow(originalText, fromLang, toLang) {
+    const row = document.createElement('div');
+    row.className = 'lb-ttt-flagrow';
+    const chips = [
+      { label: 'Misheard me', type: 'recognition', language: fromLang },
+      { label: 'Wrong meaning', type: 'translation', language: toLang },
+    ];
+    chips.forEach((c) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'lb-ttt-flagchip';
+      b.textContent = c.label;
+      b.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        row.querySelectorAll('button').forEach((x) => { x.disabled = true; });
+        b.textContent = '\u2026';
+        const r = await window.__lbToolbar?.reportProblem(originalText, c.type, {
+          language: c.language, surface: 'talk_to_teacher', context: null, quiet: true,
+        });
+        row.textContent = r && r.ok ? "Thanks \u2014 reported. We'll fix it." : 'Could not send \u2014 try again';
+        row.classList.add(r && r.ok ? 'lb-ttt-flag-done' : 'lb-ttt-flag-fail');
+      });
+      row.appendChild(b);
+    });
+    return row;
   }
 
   // A temporary "working" bubble shown while transcribing/translating.

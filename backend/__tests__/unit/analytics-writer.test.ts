@@ -1,5 +1,6 @@
 import { analyticsWriter } from '../../azure-functions/analytics-writer/index';
 import { HttpRequest, InvocationContext } from '@azure/functions';
+import { clearEnrollmentCache } from '../../shared/enrollments';
 
 // ── Mock Cosmos DB ──────────────────────────────────────────────────
 
@@ -12,7 +13,7 @@ jest.mock('../../shared/cosmos-client', () => ({
     items: { create: mockCreate },
   }),
   getEnrollmentsContainer: () => ({
-    item: () => ({ read: mockEnrollmentRead }),
+    items: { query: () => ({ fetchAll: async () => { const r = await mockEnrollmentRead(); return { resources: r?.resource ? [{ id: r.resource.id ?? 'LB-TEST7', ...r.resource }] : [] }; } }) },
   }),
   getRateLimitContainer: () => ({
     item: () => ({ patch: jest.fn().mockResolvedValue({ resource: { count: 1 } }) }),
@@ -45,6 +46,7 @@ function makeContext(): InvocationContext {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  clearEnrollmentCache();
   mockCreate.mockResolvedValue({});
   mockEnrollmentRead.mockResolvedValue({ resource: { schoolCode: 'test-school', gradeBand: 'K-2' } });
 });

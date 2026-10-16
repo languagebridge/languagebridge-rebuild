@@ -6,17 +6,22 @@ import {
   LexiconLookupResponse,
   LexiconLookupErrorResponse,
   LexiconDoc,
+  LexiconProvenance,
   SUPPORTED_LANGUAGES,
 } from '../../shared/types';
 import { getLexiconContainer, getAnalyticsContainer } from '../../shared/cosmos-client';
 import { requireFields, isValidLanguage, isValidStudentCode, validateApiKey, checkRateLimit } from '../../shared/validators';
+import { isValidVariant, variantChain, variantRank } from '../../shared/variants';
 
 /**
  * lexicon-lookup
  *
  * Front door for all translation requests. Decides WHAT to say:
- *   1. Check Lexicon for bridge definition → return if found
+ *   1. Check Lexicon → serve the best live entry (rankEntries) if found
  *   2. Fall back to Azure Translator for cognate → return + log as missing
+ *
+ * Every response carries entry_id + provenance so usage logs record which
+ * Lexicon entry fired (flywheel/SPEC.md §5).
  *
  * The tts-router decides HOW to say it (proprietary model vs Azure TTS).
  *
@@ -88,7 +93,7 @@ export async function lexiconLookup(
     } as LexiconLookupErrorResponse);
   }
 
-  const { term, language, domain, context: subjectContext, studentCode } =
+  const { term, language, domain, context: subjectContext, studentCode, variant: requestedVariant } =
     body as unknown as LexiconLookupRequest;
 
   if (!isValidStudentCode(studentCode)) {
@@ -120,23 +125,25 @@ export async function lexiconLookup(
     // ── 3. Query Lexicon ───────────────────────────────────────────
     const container = getLexiconContainer();
 
-    // Build query with optional context filtering
-    let query = 'SELECT * FROM l WHERE LOWER(l.term) = @term AND l.language = @language';
+    // Fetch every live row for this term, then rank in code: a retired
+    // ('deprecated') entry is never served, a subject match beats a general
+    // entry, and human-verified beats glossary beats cached machine output.
+    // The subject is a preference, not a filter — a math lookup with no
+    // math-specific row still gets the general entry instead of falling to Azure.
+    const query =
+      'SELECT * FROM l WHERE LOWER(l.term) = @term AND l.language = @language ' +
+      "AND (NOT IS_DEFINED(l.status) OR l.status != 'deprecated') " +
+      'ORDER BY l.version DESC OFFSET 0 LIMIT 20';
     const parameters: Array<{ name: string; value: string }> = [
       { name: '@term', value: normalizedTerm },
       { name: '@language', value: language },
     ];
 
-    if (subjectContext) {
-      query += ' AND l.subject = @subject';
-      parameters.push({ name: '@subject', value: subjectContext });
-    }
-
-    query += ' ORDER BY l.version DESC OFFSET 0 LIMIT 1';
-
-    const { resources: results } = await container.items
+    const { resources: candidates } = await container.items
       .query<LexiconDoc>({ query, parameters })
       .fetchAll();
+    const variant = isValidVariant(language, requestedVariant) ? requestedVariant : null;
+    const results = rankEntries(candidates, subjectContext ?? null, variant);
 
     // ── 4a. Bridge definition found ────────────────────────────────
     if (results.length > 0) {
@@ -146,7 +153,8 @@ export async function lexiconLookup(
       let cognate: string | null = entry.cognate ?? null;
       if (!cognate) {
         const translated = await translateWithAzure(entry.term, language, context);
-        if (translated) {
+        const isEcho = !!translated && translated.trim().toLowerCase() === entry.term.trim().toLowerCase();
+        if (translated && !isEcho) {
           cognate = translated;
           // Persist ONLY a real translation so future lookups skip Azure — never
           // persist an English echo / failed translation.
@@ -172,6 +180,8 @@ export async function lexiconLookup(
         term: normalizedTerm,
         language,
         source: 'lexicon',
+        entry_id: entry.id,
+        provenance: provenanceOf(entry),
         studentCode,
       });
 
@@ -200,6 +210,9 @@ export async function lexiconLookup(
         grade_band: entry.grade_band ?? null,
         transliteration_difficulty: entry.transliteration_difficulty ?? null,
         source: 'lexicon',
+        entry_id: entry.id,
+        provenance: provenanceOf(entry),
+        variant: entry.variant ?? null,
       } as LexiconLookupResponse);
     }
 
@@ -207,8 +220,12 @@ export async function lexiconLookup(
     const cognate = await translateWithAzure(term, language, context);
 
     // Cache the auto-generated cognate ONLY if we got a real translation —
-    // never persist an English echo / failed translation (would poison future lookups).
-    if (cognate) {
+    // never persist an echo of the input (would poison future lookups). Azure
+    // returns the input unchanged for words it does not recognize as English
+    // (e.g. a French "les" looked up as Somali); we still return it, since some
+    // words are genuinely identical across languages, but we do not keep it.
+    const isEcho = !!cognate && cognate.trim().toLowerCase() === normalizedTerm;
+    if (cognate && !isEcho) {
       const autoId = `${normalizedTerm.replace(/\s+/g, '_')}_${language}_auto`;
       container.items.upsert({
         id: autoId,
@@ -250,6 +267,9 @@ export async function lexiconLookup(
       audio_url: null,
       audio_source: null,
       source: 'translator_fallback',
+      entry_id: null,
+      provenance: 'machine',
+      variant: null,
     } as LexiconLookupResponse);
 
   } catch (err) {
@@ -262,6 +282,37 @@ export async function lexiconLookup(
 }
 
 // ── Helpers ────────────────────────────────────────────────────────
+
+export function provenanceOf(entry: Pick<LexiconDoc, 'status' | 'created_by'>): LexiconProvenance {
+  if (entry.status === 'approved') return 'human_verified';
+  if (entry.status === 'auto_generated' || entry.created_by === 'system' || entry.created_by === 'translator_fallback') {
+    return 'machine';
+  }
+  return 'glossary';
+}
+
+const PROVENANCE_RANK: Record<LexiconProvenance, number> = { human_verified: 0, glossary: 1, machine: 2 };
+
+/**
+ * Order candidate rows best-first. Stable, so ties keep version DESC from the query.
+ *   1. sense   — subject match (a wrong meaning is worse than a non-local word)
+ *   2. dialect — exact variant, then its parents, then core; other variants are dropped
+ *   3. provenance — human_verified, glossary, machine
+ */
+export function rankEntries(entries: LexiconDoc[], subject: string | null, variant: string | null = null): LexiconDoc[] {
+  const chain = variantChain(entries[0]?.language ?? '', variant);
+  const matchesSubject = (e: LexiconDoc) =>
+    !!subject && (e.subject === subject || (e.subjects ?? '').split('|').includes(subject));
+  return entries
+    .map((e, i) => ({ e, i, v: variantRank(chain, e.variant) }))
+    .filter(({ v }) => v !== -1)
+    .sort((a, b) =>
+      (Number(matchesSubject(b.e)) - Number(matchesSubject(a.e))) ||
+      (a.v - b.v) ||
+      (PROVENANCE_RANK[provenanceOf(a.e)] - PROVENANCE_RANK[provenanceOf(b.e)]) ||
+      (a.i - b.i))
+    .map(({ e }) => e);
+}
 
 async function translateWithAzure(
   text: string,

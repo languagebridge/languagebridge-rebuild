@@ -193,3 +193,25 @@
 @media (max-width: 440px) {
   .lb-ttt-panel { right: 12px; left: 12px; width: auto; bottom: 12px; }
 }
+
+/* One-tap report row under each Talk to Teacher bubble */
+.lb-ttt-flagrow {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #6b7280;
+}
+.lb-ttt-flagchip {
+  border: 1px solid #d1d5db;
+  background: transparent;
+  color: #4b5563;
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.lb-ttt-flagchip:hover:not(:disabled) { border-color: #742a69; color: #742a69; }
+.lb-ttt-flagchip:disabled { opacity: 0.6; cursor: default; }
+.lb-ttt-flag-done { color: #047857; }
+.lb-ttt-flag-fail { color: #b91c1c; }

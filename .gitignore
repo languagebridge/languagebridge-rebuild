@@ -84,3 +84,6 @@ __pycache__/
 # Sensitive/legal documents (local-only)
 DPA.pdf
 19-CON-01-0493*.pdf
+
+# Flywheel exports contain scrubbed student-flagged text — never commit them
+flywheel/backlog/flag-queue-*.csv

@@ -1,0 +1,66 @@
+# 2026-10-16 — Lexicon flywheel Phase 1, Dual Codex, dialects
+
+Branch: `feat/lexicon-flywheel`. Project home: `flywheel/` (start at `flywheel/README.md`).
+
+## What changed
+
+**New project folder `flywheel/`** — spec (replaces `docs/PRD-ML-FLYWHEEL.md`, now deleted), data model, Dual Codex design, phase checklists, open decisions for Chris/Justin, and `scripts/bootstrap-candidates.mjs` (319 science-only bridge candidates offline; `--live` adds Dari-as-Persian rows, read-only).
+
+**Backend**
+- `flag-handler`: third flag type `recognition`; flag text and student code no longer written to logs; PII in a flagged term → `400 PII_VIOLATION`; context, misheard transcripts and all Talk to Teacher text redacted (`redactPII`, `scrubFlagContext` in `validators.ts`); school + grade band read from the enrollment; candidates keyed by text + language + subject (legacy key kept when no subject); up to 10 context samples; resolved candidates re-open on re-flag.
+- New `flag-queue` function: `GET /api/flag-queue`, `POST /api/flag-queue/{id}/action`. Super-admin only, school codes → `schoolCount`, `resolutionHistory`.
+- `lexicon-lookup`: never serves `deprecated`; subject is a preference not a filter (a math lookup with no math row now gets the general row instead of Azure); ranks human_verified > glossary > machine; returns and logs `entry_id` + `provenance`.
+- New `shared/dual-codex.ts`, wired into `translate`: approved `phrase` entries replace Azure for whole-utterance matches; `fixed_term` entries go as dynamic dictionary markup; `term` entries counted only. Off unless `LB_LEXICON_OVERRIDES=on`. Logs entry ids only.
+- `types.ts`: `FLAG_TYPES`, `SeatRole`, `FlagSurface`, `FlagContextSample`, `FlagQueueItem`, `FlagQueueAction`, `LexiconProvenance`; additive fields on `FlagEventRequest`, `FlagDoc`, `LexiconDoc` (`entry_kind`, `sense_key`, `sense_gloss`), `LexiconLookupResponse`.
+
+**Extension**
+- Lookup card chips: "Wrong meaning" / "Wrong sound" / "Still in English".
+- Talk to Teacher: "Misheard me" / "Wrong meaning" under every bubble.
+- `reportProblem(text, flagType, opts)` sends surface, subject and the selection's sentence.
+- `LBTranslationService.detectSubject()` extracted for reuse.
+
+**Dialects (second pass, same day)**
+- New `backend/shared/variants.ts`: 22 variants (Spanish ×10, Arabic ×6, Pashto ×2, French ×2, Portuguese ×2), fallback chains that never cross languages. Azure voices/locales set only where Microsoft Learn lists them.
+- Variant on enrollment (`INVALID_VARIANT` if wrong), flags (part of the key; inherited from enrollment only for the student's own language), lookup ranking (sense → dialect → provenance), Dual Codex (`selectForVariant`), TTS (`resolveVoice`, separate cache key per variant voice), STT locale.
+- New `GET /api/onboarding/variants`. Extension: Settings picker ("Which sounds most like home?"); `background.js` `withVariant` attaches it to same-language calls.
+- `voice-config.json`: removed wrong-language Piper models (Pashto→Persian, Urdu→Arabic, Somali→Swahili) and the Argentine Spanish model. Core Spanish STT `es-ES` → `es-US`.
+- Privacy: `tts-router` no longer logs the student code or the SSML (which contained the selected text).
+- Policy: `flywheel/TRAINING-DATA-POLICY.md` (store machine output to fix it, never train on it or claim it); MASTER-DOCUMENT rule 4 corrected; OPEN-DECISIONS #12–#17 (RBERN licence, voice release, sanctions, base-model licences, dialect privacy, Mayan languages).
+
+**Live-backend fixes (third pass)** — verified read-only against production Cosmos and a local Functions host:
+- `enrollments` is partitioned by `/schoolCode`, so `item(code, code)` always 404'd: production analytics recorded every event with school `unknown`. New `shared/enrollments.ts` `findEnrollment` (query by id, ~2.8 RU, per-instance cache); used by `analytics-writer` and `flag-handler`.
+- `tts-router` cache-hit counter used the wrong partition key (`audio_cache_metadata` is `/language`); fixed.
+- Flag-queue routes renamed `admin/flags` → `flag-queue`: Azure Functions reserves `admin` routes, and the host refused to register them. All 13 routes now register under `func start`.
+- `LB_SUPERADMIN_EMAILS` is already set in production.
+
+**Manual loop tooling (fourth pass)**
+- `flywheel/scripts/export-flag-queue.mjs` (read-only) and `publish-approved.mjs` (dry run unless `--write`), sharing `lib/queue.mjs` (CSV, review gate, entry builder) and `lib/cosmos.mjs` (`--az` uses the read-only key unless writing). Exports are gitignored.
+- Passage flags must name a `source_term`; output labels are short single lines.
+- `LexiconDoc` gains `authored_by`, `reviewed_by`, `ai_assisted`, `approved_at`, `source_flag_id`.
+- `lexicon-lookup` no longer caches a translator echo of the input (found live: Somali "les" → "les").
+- Verified read-only against production: 12 open flags exported; dry-run publish exercised the gate (self-review blocked, dismiss path, version-2 entry planned). Nothing written.
+
+**Docs** — MASTER-DOCUMENT §2, §5.1, §7.1 rule 4 (rewritten, pending Chris), §8, §11.3, §14, §16, §18; README; company overview moat paragraph.
+
+## Tested
+- `backend`: 164 Jest tests pass; `tsc --noEmit` clean; `func start` registers all 13 routes.
+- Root Vitest: 63 pass (variant injection + flywheel scripts).
+- Bootstrap script run offline: 319 candidates.
+
+## Not tested
+- Nothing deployed; no request has hit live Cosmos or Azure.
+- Extension not loaded in Chrome (manual checklist in `flywheel/README.md`).
+- Dynamic dictionary markup not sent to the real Translator API.
+- `--live` mode of the bootstrap script not run.
+- No variant voice or recognizer has been called against Azure (the local speech key returns 401). Names come from Microsoft Learn, not a live voice list.
+- The Settings dialect picker has not been opened in Chrome.
+
+## To do
+- [ ] Composite index on `flags` if the queue query asks for one.
+- [ ] Manual Chrome test, then version bump + Web Store release.
+- [ ] Chris: Azure-output ownership (gates recognition flags), contributor agreement, NDPA clause, retention window.
+- [ ] Review `flywheel/backlog/candidates.csv` with Justin.
+- [ ] Prentice: internal flag queue page.
+- [ ] Onboarding flow offers the dialect picker (today only Settings).
+- [ ] Recorder writes speaker / release / authorship metadata per clip.
+- [ ] Spec the production loop (commissioned Author/Record/Validate tasks, sense cards) — needs Justin's direction.

@@ -1,0 +1,3192 @@
+[
+  {
+    "source": "bridge_science_only",
+    "term": "cognitive",
+    "language": "all",
+    "subject": "science",
+    "current": "thinking",
+    "current_detail": "about how the mind works to think and learn",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 676
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "organism",
+    "language": "all",
+    "subject": "science",
+    "current": "living thing",
+    "current_detail": "any living thing, from the smallest to the biggest",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 464
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "demands",
+    "language": "all",
+    "subject": "science",
+    "current": "needs",
+    "current_detail": "parts that must be done or given, needs that push hard",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 322
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "mandatory",
+    "language": "all",
+    "subject": "science",
+    "current": "required",
+    "current_detail": "something that has to happen, you cannot skip it",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 318
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "checklist",
+    "language": "all",
+    "subject": "science",
+    "current": "mark-off list",
+    "current_detail": "a list of things to do where you mark each one as you finish",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 317
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "velocity",
+    "language": "all",
+    "subject": "science",
+    "current": "speed and heading",
+    "current_detail": "how fast something moves and which way it is going",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 301
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "magnetic",
+    "language": "all",
+    "subject": "science",
+    "current": "iron-pulling",
+    "current_detail": "having the power to pull shiny hard stuffs like iron close without touching",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 294
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "chemical",
+    "language": "all",
+    "subject": "science",
+    "current": "matter-level",
+    "current_detail": "having to do with the tiny bits that form all matter",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 288
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "particle",
+    "language": "all",
+    "subject": "science",
+    "current": "tiny bit",
+    "current_detail": "one of the smallest bits that forms everything around us",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 273
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "gravitational",
+    "language": "all",
+    "subject": "science",
+    "current": "pull-down",
+    "current_detail": "having to do with the pull that draws things toward the ground",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 232
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "geologic",
+    "language": "all",
+    "subject": "science",
+    "current": "earth-rock",
+    "current_detail": "having to do with the rocks, soil, and layers of the earth",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 209
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "genetic",
+    "language": "all",
+    "subject": "science",
+    "current": "inherited",
+    "current_detail": "about the traits handed down from parents to their young",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 202
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "thermal",
+    "language": "all",
+    "subject": "science",
+    "current": "heat",
+    "current_detail": "having to do with how hot or cold something is",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 187
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "electrical",
+    "language": "all",
+    "subject": "science",
+    "current": "charge-based",
+    "current_detail": "having to do with the flow of tiny charges through wires and parts",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 158
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "homeostatic",
+    "language": "all",
+    "subject": "science",
+    "current": "self-balancing",
+    "current_detail": "about the way a living thing keeps its insides the same even when the outside shifts",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 129
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "invasive",
+    "language": "all",
+    "subject": "science",
+    "current": "spreading in",
+    "current_detail": "a living thing that moves into a new place and crowds out what was there",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 126
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "imbalance",
+    "language": "all",
+    "subject": "science",
+    "current": "unevenness",
+    "current_detail": "when one side has too much and the other too little",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 126
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "equilibrium",
+    "language": "all",
+    "subject": "science",
+    "current": "balance",
+    "current_detail": "when all the pushes and pulls or parts even out so nothing changes",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 116
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "disease",
+    "language": "all",
+    "subject": "science",
+    "current": "sickness",
+    "current_detail": "when part of a living thing stops working right and gets sick",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 114
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "universe",
+    "language": "all",
+    "subject": "science",
+    "current": "all that exists",
+    "current_detail": "all of space and everything in it — stars, planets, and all stuff",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 106
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "evolutionary",
+    "language": "all",
+    "subject": "science",
+    "current": "slowly-changing",
+    "current_detail": "having to do with how living things slowly shift and change over long stretches of time",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 104
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "biodiversity",
+    "language": "all",
+    "subject": "science",
+    "current": "life mix",
+    "current_detail": "how many different kinds of life share one place",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 101
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "respiratory",
+    "language": "all",
+    "subject": "science",
+    "current": "breathing",
+    "current_detail": "having to do with the lungs and how the body draws in air",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 101
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "deposition",
+    "language": "all",
+    "subject": "science",
+    "current": "settling",
+    "current_detail": "when bits of rock, sand, or dirt are laid down in a new place by wind or water",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 99
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "covalent",
+    "language": "all",
+    "subject": "science",
+    "current": "shared-bond",
+    "current_detail": "a bond where two atoms hold on to shared bits between them",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 96
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "cellular",
+    "language": "all",
+    "subject": "science",
+    "current": "cell-level",
+    "current_detail": "having to do with cells, the smallest living parts of a body",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 88
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "survival",
+    "language": "all",
+    "subject": "science",
+    "current": "staying alive",
+    "current_detail": "the act of living through hard times and not dying",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 86
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "electromagnetic",
+    "language": "all",
+    "subject": "science",
+    "current": "light-wave",
+    "current_detail": "having to do with the linked pushes and pulls of sparks and magnets that make light and radio",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 84
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "laboratory",
+    "language": "all",
+    "subject": "science",
+    "current": "testing room",
+    "current_detail": "a place with tools and gear where people run tests and try things out",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 79
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "molecular",
+    "language": "all",
+    "subject": "science",
+    "current": "atom-cluster",
+    "current_detail": "having to do with the very small clusters of atoms that shape all stuff",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 75
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "metamorphic",
+    "language": "all",
+    "subject": "science",
+    "current": "heat-changed rock",
+    "current_detail": "a kind of rock that started as one thing but was changed by strong heat and pressing",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 74
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "digestive",
+    "language": "all",
+    "subject": "science",
+    "current": "food-breaking",
+    "current_detail": "having to do with how the body breaks food into bits it can use",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 74
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "observable",
+    "language": "all",
+    "subject": "science",
+    "current": "seeable",
+    "current_detail": "something you are able to notice with your eyes or other senses",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 73
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "electricity",
+    "language": "all",
+    "subject": "science",
+    "current": "charge flow",
+    "current_detail": "the stream of tiny bits of charge that powers lights, screens, and machines",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 72
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "extinction",
+    "language": "all",
+    "subject": "science",
+    "current": "dying out",
+    "current_detail": "when every last one of a kind of living thing is gone for good",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 69
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "mechanical",
+    "language": "all",
+    "subject": "science",
+    "current": "gear-driven",
+    "current_detail": "having to do with gears, levers, and parts that move to do a job",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 69
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "conductor",
+    "language": "all",
+    "subject": "science",
+    "current": "flow-carrier",
+    "current_detail": "a thing that lets heat or tiny charges move through it with ease",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 67
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "refraction",
+    "language": "all",
+    "subject": "science",
+    "current": "light bending",
+    "current_detail": "the way light bends when it goes from one clear stuff into another",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 67
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "biological",
+    "language": "all",
+    "subject": "science",
+    "current": "life-based",
+    "current_detail": "having to do with life and the way living things work",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 66
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "evolution",
+    "language": "all",
+    "subject": "science",
+    "current": "slow change",
+    "current_detail": "the way kinds of life slowly shift and branch out over very long stretches of time",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 63
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "intermolecular",
+    "language": "all",
+    "subject": "science",
+    "current": "between clusters",
+    "current_detail": "about the pushes and pulls that pull or push between clusters of atoms",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 62
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "cardiovascular",
+    "language": "all",
+    "subject": "science",
+    "current": "heart-and-blood",
+    "current_detail": "having to do with the heart and the tubes that carry blood through the body",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 61
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "continental",
+    "language": "all",
+    "subject": "science",
+    "current": "about a large land mass",
+    "current_detail": "having to do with one of the big chunks of land on Earth",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 61
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "weathering",
+    "language": "all",
+    "subject": "science",
+    "current": "slow breakdown",
+    "current_detail": "when wind, rain, and ice slowly crack and wear down rocks over time",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 58
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "resistor",
+    "language": "all",
+    "subject": "science",
+    "current": "flow blocker",
+    "current_detail": "a small piece in a path that holds back the stream of tiny charges",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 58
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "precipitation",
+    "language": "all",
+    "subject": "science",
+    "current": "falling water",
+    "current_detail": "rain, snow, sleet, or hail — any water that drops from clouds to the ground",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 55
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "topographic",
+    "language": "all",
+    "subject": "science",
+    "current": "land-shape",
+    "current_detail": "showing the hills, valleys, and flat areas of a place on a map",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 54
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "skeletal",
+    "language": "all",
+    "subject": "science",
+    "current": "bone",
+    "current_detail": "having to do with the set of bones that holds the body up",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 53
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "absorption",
+    "language": "all",
+    "subject": "science",
+    "current": "soaking in",
+    "current_detail": "when one thing draws in or soaks up another, like a towel with water",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 52
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "projectile",
+    "language": "all",
+    "subject": "science",
+    "current": "thrown thing",
+    "current_detail": "any thing that is launched and moves through the air on its own path",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 52
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "accessory",
+    "language": "all",
+    "subject": "science",
+    "current": "an extra part that helps",
+    "current_detail": "something added on that makes the main thing work better or look nicer",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 52
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "oxygen",
+    "language": "all",
+    "subject": "science",
+    "current": "breathing gas",
+    "current_detail": "the part of the air that our lungs pull in to keep us alive",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 51
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "lithosphere",
+    "language": "all",
+    "subject": "science",
+    "current": "rock shell",
+    "current_detail": "the stiff, rocky top layer of the earth that we walk on",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 51
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "incline",
+    "language": "all",
+    "subject": "science",
+    "current": "slope",
+    "current_detail": "a flat the top layer that sits at a tilt, like a ramp going uphill",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 51
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "demonstration",
+    "language": "all",
+    "subject": "science",
+    "current": "live showing",
+    "current_detail": "doing something in front of others so they can see how it is done",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 50
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "contamination",
+    "language": "all",
+    "subject": "science",
+    "current": "fouling",
+    "current_detail": "when something bad or unwanted gets mixed into something clean",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 49
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "muscular",
+    "language": "all",
+    "subject": "science",
+    "current": "muscle",
+    "current_detail": "having to do with the stretchy parts of the body that help you move",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 49
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "respiration",
+    "language": "all",
+    "subject": "science",
+    "current": "breathing",
+    "current_detail": "the way a living thing draws in air and splits apart food to get the power it needs",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 49
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "telescope",
+    "language": "all",
+    "subject": "science",
+    "current": "far-seeing tool",
+    "current_detail": "a tool with lenses that lets you see things very far away as if they were near",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 49
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "reproductive",
+    "language": "all",
+    "subject": "science",
+    "current": "life-making",
+    "current_detail": "having to do with how living things bring new life into the world",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 49
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "discovery",
+    "language": "all",
+    "subject": "science",
+    "current": "first find",
+    "current_detail": "the moment you come upon something no one knew about before",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 48
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "microscope",
+    "language": "all",
+    "subject": "science",
+    "current": "tiny-seeing tool",
+    "current_detail": "a tool with lenses that lets you see very small things up close",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 48
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "anatomy",
+    "language": "all",
+    "subject": "science",
+    "current": "body parts",
+    "current_detail": "the study of what is inside a living thing and how the parts fit together",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 47
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "anatomical",
+    "language": "all",
+    "subject": "science",
+    "current": "about body parts",
+    "current_detail": "having to do with how a living thing's body is put together",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 44
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "diffraction",
+    "language": "all",
+    "subject": "science",
+    "current": "wave bending",
+    "current_detail": "when waves spread out as they pass through a gap or go around a corner",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 44
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "equipment",
+    "language": "all",
+    "subject": "science",
+    "current": "tools for the job",
+    "current_detail": "all the gear and tools gathered for doing a task",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 43
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "physiology",
+    "language": "all",
+    "subject": "science",
+    "current": "body workings",
+    "current_detail": "the study of what each part of a living thing does to keep it alive",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 43
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "abiotic",
+    "language": "all",
+    "subject": "science",
+    "current": "non-living",
+    "current_detail": "the parts of a place that were never alive — rocks, water, air, sunlight",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 42
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "insulator",
+    "language": "all",
+    "subject": "science",
+    "current": "flow blocker",
+    "current_detail": "a thing that stops heat or tiny charges from moving through it",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 40
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "disorder",
+    "language": "all",
+    "subject": "science",
+    "current": "breakdown",
+    "current_detail": "a state where parts are out of order or a body part is not working as it should",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 40
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "pollutant",
+    "language": "all",
+    "subject": "science",
+    "current": "harmful waste",
+    "current_detail": "a bad thing put into the air, water, or soil that harms living things",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 38
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "presence",
+    "language": "all",
+    "subject": "science",
+    "current": "being there",
+    "current_detail": "the fact that something or someone is in a place right now",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 37
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "deforestation",
+    "language": "all",
+    "subject": "science",
+    "current": "tree clearing",
+    "current_detail": "when large stretches of woods are cleared away and not grown back",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 37
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "mutation",
+    "language": "all",
+    "subject": "science",
+    "current": "code change",
+    "current_detail": "when the code inside a living thing shifts and makes something new or different",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 37
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "kinematic",
+    "language": "all",
+    "subject": "science",
+    "current": "motion-path",
+    "current_detail": "having to do with the paths and speeds of parts that move",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 37
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "recycling",
+    "language": "all",
+    "subject": "science",
+    "current": "reusing",
+    "current_detail": "taking parts that were thrown away and making them into something useful again",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 36
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "radiation",
+    "language": "all",
+    "subject": "science",
+    "current": "outward waves",
+    "current_detail": "when waves of light, heat, or other power move outward from a where it came from",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 36
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "endothermic",
+    "language": "all",
+    "subject": "science",
+    "current": "heat-soaking",
+    "current_detail": "a change that soaks up warmth from around it, making things feel cooler",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 36
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "collision",
+    "language": "all",
+    "subject": "science",
+    "current": "when two things crash together",
+    "current_detail": "the moment two moving things hit each other",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 35
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "maintenance",
+    "language": "all",
+    "subject": "science",
+    "current": "keeping parts in good shape",
+    "current_detail": "the steady work of fixing and caring for something so it keeps working",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 34
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "multicellular",
+    "language": "all",
+    "subject": "science",
+    "current": "made of many tiny building blocks",
+    "current_detail": "a living thing whose body is built from a great number of cells working together",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 34
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "sediment",
+    "language": "all",
+    "subject": "science",
+    "current": "bits that settle to the bottom",
+    "current_detail": "tiny pieces of rock, sand, or dirt that sink and stack up at the bottom of water",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 34
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "proposal",
+    "language": "all",
+    "subject": "science",
+    "current": "offered plan",
+    "current_detail": "a written or spoken plan offered up so others can say yes or no",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 34
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "conductivity",
+    "language": "all",
+    "subject": "science",
+    "current": "flow-ease",
+    "current_detail": "how easily heat or tiny charges can travel through a thing",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 34
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "spectrum",
+    "language": "all",
+    "subject": "science",
+    "current": "the full spread",
+    "current_detail": "the whole range of something, like all the shades of light from red to blue",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 33
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "inheritance",
+    "language": "all",
+    "subject": "science",
+    "current": "passed-down traits",
+    "current_detail": "the traits or things handed down from parents to their young",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 33
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "biosphere",
+    "language": "all",
+    "subject": "science",
+    "current": "life layer",
+    "current_detail": "the thin wrap around the earth where all life is found",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 33
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "exothermic",
+    "language": "all",
+    "subject": "science",
+    "current": "heat-giving",
+    "current_detail": "a change that pushes warmth out into the world around it",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 32
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "hydrosphere",
+    "language": "all",
+    "subject": "science",
+    "current": "water layer",
+    "current_detail": "every bit of water on, under, and above the earth — seas, rivers, clouds, ice",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 32
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "biogeochemical",
+    "language": "all",
+    "subject": "science",
+    "current": "how life and earth swap stuff",
+    "current_detail": "the loops where living parts and the earth trade bits of matter back and forth",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 32
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "magnetism",
+    "language": "all",
+    "subject": "science",
+    "current": "the pull of a magnet",
+    "current_detail": "the unseen push or pull that makes some shiny hard stuffs stick together or push apart",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 31
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "phenotype",
+    "language": "all",
+    "subject": "science",
+    "current": "outer traits",
+    "current_detail": "the traits you can see or find the size of in a living thing, shaped by its inner",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 31
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "metalloid",
+    "language": "all",
+    "subject": "science",
+    "current": "part shiny hard stuff, part not",
+    "current_detail": "a thing that has some traits of shiny hard stuffs and some of non-shiny hard stuffs",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 31
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "contaminant",
+    "language": "all",
+    "subject": "science",
+    "current": "harmful mix-in",
+    "current_detail": "an unwanted thing that got into something clean and made it dirty or unsafe",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 30
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "metallic",
+    "language": "all",
+    "subject": "science",
+    "current": "like shiny hard matter",
+    "current_detail": "looking, feeling, or acting like a shiny, hard shiny hard matter",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 30
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "abundance",
+    "language": "all",
+    "subject": "science",
+    "current": "a lot, more than enough",
+    "current_detail": "having so much of something that there is plenty to go around",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 29
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "hazardous",
+    "language": "all",
+    "subject": "science",
+    "current": "harmful or dangerous",
+    "current_detail": "likely to bring harm or danger if you are not careful",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 29
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "digestion",
+    "language": "all",
+    "subject": "science",
+    "current": "breaking food down inside the body",
+    "current_detail": "the way the body breaks food into tiny bits it can use for power",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 29
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "integumentary",
+    "language": "all",
+    "subject": "science",
+    "current": "about the skin and its layers",
+    "current_detail": "having to do with the outer covering of the body — skin, hair, and nails",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 29
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "micrograph",
+    "language": "all",
+    "subject": "science",
+    "current": "tiny-view picture",
+    "current_detail": "a picture taken through a tool that makes very small things look big",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 29
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "resistant",
+    "language": "all",
+    "subject": "science",
+    "current": "fights back, does not give in",
+    "current_detail": "able to stand up against something harmful without being hurt or changed",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 28
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "exercise",
+    "language": "all",
+    "subject": "science",
+    "current": "moving your body to stay strong",
+    "current_detail": "doing tasks that make your body or mind work harder to stay healthy",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 28
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "capillary",
+    "language": "all",
+    "subject": "science",
+    "current": "the tiniest blood tube",
+    "current_detail": "a very thin tube in the body where blood trades air and food with nearby cells",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 28
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "quantifiable",
+    "language": "all",
+    "subject": "science",
+    "current": "can be counted or measured",
+    "current_detail": "something you are able to put a number on",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 27
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "predator",
+    "language": "all",
+    "subject": "science",
+    "current": "hunter",
+    "current_detail": "a living thing that catches and feeds on other living things to stay alive",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 26
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "nonmetal",
+    "language": "all",
+    "subject": "science",
+    "current": "not a shiny hard matter",
+    "current_detail": "a kind of matter that is not shiny, hard, or able to carry heat well",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 26
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "infection",
+    "language": "all",
+    "subject": "science",
+    "current": "germs getting into the body",
+    "current_detail": "when tiny harmful things get inside a living thing and make it sick",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 26
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "unbalanced",
+    "language": "all",
+    "subject": "science",
+    "current": "not even on both sides",
+    "current_detail": "when one side has more or less than the other, not matching up",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 26
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "reversal",
+    "language": "all",
+    "subject": "science",
+    "current": "flipping to the other way",
+    "current_detail": "when something turns around and goes the other way from where it was headed",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 26
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "hydrologic",
+    "language": "all",
+    "subject": "science",
+    "current": "about how water moves through Earth",
+    "current_detail": "having to do with the paths water takes — rain, rivers, ground, clouds, and back again",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 26
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "topography",
+    "language": "all",
+    "subject": "science",
+    "current": "the shape of the land",
+    "current_detail": "the hills, valleys, and flat spots that give a piece of land its look",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 25
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "transparent",
+    "language": "all",
+    "subject": "science",
+    "current": "see-through",
+    "current_detail": "clear enough that light passes through and you can see what is on the other side",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 25
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "nomenclature",
+    "language": "all",
+    "subject": "science",
+    "current": "the naming setup for a field",
+    "current_detail": "the set of rules and words used to name parts in a branch of learning",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 25
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "nonpolar",
+    "language": "all",
+    "subject": "science",
+    "current": "shares evenly, no charged ends",
+    "current_detail": "a bond or thing where the tiny bits are spread out evenly with no sticky ends",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 25
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "predictable",
+    "language": "all",
+    "subject": "science",
+    "current": "you can tell what will happen",
+    "current_detail": "behaving in a way that lets you guess what comes next",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 24
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "instrument",
+    "language": "all",
+    "subject": "science",
+    "current": "a tool for doing or measuring",
+    "current_detail": "a device built to help you do a task, play music, or take a reading",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 24
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "fracture",
+    "language": "all",
+    "subject": "science",
+    "current": "a break or crack",
+    "current_detail": "when something hard splits or cracks apart",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 24
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "peripheral",
+    "language": "all",
+    "subject": "science",
+    "current": "at the edges, not the center",
+    "current_detail": "on the outer edge, not the main or most key part",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 24
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "pulmonary",
+    "language": "all",
+    "subject": "science",
+    "current": "about the lungs",
+    "current_detail": "having to do with the lungs and how air flows in and out",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 24
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "macromolecule",
+    "language": "all",
+    "subject": "science",
+    "current": "a giant chain of atoms",
+    "current_detail": "a huge chain of atoms linked together, like the ones that build living things",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 24
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "convection",
+    "language": "all",
+    "subject": "science",
+    "current": "heat moving through flowing stuff",
+    "current_detail": "when warm air or water rises and cool air or water sinks, making a loop",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 23
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "biology",
+    "language": "all",
+    "subject": "science",
+    "current": "the study of living things",
+    "current_detail": "the branch of learning that looks at how all life works",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 23
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "solubility",
+    "language": "all",
+    "subject": "science",
+    "current": "melt-in-ness",
+    "current_detail": "the amount of a thing that can blend into a liquid until no more will fit",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 23
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "resources",
+    "language": "all",
+    "subject": "science",
+    "current": "supplies",
+    "current_detail": "the things you can draw on to get a job done",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 23
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "ecosystems",
+    "language": "all",
+    "subject": "science",
+    "current": "life webs",
+    "current_detail": "places where living and non-living things work together",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 23
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "condensation",
+    "language": "all",
+    "subject": "science",
+    "current": "gas to drops",
+    "current_detail": "when water in the air cools and becomes tiny drops on a cold thing",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 22
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "emission",
+    "language": "all",
+    "subject": "science",
+    "current": "sent-out gas",
+    "current_detail": "gas, light, or heat that is pushed out from a where it came from",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 22
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "combustion",
+    "language": "all",
+    "subject": "science",
+    "current": "burning",
+    "current_detail": "when something catches fire and gives off heat and light",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 22
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "centripetal",
+    "language": "all",
+    "subject": "science",
+    "current": "inward pull",
+    "current_detail": "the inward pull that keeps something moving in a curved path instead of flying off",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 22
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "depletion",
+    "language": "all",
+    "subject": "science",
+    "current": "draining",
+    "current_detail": "draining something down so there is very little left",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 21
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "genotype",
+    "language": "all",
+    "subject": "science",
+    "current": "inner code",
+    "current_detail": "the set of inner codes that a living thing carries, even if you cannot see their effects",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 21
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "excretion",
+    "language": "all",
+    "subject": "science",
+    "current": "waste removal",
+    "current_detail": "when a living thing pushes out the bits it does not need",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 21
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "translucent",
+    "language": "all",
+    "subject": "science",
+    "current": "partly see-through",
+    "current_detail": "you can see light on the other side but not a clear picture",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 20
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "repulsion",
+    "language": "all",
+    "subject": "science",
+    "current": "pushing apart",
+    "current_detail": "the push or pull that shoves two things away from each other",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 20
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "propagation",
+    "language": "all",
+    "subject": "science",
+    "current": "spreading outward",
+    "current_detail": "the way waves, plants, or ideas spread from one place to more places",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 20
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "dichotomous",
+    "language": "all",
+    "subject": "science",
+    "current": "split into two clear groups",
+    "current_detail": "branching into only two paths — yes or no, this or that",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 20
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "frictional",
+    "language": "all",
+    "subject": "science",
+    "current": "about the rub between surfaces",
+    "current_detail": "having to do with the drag that slows things down when they slide past each other",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 20
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "biomagnification",
+    "language": "all",
+    "subject": "science",
+    "current": "food-chain buildup",
+    "current_detail": "when a harmful thing gets stronger as it passes from one eater to the next up the food",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 20
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "obstructive",
+    "language": "all",
+    "subject": "science",
+    "current": "blocking",
+    "current_detail": "getting in the way and stopping the flow",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 20
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "catastrophic",
+    "language": "all",
+    "subject": "science",
+    "current": "hugely harmful",
+    "current_detail": "so bad and sudden that it wrecks everything in its path",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 19
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "radioactive",
+    "language": "all",
+    "subject": "science",
+    "current": "ray-sending",
+    "current_detail": "sending out tiny bits of power from inside its atoms that can be harmful",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 19
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "replacement",
+    "language": "all",
+    "subject": "science",
+    "current": "swap-in",
+    "current_detail": "taking one thing out and putting another in the same spot",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 19
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "depositional",
+    "language": "all",
+    "subject": "science",
+    "current": "settling-down",
+    "current_detail": "about bits of rock or sand being laid down by wind or water",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 19
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "planetary",
+    "language": "all",
+    "subject": "science",
+    "current": "about planets",
+    "current_detail": "having to do with the big round bodies that go around a star",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 18
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "transmission",
+    "language": "all",
+    "subject": "science",
+    "current": "sending along",
+    "current_detail": "passing something along — a message, a sickness, or power — from here to there",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 18
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "polymer",
+    "language": "all",
+    "subject": "science",
+    "current": "repeating chain",
+    "current_detail": "a big string made by linking many small, alike pieces end to end",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 18
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "heterogeneous",
+    "language": "all",
+    "subject": "science",
+    "current": "mixed-kind",
+    "current_detail": "made of different kinds that you can tell apart when you look closely",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 17
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "junction",
+    "language": "all",
+    "subject": "science",
+    "current": "meeting point",
+    "current_detail": "the point where two or more things come together and connect",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 17
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "inelastic",
+    "language": "all",
+    "subject": "science",
+    "current": "non-bouncing",
+    "current_detail": "when things crash and do not spring back — they stick or lose shape",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 17
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "physiological",
+    "language": "all",
+    "subject": "science",
+    "current": "body-working",
+    "current_detail": "having to do with the day-to-day workings inside a living thing's body",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 17
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "antibiotic",
+    "language": "all",
+    "subject": "science",
+    "current": "germ killer",
+    "current_detail": "a kind of medicine that fights and kills the tiny living parts that make you sick",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 16
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "disequilibrium",
+    "language": "all",
+    "subject": "science",
+    "current": "out of balance",
+    "current_detail": "when a setup is no longer steady and parts are shifting or tilting",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 16
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "substrate",
+    "language": "all",
+    "subject": "science",
+    "current": "base layer",
+    "current_detail": "the thing that sits beneath or gets acted on — a base layer or target",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 16
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "receptor",
+    "language": "all",
+    "subject": "science",
+    "current": "signal catcher",
+    "current_detail": "a exactly right a cell that catches a certain kind of message and starts a response",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 16
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "malleability",
+    "language": "all",
+    "subject": "science",
+    "current": "shape-ability",
+    "current_detail": "how easily a thing can be hammered or pressed into a new shape without breaking",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 16
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "bioaccumulation",
+    "language": "all",
+    "subject": "science",
+    "current": "body buildup",
+    "current_detail": "when a harmful thing stacks up inside a living thing faster than the body can throw away",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 16
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "coordination",
+    "language": "all",
+    "subject": "science",
+    "current": "lining up",
+    "current_detail": "lining up people or parts so they all move and act at the right time",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 16
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "neurological",
+    "language": "all",
+    "subject": "science",
+    "current": "brain-nerve",
+    "current_detail": "having to do with the web of nerves and the brain that run the body",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 16
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "antibody",
+    "language": "all",
+    "subject": "science",
+    "current": "germ fighter",
+    "current_detail": "a tiny thing the body makes to lock onto a germ and mark it for removal",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 16
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "aquarium",
+    "language": "all",
+    "subject": "science",
+    "current": "a glass tank for fish",
+    "current_detail": "a clear tank filled with water where fish and plants live so you can watch them",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 16
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "instantaneous",
+    "language": "all",
+    "subject": "science",
+    "current": "at one exact moment",
+    "current_detail": "at one exact moment, with no time passing between start and finish",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 16
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "biomolecule",
+    "language": "all",
+    "subject": "science",
+    "current": "a big building block of life",
+    "current_detail": "one of the large chains of atoms that living parts are made from",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 16
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "alimentary",
+    "language": "all",
+    "subject": "science",
+    "current": "about the food tube",
+    "current_detail": "having to do with the long path food takes through the body from mouth to end",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 16
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "restrictive",
+    "language": "all",
+    "subject": "science",
+    "current": "limits what you can do",
+    "current_detail": "setting tight rules that hold back what is allowed",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 16
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "objectivity",
+    "language": "all",
+    "subject": "science",
+    "current": "fairness",
+    "current_detail": "looking at facts without letting feelings sway you",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 16
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "skepticism",
+    "language": "all",
+    "subject": "science",
+    "current": "healthy doubt",
+    "current_detail": "the habit of asking questions and wanting facts before saying yes",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 15
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "macroscopic",
+    "language": "all",
+    "subject": "science",
+    "current": "eye-visible",
+    "current_detail": "large enough that you can see it without a tool to make it bigger",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 15
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "stationary",
+    "language": "all",
+    "subject": "science",
+    "current": "still",
+    "current_detail": "staying in one spot, not going anywhere",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 14
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "convergent",
+    "language": "all",
+    "subject": "science",
+    "current": "coming together",
+    "current_detail": "moving closer and closer until meeting at the same spot",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 14
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "protocol",
+    "language": "all",
+    "subject": "science",
+    "current": "set steps",
+    "current_detail": "a written list of rules and steps that must be done the same way each time",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 14
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "electronegativity",
+    "language": "all",
+    "subject": "science",
+    "current": "charge-grab strength",
+    "current_detail": "the pull an atom has on the shared charged bits in a bond with another atom",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 14
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "filtration",
+    "language": "all",
+    "subject": "science",
+    "current": "screening",
+    "current_detail": "pushing a mix through a mesh so the good parts go through and the bad parts stay behind",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 14
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "expectations",
+    "language": "all",
+    "subject": "science",
+    "current": "what is looked for",
+    "current_detail": "what people think should happen or be done",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 14
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "disposal",
+    "language": "all",
+    "subject": "science",
+    "current": "throwing away",
+    "current_detail": "getting rid of something you no longer need",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 14
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "disturbance",
+    "language": "all",
+    "subject": "science",
+    "current": "upset",
+    "current_detail": "something that breaks the calm or throws things off",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 14
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "microscopic",
+    "language": "all",
+    "subject": "science",
+    "current": "unseen-small",
+    "current_detail": "so tiny that you need a tool with lenses to make it big enough to see",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 13
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "disaster",
+    "language": "all",
+    "subject": "science",
+    "current": "sudden ruin",
+    "current_detail": "something awful that hits fast and causes great harm to people or the land",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 13
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "photosynthetic",
+    "language": "all",
+    "subject": "science",
+    "current": "light-feeding",
+    "current_detail": "able to turn light into food the way green plants do",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 13
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "synthetic",
+    "language": "all",
+    "subject": "science",
+    "current": "human-made",
+    "current_detail": "put together by people in a lab or mill, not found in the wild",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 13
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "epicenter",
+    "language": "all",
+    "subject": "science",
+    "current": "quake top point",
+    "current_detail": "the place on the the top layer straight above the point where an earthquake started",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 13
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "terrarium",
+    "language": "all",
+    "subject": "science",
+    "current": "a small glass garden",
+    "current_detail": "a clear case with soil and plants inside that makes a tiny world",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 13
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "nonliving",
+    "language": "all",
+    "subject": "science",
+    "current": "was never alive",
+    "current_detail": "things like rocks, water, and air that do not eat, grow, or breathe",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 13
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "paleontological",
+    "language": "all",
+    "subject": "science",
+    "current": "old-life study",
+    "current_detail": "about the study of living things that died out long ago",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 13
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "relatedness",
+    "language": "all",
+    "subject": "science",
+    "current": "how closely tied",
+    "current_detail": "the degree to which two things share roots or traits",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 13
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "persuasive",
+    "language": "all",
+    "subject": "science",
+    "current": "makes you want to agree",
+    "current_detail": "using strong reasons or feelings to get someone to think or act your way",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "subatomic",
+    "language": "all",
+    "subject": "science",
+    "current": "smaller than an atom",
+    "current_detail": "the tiny bits found inside an atom, even smaller than the smallest speck of stuff",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "heredity",
+    "language": "all",
+    "subject": "science",
+    "current": "traits passed from parents",
+    "current_detail": "the passing of looks, health, and other traits from parents to their young",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "remediation",
+    "language": "all",
+    "subject": "science",
+    "current": "fixing a problem or cleaning up",
+    "current_detail": "the work of repairing harm or bringing something back to a healthy state",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "documentation",
+    "language": "all",
+    "subject": "science",
+    "current": "written proof or records",
+    "current_detail": "papers, files, or notes that show what was done and keep a record of it",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "portfolio",
+    "language": "all",
+    "subject": "science",
+    "current": "a folder of your best work",
+    "current_detail": "a set of work samples gathered to show what you can do",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "bilateral",
+    "language": "all",
+    "subject": "science",
+    "current": "on both sides",
+    "current_detail": "having two matching halves, one on each side of a middle line",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "recombination",
+    "language": "all",
+    "subject": "science",
+    "current": "mixing traits in a new way",
+    "current_detail": "when bits of the inner code swap around to make a new mix of traits",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "syndrome",
+    "language": "all",
+    "subject": "science",
+    "current": "signs that go together",
+    "current_detail": "a group of symptoms that appear together and point to one health problem",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "metabolism",
+    "language": "all",
+    "subject": "science",
+    "current": "food-to-power",
+    "current_detail": "all the steps inside a living thing that split apart food and build what the body needs",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "fermentation",
+    "language": "all",
+    "subject": "science",
+    "current": "airless breakdown",
+    "current_detail": "when tiny living things split apart food without air, making gas or sour stuff",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "oxidation",
+    "language": "all",
+    "subject": "science",
+    "current": "losing charged bits",
+    "current_detail": "when a thing gives up charged bits or links with the gas in air, like rusting",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "destruction",
+    "language": "all",
+    "subject": "science",
+    "current": "wrecking",
+    "current_detail": "the act of breaking something so badly it can no longer be used",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "neurotransmitter",
+    "language": "all",
+    "subject": "science",
+    "current": "nerve messenger",
+    "current_detail": "a tiny thing that jumps across the gap between two nerve cells to pass a message",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "diagnose",
+    "language": "all",
+    "subject": "science",
+    "current": "name the problem",
+    "current_detail": "to look at the signs and name the sickness or problem",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "attractive",
+    "language": "all",
+    "subject": "science",
+    "current": "pulling close",
+    "current_detail": "drawing things or people closer, either by a pull or by looking pleasing",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "abundant",
+    "language": "all",
+    "subject": "science",
+    "current": "plentiful",
+    "current_detail": "present in large amounts, more than enough",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "electroscope",
+    "language": "all",
+    "subject": "science",
+    "current": "charge finder",
+    "current_detail": "a device with thin leaves that spread apart when a charge is near",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "binocular",
+    "language": "all",
+    "subject": "science",
+    "current": "using both eyes",
+    "current_detail": "seeing with two eyes at once so you can judge how far away things sit",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "pharmaceutical",
+    "language": "all",
+    "subject": "science",
+    "current": "drug-making",
+    "current_detail": "having to do with making and selling medicines",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "filament",
+    "language": "all",
+    "subject": "science",
+    "current": "thin strand",
+    "current_detail": "a very thin strand, like the glowing wire inside a light bulb",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "ligament",
+    "language": "all",
+    "subject": "science",
+    "current": "bone tie",
+    "current_detail": "a tough, stretchy strip that holds two bones in place at a joint",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "platelet",
+    "language": "all",
+    "subject": "science",
+    "current": "clot helper",
+    "current_detail": "a small bit in the blood that clumps together to plug a cut",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "transfusion",
+    "language": "all",
+    "subject": "science",
+    "current": "blood giving",
+    "current_detail": "giving blood from one person into the veins of another who needs it",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "paternity",
+    "language": "all",
+    "subject": "science",
+    "current": "fatherhood",
+    "current_detail": "about who the father is",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "infographic",
+    "language": "all",
+    "subject": "science",
+    "current": "fact picture",
+    "current_detail": "a drawing or chart that shows facts in a quick, clear way",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "disruptor",
+    "language": "all",
+    "subject": "science",
+    "current": "shaker-up",
+    "current_detail": "something that breaks the old way and brings a new one",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "microgravity",
+    "language": "all",
+    "subject": "science",
+    "current": "near-weightless",
+    "current_detail": "when the pull downward is so weak things seem to float",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "nonspecific",
+    "language": "all",
+    "subject": "science",
+    "current": "not aimed",
+    "current_detail": "not pointed at one thing, broad and general",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 12
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "recessive",
+    "language": "all",
+    "subject": "science",
+    "current": "hidden trait",
+    "current_detail": "a trait that only shows when both copies of the code carry it",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 11
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "inorganic",
+    "language": "all",
+    "subject": "science",
+    "current": "non-living matter",
+    "current_detail": "matter that did not come from plants or animals — rocks, hard shiny things, water",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 11
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "constellation",
+    "language": "all",
+    "subject": "science",
+    "current": "star pattern",
+    "current_detail": "a group of stars that people long ago saw as a shape or find",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 11
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "fluorescence",
+    "language": "all",
+    "subject": "science",
+    "current": "glow from light",
+    "current_detail": "when something soaks up light and gives off a glow",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 11
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "uniformitarianism",
+    "language": "all",
+    "subject": "science",
+    "current": "same-rules-always",
+    "current_detail": "the idea that the same earth steps happening now also happened long ago",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 11
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "subsequent",
+    "language": "all",
+    "subject": "science",
+    "current": "next",
+    "current_detail": "the thing that follows or comes next in time or order",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 10
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "codominance",
+    "language": "all",
+    "subject": "science",
+    "current": "shared showing",
+    "current_detail": "when two different traits are both fully seen at the same time, neither hiding the other",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 10
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "dissolve",
+    "language": "all",
+    "subject": "science",
+    "current": "melt in",
+    "current_detail": "when a solid breaks apart and mixes evenly into a liquid until you cannot see it",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 10
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "descendant",
+    "language": "all",
+    "subject": "science",
+    "current": "offspring",
+    "current_detail": "a child, grandchild, or later kin of a person or living thing",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 10
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "dispersion",
+    "language": "all",
+    "subject": "science",
+    "current": "spreading",
+    "current_detail": "when something fans out, or when white light splits into its colors",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 10
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "viscosity",
+    "language": "all",
+    "subject": "science",
+    "current": "thickness",
+    "current_detail": "how slow or fast a liquid pours — honey is thick, water is thin",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 10
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "secretion",
+    "language": "all",
+    "subject": "science",
+    "current": "body fluid",
+    "current_detail": "when cells or glands make and release a liquid that the body needs",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 10
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "hydronium",
+    "language": "all",
+    "subject": "science",
+    "current": "water-plus ion",
+    "current_detail": "a water bit with one extra small charged bit stuck on",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 10
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "detector",
+    "language": "all",
+    "subject": "science",
+    "current": "finder",
+    "current_detail": "a tool that picks up something hidden or hard to see",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 10
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "directional",
+    "language": "all",
+    "subject": "science",
+    "current": "way-pointing",
+    "current_detail": "about which way something faces or moves",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 10
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "humidity",
+    "language": "all",
+    "subject": "science",
+    "current": "air wetness",
+    "current_detail": "the amount of tiny water drops floating in the air around you",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 9
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "differentiation",
+    "language": "all",
+    "subject": "science",
+    "current": "splitting",
+    "current_detail": "the way a cell changes to do one job, or the act of finding what makes things not",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 9
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "mitigation",
+    "language": "all",
+    "subject": "science",
+    "current": "harm-cutting",
+    "current_detail": "steps taken to cut down how bad something is or will be",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 9
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "infrared",
+    "language": "all",
+    "subject": "science",
+    "current": "heat light",
+    "current_detail": "a kind of light wave just past red that you feel as warmth but cannot see",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 9
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "redshift",
+    "language": "all",
+    "subject": "science",
+    "current": "light reddening",
+    "current_detail": "when light from a star or galaxy looks redder because the where it came from is moving away",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 9
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "speciation",
+    "language": "all",
+    "subject": "science",
+    "current": "new kind forming",
+    "current_detail": "when one group of living things splits into two different kinds over time",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 9
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "hemophilia",
+    "language": "all",
+    "subject": "science",
+    "current": "blood won't clot",
+    "current_detail": "a trait passed down where the blood does not thicken to stop a cut",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 9
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "anthropogenic",
+    "language": "all",
+    "subject": "science",
+    "current": "human-caused",
+    "current_detail": "brought about by what people do, not by the wild world",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 9
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "inertial",
+    "language": "all",
+    "subject": "science",
+    "current": "keep-moving",
+    "current_detail": "about a thing wanting to stay still or keep going unless pushed",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 9
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "negligible",
+    "language": "all",
+    "subject": "science",
+    "current": "too small to matter",
+    "current_detail": "so tiny it can be left out without changing the answer",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 9
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "lithospheric",
+    "language": "all",
+    "subject": "science",
+    "current": "rock-shell",
+    "current_detail": "about the stiff, rocky outer layer of the earth",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 9
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "intrinsic",
+    "language": "all",
+    "subject": "science",
+    "current": "built-in",
+    "current_detail": "part of the thing itself, not added from outside",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "compatible",
+    "language": "all",
+    "subject": "science",
+    "current": "works together",
+    "current_detail": "able to fit or work well with something else",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "proximity",
+    "language": "all",
+    "subject": "science",
+    "current": "nearness",
+    "current_detail": "how close two things are to each other",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "correlate",
+    "language": "all",
+    "subject": "science",
+    "current": "linked change",
+    "current_detail": "when two things shift together in a pattern",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "irrigation",
+    "language": "all",
+    "subject": "science",
+    "current": "crop watering",
+    "current_detail": "bringing water to fields through ditches or pipes",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "permeability",
+    "language": "all",
+    "subject": "science",
+    "current": "soak-through",
+    "current_detail": "how easily a liquid can pass through something",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "porosity",
+    "language": "all",
+    "subject": "science",
+    "current": "hole-filled",
+    "current_detail": "how many tiny gaps or holes are in something",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "elimination",
+    "language": "all",
+    "subject": "science",
+    "current": "removal",
+    "current_detail": "getting rid of something fully",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "autosomal",
+    "language": "all",
+    "subject": "science",
+    "current": "non-sex-linked",
+    "current_detail": "on the body's main inner code strands, not the ones that set sex",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "detection",
+    "language": "all",
+    "subject": "science",
+    "current": "finding",
+    "current_detail": "spotting something that was hidden or hard to see",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "explosion",
+    "language": "all",
+    "subject": "science",
+    "current": "sudden blast",
+    "current_detail": "a fast, outward burst of power and sound",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "assortment",
+    "language": "all",
+    "subject": "science",
+    "current": "mixed set",
+    "current_detail": "a group of different kinds put together",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "chromosomal",
+    "language": "all",
+    "subject": "science",
+    "current": "code-strand",
+    "current_detail": "about the long strands inside cells that carry inner code",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "electrophoresis",
+    "language": "all",
+    "subject": "science",
+    "current": "charge sorting",
+    "current_detail": "using a flow of charge to sort bits by size through a gel",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "prevention",
+    "language": "all",
+    "subject": "science",
+    "current": "stopping beforehand",
+    "current_detail": "acting early to keep something bad from happening",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "acidification",
+    "language": "all",
+    "subject": "science",
+    "current": "turning sour",
+    "current_detail": "when water or soil becomes more sharp and biting",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "severity",
+    "language": "all",
+    "subject": "science",
+    "current": "how bad",
+    "current_detail": "the degree of harm or harshness of something",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "domestication",
+    "language": "all",
+    "subject": "science",
+    "current": "taming",
+    "current_detail": "when wild living things are raised and bred to live with people",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "restoration",
+    "language": "all",
+    "subject": "science",
+    "current": "bringing back",
+    "current_detail": "fixing something up so it is like it was before",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "vulnerable",
+    "language": "all",
+    "subject": "science",
+    "current": "at risk",
+    "current_detail": "easy to hurt or harm because there is no shield",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "prevalence",
+    "language": "all",
+    "subject": "science",
+    "current": "how widespread",
+    "current_detail": "how common something is across a group or area",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "permeable",
+    "language": "all",
+    "subject": "science",
+    "current": "lets stuff through",
+    "current_detail": "full of tiny holes that let liquid or gas pass",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "dietary",
+    "language": "all",
+    "subject": "science",
+    "current": "food-related",
+    "current_detail": "about what a person or living thing eats",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "biosynthesis",
+    "language": "all",
+    "subject": "science",
+    "current": "life-building",
+    "current_detail": "when a living thing makes big bits from smaller ones inside its body",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "metabolic",
+    "language": "all",
+    "subject": "science",
+    "current": "body-fuel",
+    "current_detail": "about how a living thing turns food into power and parts",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "eutrophication",
+    "language": "all",
+    "subject": "science",
+    "current": "over-feeding water",
+    "current_detail": "when too many food bits get into water and choke out life",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "demographic",
+    "language": "all",
+    "subject": "science",
+    "current": "people-count",
+    "current_detail": "about the number, age, and kinds of people in a group",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "restitution",
+    "language": "all",
+    "subject": "science",
+    "current": "paying back",
+    "current_detail": "giving back what was taken or fixing the harm done",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "fertility",
+    "language": "all",
+    "subject": "science",
+    "current": "life-growing power",
+    "current_detail": "the ability of soil or a living thing to bring forth new life",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "phenological",
+    "language": "all",
+    "subject": "science",
+    "current": "season-timing",
+    "current_detail": "about when living things bloom, nest, or move with the seasons",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "terminal",
+    "language": "all",
+    "subject": "science",
+    "current": "end point",
+    "current_detail": "the last stop, or too far gone to fix",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "circulatory",
+    "language": "all",
+    "subject": "science",
+    "current": "blood-flow",
+    "current_detail": "about the heart and blood tubes that carry blood through the body",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "olfactory",
+    "language": "all",
+    "subject": "science",
+    "current": "smell",
+    "current_detail": "about the sense of smell and how the nose picks up scents",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "recipient",
+    "language": "all",
+    "subject": "science",
+    "current": "receiver",
+    "current_detail": "the one who gets something that is given or sent",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "incorporation",
+    "language": "all",
+    "subject": "science",
+    "current": "folding in",
+    "current_detail": "bringing something into a larger whole",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "interconnections",
+    "language": "all",
+    "subject": "science",
+    "current": "cross-links",
+    "current_detail": "ties between things that link them all together",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "fluorescent",
+    "language": "all",
+    "subject": "science",
+    "current": "glow-lit",
+    "current_detail": "giving off a bright glow after soaking up light or charge",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "reintroduction",
+    "language": "all",
+    "subject": "science",
+    "current": "bringing back in",
+    "current_detail": "putting a plant or animal back into a place it once lived",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "autoimmune",
+    "language": "all",
+    "subject": "science",
+    "current": "self-attacking",
+    "current_detail": "when the body fights its own healthy parts by mistake",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "vaccination",
+    "language": "all",
+    "subject": "science",
+    "current": "germ shield shot",
+    "current_detail": "a shot that trains the body to fight off a sickness before it hits",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "propulsion",
+    "language": "all",
+    "subject": "science",
+    "current": "forward push",
+    "current_detail": "the force that drives something forward",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "diaphragm",
+    "language": "all",
+    "subject": "science",
+    "current": "breathing sheet",
+    "current_detail": "the flat sheet of flesh below the lungs that pulls air in",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "reproducibility",
+    "language": "all",
+    "subject": "science",
+    "current": "can-redo-ness",
+    "current_detail": "whether someone else can do the same test and get the same answer",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 8
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "tolerance",
+    "language": "all",
+    "subject": "science",
+    "current": "putting up with",
+    "current_detail": "the ability to handle something hard or different without breaking",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 7
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "conduction",
+    "language": "all",
+    "subject": "science",
+    "current": "heat passing",
+    "current_detail": "when heat or charge moves through something by touch",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 7
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "elliptical",
+    "language": "all",
+    "subject": "science",
+    "current": "oval-shaped",
+    "current_detail": "stretched into the shape of a flattened ring",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 7
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "decomposer",
+    "language": "all",
+    "subject": "science",
+    "current": "rot breaker",
+    "current_detail": "a living thing that eats dead matter and breaks it down",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 7
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "dihybrid",
+    "language": "all",
+    "subject": "science",
+    "current": "two-trait cross",
+    "current_detail": "a breeding test that tracks two traits at once",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 7
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "reactivity",
+    "language": "all",
+    "subject": "science",
+    "current": "how fast it reacts",
+    "current_detail": "how easily a thing starts a change when mixed with another",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 7
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "ionization",
+    "language": "all",
+    "subject": "science",
+    "current": "charge-gaining",
+    "current_detail": "when an atom picks up or loses tiny charged bits",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 7
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "polyatomic",
+    "language": "all",
+    "subject": "science",
+    "current": "many-atom",
+    "current_detail": "a group of atoms bonded together that acts as one charged bit",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 7
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "flammability",
+    "language": "all",
+    "subject": "science",
+    "current": "burn-ease",
+    "current_detail": "how easily something catches fire",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 7
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "moisture",
+    "language": "all",
+    "subject": "science",
+    "current": "dampness",
+    "current_detail": "a small amount of water on or in something",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 6
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "vibration",
+    "language": "all",
+    "subject": "science",
+    "current": "quick shaking",
+    "current_detail": "fast back-and-forth movement of something",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 6
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "asteroid",
+    "language": "all",
+    "subject": "science",
+    "current": "space rock",
+    "current_detail": "a rocky body that floats through space, smaller than a planet",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 6
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "ultraviolet",
+    "language": "all",
+    "subject": "science",
+    "current": "past-purple light",
+    "current_detail": "light waves just past what the eye can see, from the sun",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 6
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "ancestral",
+    "language": "all",
+    "subject": "science",
+    "current": "from forebears",
+    "current_detail": "coming from those who lived before you in your family line",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 6
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "kinetics",
+    "language": "all",
+    "subject": "science",
+    "current": "movement study",
+    "current_detail": "the branch of learning about how and why things move",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 6
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "neutralization",
+    "language": "all",
+    "subject": "science",
+    "current": "canceling out",
+    "current_detail": "when a sharp and a bitter mix to cancel each other",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 6
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "titration",
+    "language": "all",
+    "subject": "science",
+    "current": "drop-by-drop test",
+    "current_detail": "adding a liquid bit by bit until a change shows how strong a mix is",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 6
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "hydroxide",
+    "language": "all",
+    "subject": "science",
+    "current": "bitter base bit",
+    "current_detail": "a charged group made of one air-gas atom and one water-gas atom",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 6
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "compression",
+    "language": "all",
+    "subject": "science",
+    "current": "squeezing",
+    "current_detail": "pushing something into a smaller space",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 6
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "epithelial",
+    "language": "all",
+    "subject": "science",
+    "current": "skin-lining",
+    "current_detail": "about the thin sheet of cells that covers the body and lines its insides",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 6
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "dehydration",
+    "language": "all",
+    "subject": "science",
+    "current": "drying out",
+    "current_detail": "losing too much water from the body or from something",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 6
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "compressibility",
+    "language": "all",
+    "subject": "science",
+    "current": "squeeze-ability",
+    "current_detail": "how easily something can be pressed into less space",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 5
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "germination",
+    "language": "all",
+    "subject": "science",
+    "current": "seed sprouting",
+    "current_detail": "when a seed breaks open and a new plant starts to grow",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 5
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "microorganism",
+    "language": "all",
+    "subject": "science",
+    "current": "tiny life form",
+    "current_detail": "a living thing too small to see without a tool",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 5
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "differential",
+    "language": "all",
+    "subject": "science",
+    "current": "gap-based",
+    "current_detail": "about the small change between two close values",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 5
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "malleable",
+    "language": "all",
+    "subject": "science",
+    "current": "shapeable",
+    "current_detail": "can be pounded or pressed into a new shape without breaking",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 5
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "pendulum",
+    "language": "all",
+    "subject": "science",
+    "current": "swinging weight",
+    "current_detail": "a weight that hangs and swings back and forth at a steady beat",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 5
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "parasite",
+    "language": "all",
+    "subject": "science",
+    "current": "body freeloader",
+    "current_detail": "a living thing that lives on or in another and takes from it",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 5
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "thermometer",
+    "language": "all",
+    "subject": "science",
+    "current": "heat reader",
+    "current_detail": "a tool that shows how hot or cold something is",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 5
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "transverse",
+    "language": "all",
+    "subject": "science",
+    "current": "side-to-side",
+    "current_detail": "a wave that moves up and down while heading sideways",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 5
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "insertion",
+    "language": "all",
+    "subject": "science",
+    "current": "putting in",
+    "current_detail": "adding something into a spot in the middle",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 5
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "deletion",
+    "language": "all",
+    "subject": "science",
+    "current": "removing",
+    "current_detail": "taking something out so it is no longer there",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 5
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "salinity",
+    "language": "all",
+    "subject": "science",
+    "current": "saltiness",
+    "current_detail": "how much salt is in water or soil",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 5
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "hydraulic",
+    "language": "all",
+    "subject": "science",
+    "current": "water-powered",
+    "current_detail": "using trapped liquid to push or lift heavy things",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 5
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "longitudinal",
+    "language": "all",
+    "subject": "science",
+    "current": "lengthwise",
+    "current_detail": "running the long way, or tracked over a stretch of time",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 5
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "dilution",
+    "language": "all",
+    "subject": "science",
+    "current": "thinning",
+    "current_detail": "adding more water or liquid to make a mix weaker",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 5
+  },
+  {
+    "source": "bridge_science_only",
+    "term": "navigation",
+    "language": "all",
+    "subject": "science",
+    "current": "wayfinding",
+    "current_detail": "finding your way from one place to another",
+    "question": "Is this anchor right for the everyday sense, or only the science sense?",
+    "frequency": 5
+  }
+]

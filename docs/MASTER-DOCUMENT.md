@@ -48,7 +48,7 @@ Students never create accounts and we never hold their identity. That is the cen
 | CI | Runs on pull requests to `main`: dependency audit, lint, type-check, build, tests |
 | Deploys | Manual, via `scripts/deploy-backend.sh` |
 
-Not built, with specs: admin terminal and audit log (`docs/PRD-ADMIN-DATABASE.md`), interpreter marketplace and training loop (`docs/PRD-ML-FLYWHEEL.md`), licence enforcement (`company/PROVISIONING-AND-LICENSING.md`).
+Not built, with specs: admin terminal and audit log (`docs/PRD-ADMIN-DATABASE.md`), Lexicon flywheel phases 2–5: review gate, contributors, sound overrides, marketplace (`flywheel/`). Phase 1 capture, the admin flag queue and the Dual Codex override layer are built on branch `feat/lexicon-flywheel`, not yet deployed, licence enforcement (`company/PROVISIONING-AND-LICENSING.md`).
 
 ---
 
@@ -68,7 +68,7 @@ The source of truth is `SUPPORTED_LANGUAGES` in `backend/shared/types.ts`. The e
 | Persian | `persian` | `fa` | `fa-IR-DilaraNeural` | `fa-IR` | Live |
 | Portuguese | `portuguese` | `pt` | `pt-BR-AntonioNeural` | `pt-BR` | Live |
 | Somali | `somali` | `so` | `so-SO-MuuseNeural` | `so-SO` | Live |
-| Spanish | `spanish` | `es` | `es-US-AlonsoNeural` | `es-ES` | Live |
+| Spanish | `spanish` | `es` | `es-US-AlonsoNeural` | `es-US` (was `es-ES`, Spain, until Oct 2026) | Live |
 | Swahili | `swahili` | `sw` | `sw-KE-RafikiNeural` | `sw-KE` | Live |
 | Tagalog | `tagalog` | `fil` | `fil-PH-AngeloNeural` | `fil-PH` | Live |
 | Ukrainian | `ukrainian` | `uk` | `uk-UA-OstapNeural` | `uk-UA` | Live |
@@ -81,13 +81,15 @@ Notes:
 
 - **Smoke check, 10 October 2026:** 18 of 18 for translation and 18 of 18 for audio. It does not cover speech recognition.
 - **Dari.** Azure has no Dari voice or Dari speech recognition, so both use Persian. Until October 2026 the config named a voice Azure does not offer (`fa-AF-HasanNeural`), so every Dari audio request failed and the extension retried as Persian; that retry is still in the extension as a safety net. Translation uses Azure's Dari (`prs`), which gives noticeably different wording from Persian (`fa`). A Dari speaker has not yet reviewed it.
+- **Dialects (variants).** Spanish, Arabic, Pashto, French and Portuguese have optional dialects (`es-HN`, `es-CU`, `ar-SY`, `ps-PK`, …) that pick a regional voice, recognizer and Lexicon entries, falling back to the core language. Dialects never cross languages: Dari never falls back to Persian content. See `flywheel/VARIANTS.md`.
+- **Our own voices.** Piper models from a different language were removed from `voice-config.json` (Pashto had Persian, Urdu Arabic, Somali Swahili; Spanish had Argentine). Each `note` field says why.
 - **Removed and not coming back as-is:** Kinyarwanda, Twi and Tigrinya. Azure has no voice or speech recognition for any of them, and no translation for Twi.
 - **Requested by districts, not supported:** Haitian Creole, Kinyarwanda and Hmong have Azure translation but no Azure voice. They need our own voices; see [section 16](#16-roadmap-and-open-decisions).
 
 ### Adding a language
 
 1. Add the key to `SUPPORTED_LANGUAGES` in `backend/shared/types.ts`.
-2. Add a row to `backend/shared/voice-config.json`. Use a voice in that language. Never point a language at an English voice.
+2. Add a row to `backend/shared/voice-config.json`. Use a voice in that language. Never point a language at an English voice, or at a related language's voice. Dialects go in `backend/shared/variants.ts`, not here.
 3. Add the Translator code to the maps in `translate/index.ts` and `lexicon-lookup/index.ts`, and the STT locale in `speech-to-text/index.ts`.
 4. Extension: `lb-azure-core.js` (`LB_LANGUAGES`), `options/options.js`, `content/onboarding.js` (flag chip and order), and `_ISO_TO_LB` in `lb-translation-service.js`.
 5. `deliverables/talk-to-teacher-pwa/src/languages.ts`.
@@ -130,8 +132,11 @@ Code: `backend/azure-functions/<folder>/index.ts`. Every function is registered 
 | `analytics-writer` | `/api/analytics-writer` | POST | `analyticsWriter` | App key + student code | 300 per student |
 | `onboarding-schools` | `/api/onboarding/schools` | GET | `getSchools` | App key | 100 per client address |
 | `onboarding-enroll` | `/api/onboarding/enroll` | POST | `enroll` | App key | 100 per client address |
+| `onboarding-variants` | `/api/onboarding/variants` | GET | `getVariants` | App key | — |
 | `auth-layer` | `/api/auth-layer` | POST, GET | `authLayer` | Supabase JWT | — |
 | `dashboard` | `/api/dashboard` | POST | `dashboard` | Supabase JWT + `view_dashboard` | 100 per user |
+| `flag-queue-list` | `/api/flag-queue` | GET | `listFlagQueue` | Supabase JWT + super-admin | 100 per user |
+| `flag-queue-action` | `/api/flag-queue/{id}/action` | POST | `actOnFlag` | Supabase JWT + super-admin | 100 per user |
 
 What each does:
 
@@ -139,7 +144,8 @@ What each does:
 - **`translate`** — arbitrary text between two supported languages. 2,000 characters maximum.
 - **`ttsRouter`** — text in, signed audio URL out. Checks the blob cache first. 500 characters maximum, so clients chunk long text.
 - **`speechToText`** — base64 audio in, transcript out. 16 kHz mono WAV, 4 MB maximum. Audio is passed to Azure and not stored.
-- **`flagHandler`** — records a student's report that a translation or pronunciation is wrong. `flagType` is required.
+- **`flagHandler`** — records a report that a translation, pronunciation or speech recognition is wrong. `flagType` is required (`translation`, `pronunciation`, `recognition`). Optional scrubbed context, subject, seat role and surface. See `flywheel/README.md`.
+- **`listFlagQueue` / `actOnFlag`** — internal flag triage for super-admins. School codes are returned only as a count.
 - **`analyticsWriter`** — records anonymous usage events after the PII check.
 - **`getSchools` / `enroll`** — lists schools and issues a pseudonymous student code.
 - **`authLayer`** — turns a Supabase sign-in into permissions.
@@ -222,7 +228,7 @@ This is the method every change must follow. It is why districts can approve us.
 1. **No student identity, ever.** No names, emails, student IDs, addresses, dates of birth or device IDs. A student is a random code (`LB-XXXXXX`) generated at enrolment.
 2. **Reject PII at the door.** `checkForPII` runs before a write. It rejects 15 prohibited field names (`email`, `name`, `firstName`, `lastName`, `studentId`, `schoolId`, `teacherId`, `userId`, `phone`, `address`, `dob`, `dateOfBirth`, `ssn`, `ipAddress`, `deviceId`) and scans text values for emails, US phone numbers and Social Security numbers, five levels deep.
 3. **Process and discard.** Selected text and microphone audio go to Azure for processing and are not stored by us.
-4. **Only student-written text enters the flag pipeline.** Azure output is never stored in a flag. That keeps the future interpreter corrections our own work.
+4. **Flags store only what is needed to fix them, scrubbed.** A highlighted term with PII is rejected; surrounding context and speech (misheard transcripts, Talk to Teacher) are redacted and trimmed before storage; no audio; flag text never goes to logs. Recognition flags store redacted speech-to-text output so a person can fix it. **Store machine output to fix it; never train on it, sell it, or call it ours** — training exports are human-verified only (`flywheel/TRAINING-DATA-POLICY.md`). Whether Microsoft's terms allow storing it this way is **pending Chris** (`flywheel/OPEN-DECISIONS.md` #1).
 5. **Keys stay on a server.** The app key lives in the extension's service worker or behind a server-side proxy. It is never placed in a public web page.
 6. **No silent defaults.** Missing configuration fails loudly instead of quietly pointing at the wrong database.
 7. **Adults are the only accounts.** Teachers and admins sign in through Supabase. Students do not sign in.
@@ -256,7 +262,9 @@ Formal compliance documents (incident response, disaster recovery, risk assessme
 
 **Speech to text.** The client records the microphone, converts to 16 kHz mono 16-bit WAV, and posts base64 to `speechToText`, which passes it to Azure and returns the transcript.
 
-**Flags.** A flag stores the student's selected text, the language and a `flagType` of `translation` or `pronunciation`. Repeats of the same text and language increase a count, which drives the escalation in section 5.3.
+**Flags.** A flag stores the selected text, the language, a `flagType` of `translation`, `pronunciation` or `recognition`, and optionally a scrubbed context sample, subject, seat role and surface; school and grade band come from the enrollment. Repeats of the same text, language and subject increase one candidate's counts, which drive the escalation in section 5.3. The full pipeline is in `flywheel/SPEC.md`.
+
+**Lexicon overrides.** `lexiconLookup` never serves `deprecated` entries, ranks human-verified over glossary over machine-cached, and returns `entry_id` and `provenance`. `translate` applies approved phrase and fixed-term entries through Dual Codex (`backend/shared/dual-codex.ts`) when `LB_LEXICON_OVERRIDES=on`; it is off in production.
 
 ---
 
@@ -354,6 +362,8 @@ Endpoints are then at `http://localhost:7071/api/<route>`. `local.settings.json`
 | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | `auth-layer`, `dashboard` | Those two endpoints fail |
 | `LB_SUPERADMIN_EMAILS` | Dashboard sign-in | **No one can sign in to the dashboard** |
 | `LB_TTS_SERVICE_URL` | Proprietary voices | Audio uses Azure only |
+| `LB_LEXICON_OVERRIDES` | Dual Codex in `translate` (`on` to enable) | Off: `translate` is plain Azure. Leave off until `flywheel/DUAL-CODEX.md` checks pass |
+| `LB_LEXICON_OVERRIDE_TTL_MS` | Dual Codex cache lifetime | Defaults to 300000 (5 minutes) |
 | `LB_ALLOW_INSECURE_DEV` | Local only | Bypasses the app key. Never set it on a deployed app |
 
 ### 11.4 Quick check
@@ -466,7 +476,8 @@ Change these only with the reason in view.
 | Shared key for students, JWT for adults | Students must get help mid-lesson without an account. Teachers and admins need real identity and permissions |
 | Keys at a server-side edge | A key in a public bundle can be taken by anyone who views source |
 | Rate limits counted in Cosmos | In-memory counters do not work across multiple function instances |
-| Only student-written text in flags | Keeps interpreter corrections free of Azure-derived content |
+| Flags scrubbed, not Azure-free; training human-only | Recognition flags need the misheard transcript to be fixed, but machine output never enters training data or ownership claims (`flywheel/TRAINING-DATA-POLICY.md`) |
+| Dialects are variants with a fallback chain | One entry per real difference, never a copy per dialect; chains never cross languages, so Dari never falls back to Persian (`flywheel/VARIANTS.md`) |
 | `flagType` on every flag | Tells a future interpreter whether to re-record audio or fix text |
 | Bridge glosses are inline anchors | A reader needs a word that fits the sentence, not a paragraph |
 | Machine translations cached on first miss | The first lookup of an unknown term is slow; every later one is instant |
@@ -500,7 +511,8 @@ Commit-level detail is in `git log` and in `docs/dev-notes/`.
 | Now | Test the extension changes in Chrome; next Web Store release (brings Amharic and Uzbek to students); test Talk to Teacher in Amharic, Uzbek and Dari; Dari speaker review | `docs/dev-notes/` |
 | Next | Licence record and enforcement at enrolment (seats, term, status, demo) | `company/PROVISIONING-AND-LICENSING.md` |
 | During pilot | Admin terminal for flag triage, and an audit log | `docs/PRD-ADMIN-DATABASE.md` |
-| After pilot | Interpreter marketplace; corrections flow back into the lexicon | `docs/PRD-ML-FLYWHEEL.md` |
+| Now | Lexicon flywheel Phase 1: deploy capture + admin queue, run the bootstrap backlog | `flywheel/PHASES.md` |
+| After pilot | Lexicon flywheel Phases 2–5: paid linguists, two-approval gate, sound overrides, marketplace | `flywheel/SPEC.md` |
 | After pilot | Our own voices behind `LB_TTS_SERVICE_URL`; automated deploys | `ml-pipeline/` |
 
 Decisions waiting on Justin:
@@ -548,7 +560,8 @@ Found while reconciling. None are fixed by this document.
 | `company/` (canonical facts, pricing, provisioning, cost model, DPA template, FAQ, security overview, send checklist) | Different audience. Several are sent to districts as they are, and the DPA is a signable template |
 | `docs/compliance/` | Formal plans that districts and auditors ask for one at a time |
 | `docs/DPA-V2-DRAFT.md` | A legal draft awaiting review |
-| `docs/PRD-ADMIN-DATABASE.md`, `docs/PRD-ML-FLYWHEEL.md` | Specifications for things not built yet |
+| `docs/PRD-ADMIN-DATABASE.md` | Specification for things not built yet |
+| `flywheel/` | The Lexicon flywheel project: spec, data model, Dual Codex, phases, open decisions. Replaced `docs/PRD-ML-FLYWHEEL.md` (deleted Oct 2026) |
 | `docs/dev-notes/` | Dated notes per change. A log, not a reference |
 | `deliverables/` | Text that is pasted into the Chrome Web Store and the PWA hand-off |
 

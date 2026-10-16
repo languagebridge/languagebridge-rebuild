@@ -14,7 +14,7 @@ It is a Chrome extension (`extension/`) and a web app at languagebridge.app, bot
 | What changed recently | [docs/dev-notes/](docs/dev-notes/) |
 | Facts we may state to customers, pricing, the DPA | [company/](company/), starting with `00-CANONICAL-FACTS.md` |
 | Compliance plans | [docs/compliance/](docs/compliance/) |
-| Specs for what is not built yet | `docs/PRD-ADMIN-DATABASE.md`, `docs/PRD-ML-FLYWHEEL.md`, `company/PROVISIONING-AND-LICENSING.md` |
+| Specs for what is not built yet | `docs/PRD-ADMIN-DATABASE.md`, `flywheel/` (Lexicon flywheel), `company/PROVISIONING-AND-LICENSING.md` |
 | Every API request and response shape | `backend/shared/types.ts` |
 
 ## Quick start

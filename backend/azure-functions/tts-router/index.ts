@@ -6,6 +6,7 @@ import { getAudioCacheContainer, generateSasUrl } from '../../shared/blob-client
 import { getAudioCacheMetadataContainer } from '../../shared/cosmos-client';
 import { requireFields, isValidLanguage, isValidStudentCode, validateTTSText, validateApiKey, checkRateLimit, errorResponse } from '../../shared/validators';
 import voiceConfig from '../../shared/voice-config.json';
+import { isValidVariant, resolveAlongChain } from '../../shared/variants';
 
 /**
  * tts-router
@@ -47,11 +48,10 @@ export async function ttsRouter(
     return error(400, 'MISSING_FIELDS', `Missing required fields: ${fieldCheck.missing.join(', ')}`);
   }
 
-  const { text, language, studentCode } = body as TTSRequest;
+  const { text, language, studentCode, variant: requestedVariant } = body as TTSRequest;
   if (!isValidStudentCode(studentCode)) {
     return error(400, 'INVALID_STUDENT_CODE', 'studentCode is malformed');
   }
-  context.log(`tts-router request — student: ${studentCode}`);
 
   // ── 2b. Rate limit (per student, most expensive endpoint) ────
   // Lower limit — TTS generation is expensive (Azure API calls + blob upload)
@@ -72,7 +72,15 @@ export async function ttsRouter(
   }
 
   // ── 5. Generate cache key ──────────────────────────────────────
-  const textHash = createHash('sha256').update(`${text}::${language}`).digest('hex');
+  // Core-language audio keeps the original key (existing cache stays valid). A
+  // variant with its own voice gets its own key, so Honduran audio is never
+  // served from the core Spanish cache or vice versa.
+  const variant = isValidVariant(language, requestedVariant) ? requestedVariant : null;
+  const voice = resolveVoice(language, variant);
+  const coreVoice = resolveVoice(language, null);
+  const textHash = createHash('sha256')
+    .update(voice === coreVoice ? `${text}::${language}` : `${text}::${language}::${voice}`)
+    .digest('hex');
   const blobName = `${language}/${textHash}.mp3`;
 
   // ── 6. Check cache ─────────────────────────────────────────────
@@ -83,7 +91,7 @@ export async function ttsRouter(
 
     if (exists) {
       context.log(`Cache hit: ${blobName}`);
-      await incrementCacheHit(textHash);
+      await incrementCacheHit(textHash, language);
 
       const containerName = process.env.AZURE_STORAGE_CONTAINER_AUDIO ?? 'tts-audio-cache';
       const response: TTSResponse = {
@@ -108,7 +116,7 @@ export async function ttsRouter(
     try {
       const propResponse = await axios.post(
         `${proprietaryUrl}/synthesize`,
-        { text, language },
+        { text, language, variant },
         {
           headers: { 'Content-Type': 'application/json' },
           responseType: 'arraybuffer',
@@ -140,7 +148,7 @@ export async function ttsRouter(
     }
 
     try {
-      const ssml = buildSSML(text, language);
+      const ssml = buildSSML(text, language, variant);
       const ttsResponse = await axios.post(
         `https://${ttsRegion}.tts.speech.microsoft.com/cognitiveservices/v1`,
         ssml,
@@ -163,7 +171,8 @@ export async function ttsRouter(
           ? Buffer.from(err.response.data).toString('utf8')
           : '(empty)';
         context.log(`Azure TTS failed — status: ${status}, body: ${body}`);
-        context.log(`SSML sent: ${buildSSML(text, language)}`);
+        // Voice only — the SSML contains the student's selected text, which never goes to logs.
+        context.log(`Voice requested: ${voice}`);
       } else {
         context.log('Azure TTS failed:', err);
       }
@@ -248,9 +257,16 @@ function escapeXml(s: string): string {
     .replace(/"/g, '&quot;');
 }
 
-function buildSSML(text: string, language: string): string {
+/** Azure voice for a language + optional variant (shared/variants.ts), else the core voice. */
+export function resolveVoice(language: string, variant: string | null): string {
+  const variantVoice = resolveAlongChain(language, variant, (v) => v.azureVoice);
+  if (variantVoice) return variantVoice;
   const langConfig = (voiceConfig as Record<string, { azure_voice: string }>)[language];
-  const voice = langConfig?.azure_voice ?? 'en-US-AndrewNeural';
+  return langConfig?.azure_voice ?? 'en-US-AndrewNeural';
+}
+
+function buildSSML(text: string, language: string, variant: string | null = null): string {
+  const voice = resolveVoice(language, variant);
   const langCode = voice.split('-').slice(0, 2).join('-');
 
   return `<speak version='1.0' xml:lang='${langCode}'>
@@ -260,10 +276,12 @@ function buildSSML(text: string, language: string): string {
   </speak>`;
 }
 
-async function incrementCacheHit(textHash: string): Promise<void> {
+// audio_cache_metadata is partitioned by /language (verified live, 16 Oct 2026);
+// the old item(textHash, textHash) never matched, so hitCount never moved.
+async function incrementCacheHit(textHash: string, language: string): Promise<void> {
   try {
     const container = getAudioCacheMetadataContainer();
-    await container.item(textHash, textHash).patch([
+    await container.item(textHash, language).patch([
       { op: 'incr', path: '/hitCount', value: 1 },
     ]);
   } catch {

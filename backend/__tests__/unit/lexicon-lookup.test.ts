@@ -145,6 +145,21 @@ describe('lexicon-lookup', () => {
     delete process.env.AZURE_TRANSLATOR_REGION;
   });
 
+  it('never caches a translator echo of the input (e.g. French "les" looked up as Somali)', async () => {
+    mockQuery.mockResolvedValue({ resources: [] });
+    const axios = require('axios');
+    axios.post.mockResolvedValue({ data: [{ translations: [{ text: 'les' }] }] });
+    process.env.AZURE_TRANSLATOR_KEY = 'test-key';
+    process.env.AZURE_TRANSLATOR_REGION = 'eastus';
+
+    const response = await lexiconLookup(makeRequest({ ...validBody, term: 'Les', language: 'somali' }), makeContext());
+    expect(response.status).toBe(200);
+    expect(mockUpsert).not.toHaveBeenCalled();
+
+    delete process.env.AZURE_TRANSLATOR_KEY;
+    delete process.env.AZURE_TRANSLATOR_REGION;
+  });
+
   it('increments usage_count on lexicon hit when cognate exists', async () => {
     mockQuery.mockResolvedValue({
       resources: [{

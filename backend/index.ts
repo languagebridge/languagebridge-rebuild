@@ -19,3 +19,4 @@ import './azure-functions/onboarding/index';
 import './azure-functions/dashboard/index';
 import './azure-functions/speech-to-text/index';
 import './azure-functions/translate/index';
+import './azure-functions/flag-queue/index';

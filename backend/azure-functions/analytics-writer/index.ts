@@ -5,9 +5,9 @@ import {
   AnalyticsWriterResponse,
   AnalyticsWriterErrorResponse,
   SessionUsageDoc,
-  EnrollmentDoc,
 } from '../../shared/types';
-import { getSessionsContainer, getEnrollmentsContainer } from '../../shared/cosmos-client';
+import { getSessionsContainer } from '../../shared/cosmos-client';
+import { findEnrollment } from '../../shared/enrollments';
 import { checkForPII, requireFields, isValidLanguage, isValidStudentCode, validateApiKey, errorResponse, checkRateLimit } from '../../shared/validators';
 
 /**
@@ -106,8 +106,7 @@ export async function analyticsWriter(
   let schoolCode = 'unknown';
   let gradeBand: string = 'unknown';
   try {
-    const enrollments = getEnrollmentsContainer();
-    const { resource } = await enrollments.item(req.studentCode, req.studentCode).read<EnrollmentDoc>();
+    const resource = await findEnrollment(req.studentCode);
     if (resource) {
       schoolCode = resource.schoolCode;
       gradeBand = resource.gradeBand;
