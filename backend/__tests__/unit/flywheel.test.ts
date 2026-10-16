@@ -161,7 +161,22 @@ describe('flag-handler — flywheel capture', () => {
     expect((res.jsonBody as { status: string }).status).toBe('dismissed');
   });
 
-  it('still works when the enrollment lookup fails', async () => {
+  it('rejects junk flags with no words', async () => {
+    for (const flaggedText of ['   ', '...', '12 34', '!!']) {
+      const res = await flagHandler(makeRequest({ ...base, flaggedText }), makeContext());
+      expect(res.status).toBe(400);
+    }
+    expect(mockCreate).not.toHaveBeenCalled();
+  });
+
+  it('tags passages so the fixer must name the wrong word', async () => {
+    mockPatch.mockRejectedValueOnce(new Error('Not found'));
+    mockCreate.mockResolvedValueOnce({});
+    await flagHandler(makeRequest({ ...base, flaggedText: 'the articles of confederation established the first national government' }), makeContext());
+    expect(mockCreate.mock.calls[0][0].scope).toBe('passage');
+  });
+
+    it('still works when the enrollment lookup fails', async () => {
     mockEnrollmentRead.mockRejectedValueOnce(new Error('down'));
     mockPatch.mockRejectedValueOnce(new Error('Not found'));
     mockCreate.mockResolvedValueOnce({});

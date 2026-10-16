@@ -40,6 +40,13 @@ Branch: `feat/lexicon-flywheel`. Project home: `flywheel/` (start at `flywheel/R
 - `lexicon-lookup` no longer caches a translator echo of the input (found live: Somali "les" → "les").
 - Verified read-only against production: 12 open flags exported; dry-run publish exercised the gate (self-review blocked, dismiss path, version-2 entry planned). Nothing written.
 
+**Storage cleanup (fifth pass)**
+- Audit of production `lexicon` (read-only): 150,461 rows, well partitioned, no RBERN duplicates; but 1,271 Azure answers cached inside it (482 junk), 98 Azure translations written into bridge rows, and 9,445 terms split across an RBERN row and a bridge row of which lookup served only one (so it called Azure even when RBERN had the translation).
+- `lexicon-lookup`: merges the translation row and the bridge-gloss row; Azure answers read from and written to the new `lexicon_machine_cache` only; never caches echoes, passages, English→English or text without letters.
+- `flag-handler`: rejects flags with no letters (`INVALID_TEXT`), tags `scope: term | passage`.
+- `flywheel/scripts/clean-lexicon.mjs`: `--phase junk` APPLIED in production 16 Oct (482 deleted, 20 "producer" glosses fixed; 502-document backup in `flywheel/backlog/`, gitignored). `--phase split` must run after deploy.
+- PRODUCTION-LOOP §9–10: English sentence menu (authored / AI-draft-reviewed / remix — never machine translations), recording menu, copy check, junk gates.
+
 **Docs** — MASTER-DOCUMENT §2, §5.1, §7.1 rule 4 (rewritten, pending Chris), §8, §11.3, §14, §16, §18; README; company overview moat paragraph.
 
 ## Tested
@@ -60,6 +67,7 @@ Branch: `feat/lexicon-flywheel`. Project home: `flywheel/` (start at `flywheel/R
 - [ ] Manual Chrome test, then version bump + Web Store release.
 - [ ] Chris: Azure-output ownership (gates recognition flags), contributor agreement, NDPA clause, retention window.
 - [ ] Review `flywheel/backlog/candidates.csv` with Justin.
+- [ ] **Right after deploy:** `node flywheel/scripts/clean-lexicon.mjs --phase split --az --write`. Before it runs, lookups still find the 789 old machine rows in `lexicon` (harmless); new Azure answers go to the cache, whose container the script creates — until then cache writes fail quietly and lookups call Azure.
 - [ ] Prentice: internal flag queue page.
 - [ ] Onboarding flow offers the dialect picker (today only Settings).
 - [ ] Recorder writes speaker / release / authorship metadata per clip.

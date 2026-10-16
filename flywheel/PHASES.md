@@ -59,7 +59,10 @@ Dashboard (Prentice)
 Manual loop (bridges to Phase 2)
 - ✅ `export-flag-queue.mjs` (read-only) and `publish-approved.mjs` (dry run by default; enforces the two-approval gate) — verified against production read-only
 - ⬜ Triage the 12 live flags: dismiss the 4 empty legacy flags; name `source_term` for the 4 passages
-- ⬜ Clean polluted machine-cache rows (echoes like Somali "les"; passage-length "terms") — production write, needs go-ahead
+- ✅ Lexicon junk cleanup applied in production (16 Oct): 482 junk machine rows deleted, "producer" fixed; backup kept locally
+- ✅ Lookup merges RBERN translation + bridge gloss rows; Azure answers go to `lexicon_machine_cache`, never `lexicon`
+- ⬜ After deploy: `clean-lexicon.mjs --phase split --az --write` (creates the cache container, moves 789 + 98 Azure translations out of `lexicon`)
+- ⬜ Phase 4: English sentence bank + sentence/recording menus + copy check + junk gates (PRODUCTION-LOOP §9–10)
 
 Bootstrap
 - ✅ `flywheel/scripts/bootstrap-candidates.mjs` — science-only bridge backlog (offline), Dari-as-Persian list (`--live`, read-only)

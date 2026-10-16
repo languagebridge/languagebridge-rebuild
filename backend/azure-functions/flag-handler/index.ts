@@ -12,6 +12,7 @@ import {
   FLAG_TYPES,
   FLAG_THRESHOLDS,
   FLAG_CONTEXT_SAMPLE_CAP,
+  FLAG_MAX_TERM_WORDS,
 } from '../../shared/types';
 import { getFlagsContainer } from '../../shared/cosmos-client';
 import { findEnrollment } from '../../shared/enrollments';
@@ -115,9 +116,13 @@ export async function flagHandler(
     }
     flaggedText = req.flaggedText.toLowerCase().trim();
   }
-  if (flaggedText.length === 0) {
-    return error(400, 'MISSING_FIELDS', 'flaggedText is empty after normalization');
+  // Junk guard: the Oct 2026 audit found empty flags in production. A flag must
+  // contain at least one letter in any script.
+  flaggedText = flaggedText.replace(/\s+/g, ' ');
+  if (!/\p{L}/u.test(flaggedText)) {
+    return error(400, 'INVALID_TEXT', 'Flagged text must contain words');
   }
+  const scope: FlagDoc['scope'] = flaggedText.split(' ').length > FLAG_MAX_TERM_WORDS ? 'passage' : 'term';
 
   // ── 4. Rate limit ──────────────────────────────────────────────
   const rateCheck = await checkRateLimit(`flag:${studentCode}`);
@@ -188,6 +193,7 @@ export async function flagHandler(
         language,
         subject,
         variant,
+        scope,
         flagCount: 1,
         pronunciationFlagCount: flagType === 'pronunciation' ? 1 : 0,
         translationFlagCount: flagType === 'translation' ? 1 : 0,

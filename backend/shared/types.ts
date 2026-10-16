@@ -286,7 +286,7 @@ export type FlagHandlerResponse = {
 };
 
 export type FlagHandlerErrorResponse = {
-  error: 'UNAUTHORIZED' | 'RATE_LIMITED' | 'MISSING_FIELDS' | 'INVALID_LANGUAGE' | 'INVALID_FLAG_TYPE' | 'PII_VIOLATION' | 'TEXT_TOO_LONG' | 'INTERNAL_ERROR';
+  error: 'UNAUTHORIZED' | 'RATE_LIMITED' | 'MISSING_FIELDS' | 'INVALID_LANGUAGE' | 'INVALID_FLAG_TYPE' | 'INVALID_TEXT' | 'PII_VIOLATION' | 'TEXT_TOO_LONG' | 'INTERNAL_ERROR';
   details: string;
 };
 
@@ -392,6 +392,7 @@ export type FlagDoc = {
   language: SupportedLanguage;
   subject?: string | null;
   variant?: string | null;            // Part of the key — a Honduran fix is a different candidate from a core one
+  scope?: 'term' | 'passage';         // > FLAG_MAX_TERM_WORDS words = passage: the fixer must name the wrong word
   flagCount: number;                  // Total flags across all types
   pronunciationFlagCount: number;     // "wrong sound"
   translationFlagCount: number;       // "wrong meaning"
@@ -432,6 +433,7 @@ export type FlagContextSample = {
 };
 
 export const FLAG_CONTEXT_SAMPLE_CAP = 10;
+export const FLAG_MAX_TERM_WORDS = 6;
 
 export type PilotDoc = {
   id: string;             // e.g. 'PCSD-2026'

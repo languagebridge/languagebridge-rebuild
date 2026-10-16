@@ -18,6 +18,8 @@ The rule in one line: **store machine output when it helps us fix it; never trai
 | RBERN glossary terms (`created_by: rbern_glossary`) | Yes — a starting point | After a contributor verifies them (they become `approved`) | The evolved, verified entries — never the RBERN glossaries as-is (#12) |
 | AI-drafted text a human did not substantially rewrite (`ai_assisted: true`, no human edit) | Yes, as a draft | No | No |
 | Student text (highlights, flagged context, Talk to Teacher) | Only as scrubbed flag context | **Never** | **Never** |
+| English source sentences we authored, AI-drafted and human-reviewed, or remixed from our own approved sentences | Yes | Yes (as the source side of pairs) | Yes |
+| Text copied from curriculum pages, the web, or RBERN examples | No | **Never** | **Never** |
 | Student audio | Not stored | **Never** | **Never** |
 
 Why machine output stays out of training even though we may store it: Microsoft's terms may restrict using service output to build competing services (Chris to confirm, #1), and a model trained on Azure output would inherit Azure's errors and weaken any claim that the result is ours.

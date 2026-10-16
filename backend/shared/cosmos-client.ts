@@ -58,6 +58,15 @@ export function getLexiconContainer(): Container {
   return getDatabase().container('lexicon');
 }
 
+/**
+ * Azure Translator answers cached on lookup. Kept OUT of `lexicon` so the Lexicon
+ * holds only our data (glossary + human-verified). Partition key /language;
+ * container TTL expires entries (created by flywheel/scripts/clean-lexicon.mjs).
+ */
+export function getLexiconMachineCacheContainer(): Container {
+  return getDatabase().container('lexicon_machine_cache');
+}
+
 export function getEnrollmentsContainer(): Container {
   return getDatabase().container('enrollments');
 }

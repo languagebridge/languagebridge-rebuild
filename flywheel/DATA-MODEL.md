@@ -70,7 +70,7 @@ Partition key: `/language`. Existing `LexiconDoc` plus three additive fields.
 
 Lookup ranking: subject match → provenance (human_verified, glossary, machine) → version.
 
-**Known debt:** Azure answers cached on a lookup miss live in the same container as owned entries, told apart only by `status`/`created_by`. Before Phase 2 publishes the first approved entry, decide whether to move the machine cache to its own container (cleaner for IP audits and exports). Recommendation: move it.
+**Machine cache (decided, built 16 Oct 2026):** Azure answers no longer go into `lexicon`. `lexicon-lookup` reads and writes `lexicon_machine_cache` instead, and serves the translation half and the bridge-gloss half of a term from separate rows when they are split (RBERN + bridge). The junk cleanup ran 16 Oct (482 rows deleted, 20 "producer" glosses fixed, backup kept locally). After deploying, run `clean-lexicon.mjs --phase split --az --write` to move the remaining 789 cached rows and the 98 Azure translations inside bridge rows.
 
 ---
 
@@ -92,8 +92,9 @@ Lookup ranking: subject match → provenance (human_verified, glossary, machine)
 | `contributors` | `/id` | Role (contributor/reviewer/lead), languages, agreement signed date + version, agreement-rate score, demotion state. No pay details (payment processor holds those) | 2 |
 | `pronunciations` | `/language` | `{ sense_key, ipa | sapi, alphabet, authored_by, status }` → SSML `<phoneme>` or custom lexicon file | 3 |
 | `recognition_phrases` | `/language` | `{ phrase, subject, authored_by, status }` → per-language/subject phrase list | 3 |
-| `example_sentences` | `/sense_key` | `{ en, target, grade_band, authored_by, ai_assisted, status }`. Student text never allowed | 4 |
-| `lexicon_machine_cache` | `/language` | Azure answers cached on lookup miss, moved out of `lexicon` (see known debt) | 2 (recommended) |
+| `english_sentences` | `/sense_key` | The menu: `{ text, term, grade_band, subject, origin: authored \| ai_draft \| remix, authored_by, reviewed_by, status }`. Never machine translations, student text or copied text | 4 |
+| `target_sentences` | `/language` | `{ english_sentence_id, text, variant, authored_by, ai_assisted, reviewed_by, copy_check_score, status }` | 4 |
+| `lexicon_machine_cache` | `/language` | Azure answers, 90-day TTL. **Code built**; container is created by `clean-lexicon.mjs --phase split` after deploy | now |
 
 Create containers in a seed/migration script modelled on `scripts/seed-pilot-schools.ts` (`createIfNotExists`). Add new accessors to `backend/shared/cosmos-client.ts`.
 

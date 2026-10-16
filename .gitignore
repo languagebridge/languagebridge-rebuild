@@ -87,3 +87,4 @@ DPA.pdf
 
 # Flywheel exports contain scrubbed student-flagged text — never commit them
 flywheel/backlog/flag-queue-*.csv
+flywheel/backlog/cleanup-backup-*.json

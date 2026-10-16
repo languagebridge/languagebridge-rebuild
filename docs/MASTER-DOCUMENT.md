@@ -183,21 +183,22 @@ Never construct a Cosmos or Blob client anywhere else.
 
 ### 6.1 Cosmos DB
 
-One database, named by `COSMOS_DB_DATABASE` (production: `languagebridge-prod`). Nine containers:
+One database, named by `COSMOS_DB_DATABASE` (production: `languagebridge-prod`, account `languagebridge-cosmos` in resource group `languagebridge-rg`). Ten containers, all autoscale 100–1,000 RU/s:
 
-| Container | Holds |
-|---|---|
-| `lexicon` | The bilingual glossary: term, translation, bridge gloss, subject, grade band |
-| `sessions` | Anonymous usage events |
-| `enrollments` | Student code, school code, grade band. No names |
-| `flags` | Student-reported problems, deduplicated by text and language |
-| `pilots` | School and pilot configuration. Planned home of the licence record |
-| `admin_users` | Dashboard users and their permissions |
-| `audio_cache_metadata` | Index of generated audio clips |
-| `analytics` | Derived reporting data |
-| `rate_limits` | Rate-limit counters. Each document deletes itself after 120 seconds |
+| Container | Partition key | Holds |
+|---|---|---|
+| `lexicon` | `/language` | **Our data only:** RBERN glossary, bridge glosses, human-verified entries |
+| `lexicon_machine_cache` | `/language` | Azure Translator answers served as a fallback; 90-day expiry; never ours. Created by `flywheel/scripts/clean-lexicon.mjs --phase split` |
+| `sessions` | `/pilotId` | Anonymous usage events |
+| `enrollments` | `/schoolCode` | Student code, school code, grade band, optional dialect. No names. Look up by student code with `findEnrollment` (`shared/enrollments.ts`), never a point read |
+| `flags` | `/language` | Flag candidates, deduplicated by text, language, subject and dialect |
+| `pilots` | `/id` | School and pilot configuration. Planned home of the licence record |
+| `admin_users` | `/email` | Dashboard users and their permissions |
+| `audio_cache_metadata` | `/language` | Index of generated audio clips |
+| `analytics` | `/pilotId` | Derived reporting data |
+| `rate_limits` | `/partitionKey` | Rate-limit counters. Each document deletes itself after 120 seconds |
 
-Partition keys and indexes were not re-checked for this document.
+Partition keys verified against production on 16 Oct 2026.
 
 ### 6.2 Blob Storage
 
@@ -213,9 +214,13 @@ Audio is served through signed URLs that expire after one hour.
 
 - **Translations** from the NYU Steinhardt RBERN bilingual glossaries.
 - **Bridge glosses:** about 1,080 short simple-English anchors of one to three words that fit inside the sentence ("light-feeding" for photosynthesis). They are not dictionary definitions.
-- **Cached machine translations**, added automatically the first time a term misses.
+- **Human-verified entries** published through the flywheel (`status: approved`).
 
-Known data problems: about 319 of the bridge entries are science-only and some give a common word a narrow science meaning. The source for "producer" was corrected in June but the live database was not updated. Lexicon rows for the three removed languages are still in the database and unreachable. Dari terms that missed the glossary before October 2026 were machine-translated as Persian and cached under `dari`; they are still served until cleared.
+A term's translation (RBERN row) and its bridge gloss (bridge row) are often separate rows; lookup serves both halves together. Azure answers are not part of the lexicon (see `lexicon_machine_cache`).
+
+Cleanup on 16 October 2026: 482 junk machine rows deleted (echoes, passages stored as terms, English-to-English, Dari cached as Persian, removed languages) and the "producer" gloss corrected; backup kept outside git. Still to do after the next deploy: move the remaining 789 cached Azure answers and 98 Azure translations inside bridge rows to `lexicon_machine_cache` (`clean-lexicon.mjs --phase split`).
+
+Known data problems: about 319 of the bridge entries are science-only and some give a common word a narrow science meaning (`flywheel/backlog/candidates.csv`). Glossary rows for the three removed languages are kept on purpose as reference data.
 
 ---
 

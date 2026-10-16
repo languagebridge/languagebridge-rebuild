@@ -27,6 +27,7 @@ const cosmosStore: Record<string, Map<string, Record<string, unknown>>> = {
   audio_cache_metadata: new Map(),
   rate_limits: new Map(),
   analytics: new Map(),
+  lexicon_machine_cache: new Map(),
 };
 
 // Populate pilot school
@@ -120,6 +121,7 @@ jest.mock('../../shared/cosmos-client', () => ({
   getPilotsContainer: () => mockContainer('pilots'),
   getEnrollmentsContainer: () => mockContainer('enrollments'),
   getLexiconContainer: () => mockContainer('lexicon'),
+  getLexiconMachineCacheContainer: () => mockContainer('lexicon_machine_cache'),
   getSessionsContainer: () => mockContainer('sessions'),
   getFlagsContainer: () => mockContainer('flags'),
   getAudioCacheMetadataContainer: () => mockContainer('audio_cache_metadata'),

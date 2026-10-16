@@ -33,6 +33,7 @@ const out = resolve(root, arg('--out') ?? `flywheel/backlog/flag-queue-${new Dat
 const db = await connect({ readOnly: true });
 const flags = db.container('flags');
 const lexicon = db.container('lexicon');
+const machineCache = db.container('lexicon_machine_cache');   // may not exist before the split phase
 
 const where = [`ARRAY_CONTAINS(@open, c.status)`, 'c.flagCount >= @min'];
 const parameters = [{ name: '@open', value: OPEN }, { name: '@min', value: minReports }];
@@ -50,6 +51,11 @@ for (const f of candidates) {
       { partitionKey: f.language }
     )
     .fetchAll();
+  let cached = null;
+  try {
+    const id = `${f.flaggedText.trim().toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '_')}_${f.language}`;
+    ({ resource: cached } = await machineCache.item(id, f.language).read());
+  } catch { /* no cache container or no entry */ }
   rows.push({
     flag_id: f.id,
     language: f.language,
@@ -63,7 +69,7 @@ for (const f of candidates) {
     recognition_reports: f.recognitionFlagCount ?? 0,
     status: f.status,
     contexts: (f.contexts ?? []).map((c) => c.text || c.intendedText).filter(Boolean).join(' | '),
-    currently_served: summarizeServed(served) || '(nothing in Lexicon — Azure)',
+    currently_served: summarizeServed(served) || (cached?.cognate ? `${cached.cognate} [machine cache]` : '(nothing stored — live Azure)'),
   });
 }
 

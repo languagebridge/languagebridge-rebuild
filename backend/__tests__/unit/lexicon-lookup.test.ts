@@ -7,6 +7,8 @@ const mockQuery = jest.fn();
 const mockPatch = jest.fn();
 const mockUpsert = jest.fn();
 const mockAnalyticsCreate = jest.fn();
+const mockCacheRead = jest.fn();
+const mockCacheUpsert = jest.fn();
 
 jest.mock('../../shared/cosmos-client', () => ({
   getLexiconContainer: () => ({
@@ -18,6 +20,10 @@ jest.mock('../../shared/cosmos-client', () => ({
   }),
   getAnalyticsContainer: () => ({
     items: { create: mockAnalyticsCreate },
+  }),
+  getLexiconMachineCacheContainer: () => ({
+    item: () => ({ read: mockCacheRead }),
+    items: { upsert: mockCacheUpsert },
   }),
   getRateLimitContainer: () => ({
     item: () => ({ patch: jest.fn().mockResolvedValue({ resource: { count: 1 } }) }),
@@ -55,6 +61,8 @@ beforeEach(() => {
   mockPatch.mockReturnValue({ catch: jest.fn() });
   mockUpsert.mockReturnValue({ catch: jest.fn() });
   mockAnalyticsCreate.mockReturnValue({ catch: jest.fn() });
+  mockCacheRead.mockResolvedValue({ resource: undefined });
+  mockCacheUpsert.mockReturnValue({ catch: jest.fn() });
 });
 
 describe('lexicon-lookup', () => {
@@ -155,6 +163,8 @@ describe('lexicon-lookup', () => {
     const response = await lexiconLookup(makeRequest({ ...validBody, term: 'Les', language: 'somali' }), makeContext());
     expect(response.status).toBe(200);
     expect(mockUpsert).not.toHaveBeenCalled();
+    expect(mockCacheUpsert).not.toHaveBeenCalled();
+    expect((response.jsonBody as Record<string, unknown>).cognate).toBeNull();
 
     delete process.env.AZURE_TRANSLATOR_KEY;
     delete process.env.AZURE_TRANSLATOR_REGION;
@@ -182,7 +192,7 @@ describe('lexicon-lookup', () => {
     ]);
   });
 
-  it('backfills cognate via translator when lexicon entry has null cognate', async () => {
+  it('fills a missing cognate from Azure WITHOUT writing it into the Lexicon row', async () => {
     mockQuery.mockResolvedValue({
       resources: [{
         id: 'test_dari_bridge',
@@ -212,11 +222,52 @@ describe('lexicon-lookup', () => {
     expect(response.status).toBe(200);
     expect(body.source).toBe('lexicon');
     expect(body.cognate).toBe('فتوسنتز');
-    // Should patch both cognate and usage_count
-    expect(mockPatch).toHaveBeenCalledWith([
-      { op: 'set', path: '/cognate', value: 'فتوسنتز' },
-      { op: 'incr', path: '/usage_count', value: 1 },
-    ]);
+    expect(body.provenance).toBe('machine');
+    // Lexicon row only gets its usage count; the Azure answer goes to the machine cache
+    expect(mockPatch).toHaveBeenCalledWith([{ op: 'incr', path: '/usage_count', value: 1 }]);
+    expect(mockCacheUpsert).toHaveBeenCalledWith(expect.objectContaining({ cognate: 'فتوسنتز', language: 'dari', source: 'azure_translator' }));
+
+    delete process.env.AZURE_TRANSLATOR_KEY;
+    delete process.env.AZURE_TRANSLATOR_REGION;
+  });
+
+  it('merges the RBERN translation and the bridge gloss for the same term — no Azure call', async () => {
+    mockQuery.mockResolvedValue({
+      resources: [
+        { id: 'p_dari_bridge', term: 'photosynthesis', language: 'dari', cognate: null, bridge_anchor: 'light-feeding', bridge_scaffold: 'how plants make food', status: 'pending_review', created_by: 'bridge_pipeline_v1', version: 1 },
+        { id: 'p_dari_rbern', term: 'photosynthesis', language: 'dari', cognate: 'فتوسنتز', bridge_anchor: null, status: 'pending_review', created_by: 'rbern_glossary', version: 1 },
+      ],
+    });
+    const axios = require('axios');
+    axios.post.mockClear();
+
+    const response = await lexiconLookup(makeRequest(validBody), makeContext());
+    const body = response.jsonBody as Record<string, unknown>;
+    expect(body).toMatchObject({ cognate: 'فتوسنتز', bridge_anchor: 'light-feeding', type: 'bridge', provenance: 'glossary', entry_id: 'p_dari_rbern' });
+    expect(axios.post).not.toHaveBeenCalled();
+  });
+
+  it('serves a cached machine translation without calling Azure', async () => {
+    mockQuery.mockResolvedValue({ resources: [] });
+    mockCacheRead.mockResolvedValue({ resource: { cognate: 'ترجمه' } });
+    const axios = require('axios');
+    axios.post.mockClear();
+
+    const response = await lexiconLookup(makeRequest({ ...validBody, term: 'mitochondria' }), makeContext());
+    expect((response.jsonBody as Record<string, unknown>).cognate).toBe('ترجمه');
+    expect(axios.post).not.toHaveBeenCalled();
+  });
+
+  it('never caches a whole passage as a term', async () => {
+    mockQuery.mockResolvedValue({ resources: [] });
+    const axios = require('axios');
+    axios.post.mockResolvedValue({ data: [{ translations: [{ text: 'متن طولانی' }] }] });
+    process.env.AZURE_TRANSLATOR_KEY = 'test-key';
+    process.env.AZURE_TRANSLATOR_REGION = 'eastus';
+
+    await lexiconLookup(makeRequest({ ...validBody, term: 'what document established the first national government of the united states' }), makeContext());
+    expect(mockCacheUpsert).not.toHaveBeenCalled();
+    expect(mockUpsert).not.toHaveBeenCalled();
 
     delete process.env.AZURE_TRANSLATOR_KEY;
     delete process.env.AZURE_TRANSLATOR_REGION;

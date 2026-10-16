@@ -11,7 +11,7 @@
 | 7 | First three languages | Justin | Phase 2 | By flag volume once data exists; by bootstrap backlog until then |
 | 8 | Build ownership | Justin | — | Proposed: Matt = backend + scripts, Prentice = queue and review UI |
 | 9 | Custom Translator per language — whether and when | Justin | Later | Needs a meaningful number of approved sentence pairs per language |
-| 10 | Move Azure machine cache out of `lexicon` before first approved entry | Justin / Matt | Phase 2 | Recommended yes |
+| 10 | ✅ **Done (16 Oct):** Azure machine cache moved out of `lexicon` into `lexicon_machine_cache` (code built; data split runs after deploy) | — | — | `clean-lexicon.mjs --phase split` |
 | 11 | Do teachers flag from the extension with a student code, or from the dashboard with their login? | Justin / Prentice | Teacher seat role | Today only the extension flags, and `seatRole` is client-declared |
 | 12 | ✅ **Decided (Justin, 16 Oct):** RBERN word pairs are facts and are used as a starting point only. We evolve them: every entry a contributor reviews or rewrites becomes our own human-verified entry. Guardrail: never redistribute or export the RBERN glossaries as-is | — | — | Glossary rows are served; they join training data once a contributor has verified them (TRAINING-DATA-POLICY §1) |
 | 13 | ✅ **Decided (Justin, 16 Oct):** the voice release is part of the contributor terms of service, accepted before anyone contributes. Remaining for Chris: the wording (synthetic-voice use, payment, withdrawal), and making acceptance an explicit, logged step | Chris (wording) | Any Record task | Store accepted version + timestamp per contributor |
