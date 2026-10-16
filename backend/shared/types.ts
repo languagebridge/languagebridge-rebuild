@@ -358,6 +358,7 @@ export type LexiconLookupErrorResponse = {
 export type SessionUsageDoc = {
   id: string;             // UUID
   studentCode: string;    // Pseudonymous code (e.g. "LB-7K2M")
+  pilotId: string;        // Partition key. Resolved from studentCode at write time ('unknown' if unresolved)
   schoolCode: string;     // Resolved from studentCode at write time
   gradeBand: GradeBand;   // Resolved from studentCode at write time
   language: SupportedLanguage;

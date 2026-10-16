@@ -47,6 +47,13 @@ Branch: `feat/lexicon-flywheel`. Project home: `flywheel/` (start at `flywheel/R
 - `flywheel/scripts/clean-lexicon.mjs`: `--phase junk` APPLIED in production 16 Oct (482 deleted, 20 "producer" glosses fixed; 502-document backup in `flywheel/backlog/`, gitignored). `--phase split` must run after deploy.
 - PRODUCTION-LOOP §9–10: English sentence menu (authored / AI-draft-reviewed / remix — never machine translations), recording menu, copy check, junk gates.
 
+**Metrics data (sixth pass)**
+- Production check: 7,036 `sessions` events stored with school `unknown` (the enrollment bug) — every dashboard query filters by school, so district reports were empty. Almost no event had `pilotId`, the partition key of `sessions` and `analytics`.
+- `shared/enrollments.ts`: `findPilotId` and `resolveStudentScope` (student → school, grade, pilot; cached; never throws). `analytics-writer`, `lexicon-lookup` and `translate` now write `pilotId` on every event (`'unknown'` when unresolved).
+- `backend/scripts/backfill-session-scope.mjs`: repairs school and grade on old events from enrollments. Dry run verified read-only: 7,033 of 7,036 repairable (Greenbriar 4,899, demo 2,134). **Not applied** — the write was blocked by the permission check; run it by hand. Old events keep no `pilotId` (partition keys can't change in place); dashboard queries still find them.
+- Azure Monitor returned no request metrics for the account (only storage), so there is no alerting on throttling yet.
+- Baseline: 1,276 of 2,137 lookups (60%) answered by Azure before the cleanup.
+
 **Docs** — MASTER-DOCUMENT §2, §5.1, §7.1 rule 4 (rewritten, pending Chris), §8, §11.3, §14, §16, §18; README; company overview moat paragraph.
 
 ## Tested
@@ -67,6 +74,9 @@ Branch: `feat/lexicon-flywheel`. Project home: `flywheel/` (start at `flywheel/R
 - [ ] Manual Chrome test, then version bump + Web Store release.
 - [ ] Chris: Azure-output ownership (gates recognition flags), contributor agreement, NDPA clause, retention window.
 - [ ] Review `flywheel/backlog/candidates.csv` with Justin.
+- [ ] Run `node backend/scripts/backfill-session-scope.mjs --az --write` (repairs 7,033 dashboard events; production write).
+- [ ] Run `node flywheel/scripts/clean-lexicon.mjs --phase split --az --write` (creates `lexicon_machine_cache`; needed before deploy).
+- [ ] Cosmos alert on 429s / normalized RU > 80%; find out why Azure Monitor shows no request metrics.
 - [ ] **Right after deploy:** `node flywheel/scripts/clean-lexicon.mjs --phase split --az --write`. Before it runs, lookups still find the 789 old machine rows in `lexicon` (harmless); new Azure answers go to the cache, whose container the script creates — until then cache writes fail quietly and lookups call Azure.
 - [ ] Prentice: internal flag queue page.
 - [ ] Onboarding flow offers the dialect picker (today only Settings).

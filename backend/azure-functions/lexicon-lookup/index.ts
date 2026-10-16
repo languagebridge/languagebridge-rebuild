@@ -12,6 +12,7 @@ import {
 import { getLexiconContainer, getAnalyticsContainer, getLexiconMachineCacheContainer } from '../../shared/cosmos-client';
 import { requireFields, isValidLanguage, isValidStudentCode, validateApiKey, checkRateLimit } from '../../shared/validators';
 import { isValidVariant, variantChain, variantRank } from '../../shared/variants';
+import { resolveStudentScope } from '../../shared/enrollments';
 
 /**
  * lexicon-lookup
@@ -376,19 +377,23 @@ function logAnalytics(
   context: InvocationContext,
   event: Record<string, unknown>
 ): void {
-  // Fire-and-forget analytics write — never block the response
-  try {
-    const container = getAnalyticsContainer();
-    container.items.create({
-      id: createHash('sha256')
-        .update(`${event.term}_${event.language}_${Date.now()}`)
-        .digest('hex'),
-      ...event,
-      timestamp: new Date().toISOString(),
-    }).catch((err: unknown) => { context.warn('Non-critical write failed:', err); });
-  } catch {
-    context.warn('Analytics write failed — non-critical');
-  }
+  // Fire-and-forget analytics write — never block the response. The pilot is
+  // resolved here (cached) because `analytics` is partitioned by /pilotId.
+  void (async () => {
+    try {
+      const { pilotId } = await resolveStudentScope(String(event.studentCode ?? ''));
+      await getAnalyticsContainer().items.create({
+        id: createHash('sha256')
+          .update(`${event.term}_${event.language}_${Date.now()}`)
+          .digest('hex'),
+        ...event,
+        pilotId,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (err) {
+      context.warn('Analytics write failed — non-critical:', (err as Error)?.message);
+    }
+  })();
 }
 
 function respond(status: number, body: unknown): HttpResponseInit {

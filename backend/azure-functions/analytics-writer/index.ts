@@ -7,7 +7,7 @@ import {
   SessionUsageDoc,
 } from '../../shared/types';
 import { getSessionsContainer } from '../../shared/cosmos-client';
-import { findEnrollment } from '../../shared/enrollments';
+import { resolveStudentScope } from '../../shared/enrollments';
 import { checkForPII, requireFields, isValidLanguage, isValidStudentCode, validateApiKey, errorResponse, checkRateLimit } from '../../shared/validators';
 
 /**
@@ -102,20 +102,9 @@ export async function analyticsWriter(
     return error(429, 'RATE_LIMITED', `Rate limit exceeded. Retry after ${rateCheck.retryAfterMs}ms`);
   }
 
-  // ── 6. Look up enrollment to resolve school + grade band ───────
-  let schoolCode = 'unknown';
-  let gradeBand: string = 'unknown';
-  try {
-    const resource = await findEnrollment(req.studentCode);
-    if (resource) {
-      schoolCode = resource.schoolCode;
-      gradeBand = resource.gradeBand;
-    } else {
-      context.warn(`Unknown studentCode: ${req.studentCode}`);
-    }
-  } catch {
-    context.warn(`Failed to resolve enrollment for ${req.studentCode}`);
-  }
+  // ── 6. Resolve school, grade band and pilot from the enrollment ─
+  const { schoolCode, gradeBand, pilotId } = await resolveStudentScope(req.studentCode);
+  if (schoolCode === 'unknown') context.warn('Analytics event from an unknown or unresolvable student code');
 
   // ── 7. Write to Cosmos DB ──────────────────────────────────────
   const eventId = randomUUID();
@@ -124,6 +113,7 @@ export async function analyticsWriter(
   const doc: SessionUsageDoc = {
     id: eventId,
     studentCode: req.studentCode,
+    pilotId,
     schoolCode,
     gradeBand: gradeBand as SessionUsageDoc['gradeBand'],
     language: req.language,

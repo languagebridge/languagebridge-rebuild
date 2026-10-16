@@ -8,6 +8,7 @@ import { requireFields, isValidLanguage, isValidStudentCode, validateApiKey, che
 import { isDualCodexEnabled, loadOverrides, applyOverrides, selectForVariant } from '../../shared/dual-codex';
 import { isValidVariant } from '../../shared/variants';
 import { getAnalyticsContainer } from '../../shared/cosmos-client';
+import { resolveStudentScope } from '../../shared/enrollments';
 import { randomUUID } from 'crypto';
 
 /**
@@ -134,7 +135,7 @@ export async function translate(
       const variant = isValidVariant(toLanguage, toVariant) ? toVariant : null;
       const overrides = applyOverrides(text, selectForVariant(await loadOverrides(toLanguage), toLanguage, variant));
       if (overrides.mode === 'phrase') {
-        logOverridesFired(context, toLanguage, 'phrase', overrides.firedEntryIds, []);
+        logOverridesFired(context, studentCode, toLanguage, 'phrase', overrides.firedEntryIds, []);
         return { status: 200, jsonBody: { translatedText: overrides.translatedText, fromLanguage, toLanguage } as TranslateResponse };
       }
       textForAzure = overrides.textForAzure;
@@ -173,7 +174,7 @@ export async function translate(
     }
 
     if (firedEntryIds.length || matchedTermIds.length) {
-      logOverridesFired(context, toLanguage, 'fixed_term', firedEntryIds, matchedTermIds);
+      logOverridesFired(context, studentCode, toLanguage, 'fixed_term', firedEntryIds, matchedTermIds);
     }
 
     const result: TranslateResponse = {
@@ -194,26 +195,32 @@ export async function translate(
 }
 
 // Usage count for the flywheel: which entries fired, never the text translated.
+// Only the pilot is recorded (the partition key) — never the student code or text.
 function logOverridesFired(
   context: InvocationContext,
+  studentCode: string,
   language: string,
   layer: 'phrase' | 'fixed_term',
   entryIds: string[],
   matchedTermIds: string[]
 ): void {
-  try {
-    getAnalyticsContainer().items.create({
-      id: randomUUID(),
-      type: 'lexicon_override_fired',
-      language,
-      layer,
-      entry_ids: entryIds,
-      matched_term_ids: matchedTermIds,
-      timestamp: new Date().toISOString(),
-    }).catch((err: unknown) => { context.warn('Non-critical write failed:', (err as Error)?.message); });
-  } catch {
-    context.warn('Override usage log failed — non-critical');
-  }
+  void (async () => {
+    try {
+      const { pilotId } = await resolveStudentScope(studentCode);
+      await getAnalyticsContainer().items.create({
+        id: randomUUID(),
+        type: 'lexicon_override_fired',
+        pilotId,
+        language,
+        layer,
+        entry_ids: entryIds,
+        matched_term_ids: matchedTermIds,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (err) {
+      context.warn('Override usage log failed — non-critical:', (err as Error)?.message);
+    }
+  })();
 }
 
 const error = errorResponse;

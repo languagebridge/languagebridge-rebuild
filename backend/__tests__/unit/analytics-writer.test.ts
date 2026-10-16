@@ -15,6 +15,9 @@ jest.mock('../../shared/cosmos-client', () => ({
   getEnrollmentsContainer: () => ({
     items: { query: () => ({ fetchAll: async () => { const r = await mockEnrollmentRead(); return { resources: r?.resource ? [{ id: r.resource.id ?? 'LB-TEST7', ...r.resource }] : [] }; } }) },
   }),
+  getPilotsContainer: () => ({
+    items: { query: () => ({ fetchAll: async () => ({ resources: [{ pilotId: 'PCSD-2026' }] }) }) },
+  }),
   getRateLimitContainer: () => ({
     item: () => ({ patch: jest.fn().mockResolvedValue({ resource: { count: 1 } }) }),
     items: { create: jest.fn().mockResolvedValue({}) },
@@ -70,6 +73,17 @@ describe('analytics-writer', () => {
     expect(body.eventId).toBeDefined();
     expect(body.timestamp).toBeDefined();
     expect(mockCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it('writes school, grade band and pilot resolved from the enrollment (pilotId is the partition key)', async () => {
+    await analyticsWriter(makeRequest(validBody), makeContext());
+    expect(mockCreate.mock.calls[0][0]).toMatchObject({ schoolCode: 'test-school', gradeBand: 'K-2', pilotId: 'PCSD-2026' });
+  });
+
+  it('writes explicit "unknown" scope for an unenrolled student code', async () => {
+    mockEnrollmentRead.mockResolvedValueOnce({ resource: undefined });
+    await analyticsWriter(makeRequest(validBody), makeContext());
+    expect(mockCreate.mock.calls[0][0]).toMatchObject({ schoolCode: 'unknown', pilotId: 'unknown' });
   });
 
   it('rejects payloads with PII — runs before any other check', async () => {

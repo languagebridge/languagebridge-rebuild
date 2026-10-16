@@ -189,13 +189,13 @@ One database, named by `COSMOS_DB_DATABASE` (production: `languagebridge-prod`, 
 |---|---|---|
 | `lexicon` | `/language` | **Our data only:** RBERN glossary, bridge glosses, human-verified entries |
 | `lexicon_machine_cache` | `/language` | Azure Translator answers served as a fallback; 90-day expiry; never ours. Created by `flywheel/scripts/clean-lexicon.mjs --phase split` |
-| `sessions` | `/pilotId` | Anonymous usage events |
+| `sessions` | `/pilotId` | Anonymous usage events (the dashboard's source). Every event carries `pilotId`, `schoolCode`, `gradeBand` resolved by `resolveStudentScope`. Events before Oct 2026 have no `pilotId` and were stored with school `unknown`; repair with `backend/scripts/backfill-session-scope.mjs` |
 | `enrollments` | `/schoolCode` | Student code, school code, grade band, optional dialect. No names. Look up by student code with `findEnrollment` (`shared/enrollments.ts`), never a point read |
 | `flags` | `/language` | Flag candidates, deduplicated by text, language, subject and dialect |
 | `pilots` | `/id` | School and pilot configuration. Planned home of the licence record |
 | `admin_users` | `/email` | Dashboard users and their permissions |
 | `audio_cache_metadata` | `/language` | Index of generated audio clips |
-| `analytics` | `/pilotId` | Derived reporting data |
+| `analytics` | `/pilotId` | Lookup usage (`lexicon_hit` / `lexicon_miss` with provenance) and Dual Codex hits — the flywheel's demand signal. Baseline 16 Oct 2026: 60% of lookups answered by Azure |
 | `rate_limits` | `/partitionKey` | Rate-limit counters. Each document deletes itself after 120 seconds |
 
 Partition keys verified against production on 16 Oct 2026.
