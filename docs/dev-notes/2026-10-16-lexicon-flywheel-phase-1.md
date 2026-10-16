@@ -74,9 +74,10 @@ Branch: `feat/lexicon-flywheel`. Project home: `flywheel/` (start at `flywheel/R
 - [ ] Manual Chrome test, then version bump + Web Store release.
 - [ ] Chris: Azure-output ownership (gates recognition flags), contributor agreement, NDPA clause, retention window.
 - [ ] Review `flywheel/backlog/candidates.csv` with Justin.
-- [ ] Run `node backend/scripts/backfill-session-scope.mjs --az --write` (repairs 7,033 dashboard events; production write).
-- [ ] Run `node flywheel/scripts/clean-lexicon.mjs --phase split --az --write` (creates `lexicon_machine_cache`; needed before deploy).
-- [ ] Cosmos alert on 429s / normalized RU > 80%; find out why Azure Monitor shows no request metrics.
+- [x] `backfill-session-scope.mjs --az --write` APPLIED 16 Oct: 7,033 events repaired (Greenbriar 4,899, demo 2,134), 0 failed; 3 unrepairable test-code events remain. Backup in `flywheel/backlog/`.
+- [x] `clean-lexicon.mjs --phase split --az --write` APPLIED 16 Oct: `lexicon_machine_cache` created (/language, 90-day TTL); 789 cached Azure rows + 98 Azure cognates in bridge rows moved; lexicon now 149,190 rows, 0 machine rows. Until the new backend deploys, the old code may write some back — re-run the split after deploy.
+- [x] Alerts (RG languagebridge-rg): action group `lb-cosmos-alerts` → admin@languagebridge.app; `cosmos-throttling-429` (> 50 in 5 min) and `cosmos-high-load` (max normalized RU > 90% for 15 min). Azure Monitor works — the earlier empty result was a bad query window.
+- [ ] Bulk scripts hit the 1,000 RU/s ceiling (588 retried 429s on 16 Oct, none failed). Run large writes off-hours or raise the container's autoscale max first.
 - [ ] **Right after deploy:** `node flywheel/scripts/clean-lexicon.mjs --phase split --az --write`. Before it runs, lookups still find the 789 old machine rows in `lexicon` (harmless); new Azure answers go to the cache, whose container the script creates — until then cache writes fail quietly and lookups call Azure.
 - [ ] Prentice: internal flag queue page.
 - [ ] Onboarding flow offers the dialect picker (today only Settings).
