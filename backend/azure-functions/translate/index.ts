@@ -9,6 +9,7 @@ import { isDualCodexEnabled, loadOverrides, applyOverrides, selectForVariant } f
 import { isValidVariant } from '../../shared/variants';
 import { getAnalyticsContainer } from '../../shared/cosmos-client';
 import { resolveStudentScope } from '../../shared/enrollments';
+import { recordAzureCall } from '../../shared/metering';
 import { randomUUID } from 'crypto';
 
 /**
@@ -153,6 +154,7 @@ export async function translate(
     return error(500, 'INTERNAL_ERROR', 'Translator service not configured');
   }
 
+  const started = Date.now();
   try {
     const response = await axios.post(
       `${TRANSLATOR_ENDPOINT}/translate?api-version=${TRANSLATOR_API_VERSION}&from=${fromCode}&to=${toCode}`,
@@ -167,6 +169,7 @@ export async function translate(
       }
     );
 
+    recordAzureCall(context, { service: 'translator', units: textForAzure.length, durationMs: Date.now() - started, status: response.status, studentCode });
     const translatedText = response.data?.[0]?.translations?.[0]?.text;
     if (!translatedText) {
       context.warn('Azure Translator returned no translation');
@@ -184,6 +187,7 @@ export async function translate(
     };
     return { status: 200, jsonBody: result };
   } catch (err) {
+    recordAzureCall(context, { service: 'translator', units: textForAzure.length, durationMs: Date.now() - started, status: axios.isAxiosError(err) ? err.response?.status ?? 0 : 0, studentCode });
     if (axios.isAxiosError(err)) {
       const status = err.response?.status;
       context.error(`Azure Translator failed — status: ${status}, message: ${err.message}`);

@@ -133,6 +133,9 @@ Code: `backend/azure-functions/<folder>/index.ts`. Every function is registered 
 | `onboarding-schools` | `/api/onboarding/schools` | GET | `getSchools` | App key | 100 per client address |
 | `onboarding-enroll` | `/api/onboarding/enroll` | POST | `enroll` | App key | 100 per client address |
 | `onboarding-variants` | `/api/onboarding/variants` | GET | `getVariants` | App key | — |
+| `insights-summary` | `/api/insights/summary` | POST | `summary` | Supabase JWT + `view_dashboard`, scoped to the user's schools | 100 per user |
+| `insights-students` | `/api/insights/students` | POST | `students` | Supabase JWT; champion teachers and super-admins only | 100 per user |
+| `ops-*` | `/api/ops/health`, `overview`, `pricing`, `districts`, `invite` | GET/PUT/POST | `ops/index.ts` | Supabase JWT + super-admin | 60 per user |
 | `auth-layer` | `/api/auth-layer` | POST, GET | `authLayer` | Supabase JWT | — |
 | `dashboard` | `/api/dashboard` | POST | `dashboard` | Supabase JWT + `view_dashboard` | 100 per user |
 | `flag-queue-list` | `/api/flag-queue` | GET | `listFlagQueue` | Supabase JWT + super-admin | 100 per user |
@@ -369,6 +372,8 @@ Endpoints are then at `http://localhost:7071/api/<route>`. `local.settings.json`
 | `LB_TTS_SERVICE_URL` | Proprietary voices | Audio uses Azure only |
 | `LB_LEXICON_OVERRIDES` | Dual Codex in `translate` (`on` to enable) | Off: `translate` is plain Azure. Leave off until `flywheel/DUAL-CODEX.md` checks pass |
 | `LB_LEXICON_OVERRIDE_TTL_MS` | Dual Codex cache lifetime | Defaults to 300000 (5 minutes) |
+| `LB_COSMOS_RESOURCE_ID`, `LB_TRANSLATOR_RESOURCE_ID`, `LB_SPEECH_RESOURCE_ID`, `LB_APPINSIGHTS_RESOURCE_ID`, `LB_FUNCTIONAPP_RESOURCE_ID`, `LB_SUBSCRIPTION_ID` | Health banners and the Azure bill (`/api/ops/*`), read with the app's managed identity | Health falls back to LanguageBridge's own metering and shows "Azure monitoring not connected" |
+| `LB_DASHBOARD_URL` | Where staff invite emails land | Supabase's site URL is used |
 | `LB_ALLOW_INSECURE_DEV` | Local only | Bypasses the app key. Never set it on a deployed app |
 
 ### 11.4 Quick check
@@ -519,6 +524,8 @@ Commit-level detail is in `git log` and in `docs/dev-notes/`.
 | Now | Lexicon flywheel Phase 1: deploy capture + admin queue, run the bootstrap backlog | `flywheel/PHASES.md` |
 | After pilot | Lexicon flywheel Phases 2–5: paid linguists, two-approval gate, sound overrides, marketplace | `flywheel/SPEC.md` |
 | After pilot | Our own voices behind `LB_TTS_SERVICE_URL`; automated deploys | `ml-pipeline/` |
+
+**Azure tiers (decided 16 Oct 2026):** Translator and Speech stay on the free F0 tier until **1 January 2027**, then move to paid tiers. F0 blocks calls at its monthly quota instead of billing, so `/api/ops/health` warns admin@languagebridge.app at 70% and 90% of each quota and counts down to the switch. See `docs/PRD-DISTRICT-ANALYTICS.md`.
 
 Decisions waiting on Justin:
 

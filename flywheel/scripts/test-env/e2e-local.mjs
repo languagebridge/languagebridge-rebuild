@@ -136,5 +136,17 @@ check('lookup events have pilot + provenance', lookups.length > 0 && lookups.eve
 const fired = await q('analytics', "SELECT * FROM c WHERE c.type = 'lexicon_override_fired' AND c.timestamp >= @start", [{ name: '@start', value: START }]);
 check('Dual Codex hit logged with entry id, no text', fired.length === 1 && fired[0].entry_ids[0] === 'e2e_line_up_for_lunch_somali_v1' && !('text' in fired[0]));
 
+// ── 8. Azure metering (cost attribution + free-tier banners) ───────
+const tr2 = await call('POST', 'translate', { text: 'Good morning, everyone', fromLanguage: 'english', toLanguage: 'somali', studentCode: SO });
+check('translate through Azure works', tr2.status === 200 && !!tr2.data?.translatedText, JSON.stringify(tr2.data));
+await sleep(3000);
+const today = new Date().toISOString().slice(0, 10);
+const meter = (await q('analytics', 'SELECT * FROM c WHERE c.id = @id', [{ name: '@id', value: `meter:${today}:greenbriar` }]))[0];
+check('per-school meter written in the district partition', meter?.pilotId === 'PCSD-2026' && meter?.translator_calls >= 2 && meter?.translator_units > 10, JSON.stringify({ p: meter?.pilotId, calls: meter?.translator_calls, units: meter?.translator_units }));
+const health = (await q('analytics', 'SELECT * FROM c WHERE c.id = @id', [{ name: '@id', value: `health:${today}` }]))[0];
+const buckets = Object.keys(health ?? {}).filter((k) => k.startsWith('translator_lat_'));
+check('system health counters + latency buckets written', health?.pilotId === '__ops__' && health?.translator_calls >= 2 && buckets.length > 0, JSON.stringify({ calls: health?.translator_calls, buckets }));
+check('meters store counts only — no text, no student code', !JSON.stringify(meter).includes(SO) && !JSON.stringify(health).includes(SO) && !/morning/i.test(JSON.stringify([meter, health])));
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

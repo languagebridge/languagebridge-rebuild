@@ -93,7 +93,9 @@ export async function resolveAuthContext(
   const allowlisted = isAllowlistedSuperAdmin(email);
   let isSuperAdmin = allowlisted;
   let accessiblePilotIds: string[] = [];
+  let accessibleDistrictIds: string[] = [];
   let permissions: AuthResponse['permissions'] = [];
+  let role: AuthResponse['role'];
 
   try {
     const container = getAdminUsersContainer();
@@ -107,7 +109,9 @@ export async function resolveAuthContext(
     if (resources.length > 0) {
       isSuperAdmin = resources[0].isSuperAdmin === true || allowlisted;
       accessiblePilotIds = resources[0].pilotIds ?? [];
+      accessibleDistrictIds = resources[0].districtIds ?? [];
       permissions = resources[0].permissions ?? [];
+      role = resources[0].role;
     }
 
     // Allowlisted bootstrap admins always get full permissions, even before
@@ -130,25 +134,29 @@ export async function resolveAuthContext(
     try {
       const pilots = getPilotsContainer();
       const { resources } = await pilots.items
-        .query<{ schoolCode: string }>('SELECT c.schoolCode FROM c')
+        .query<{ schoolCode: string }>('SELECT c.schoolCode FROM c WHERE IS_DEFINED(c.schoolCode)')
         .fetchAll();
       accessibleSchoolCodes = resources.map(r => r.schoolCode);
     } catch (err) {
       context.warn('Failed to load all school codes for super admin:', err);
     }
-  } else if (accessiblePilotIds.length > 0) {
+  } else if (accessiblePilotIds.length > 0 || accessibleDistrictIds.length > 0) {
     try {
       const pilots = getPilotsContainer();
-      // Look up schoolCodes for each pilotId
-      const placeholders = accessiblePilotIds.map((_, i) => `@p${i}`).join(', ');
-      const parameters = accessiblePilotIds.map((id, i) => ({ name: `@p${i}`, value: id }));
+      // School records the user was given directly (champions), plus every school
+      // in the districts they administer (district admins) — including schools
+      // added to the district after they were invited.
+      const parameters = [
+        { name: '@ids', value: accessiblePilotIds },
+        { name: '@districts', value: accessibleDistrictIds },
+      ];
       const { resources } = await pilots.items
         .query<{ schoolCode: string }>({
-          query: `SELECT c.schoolCode FROM c WHERE c.id IN (${placeholders})`,
+          query: 'SELECT c.schoolCode FROM c WHERE IS_DEFINED(c.schoolCode) AND (ARRAY_CONTAINS(@ids, c.id) OR ARRAY_CONTAINS(@districts, c.pilotId))',
           parameters,
         })
         .fetchAll();
-      accessibleSchoolCodes = resources.map(r => r.schoolCode);
+      accessibleSchoolCodes = [...new Set(resources.map(r => r.schoolCode))];
     } catch (err) {
       context.warn('Failed to resolve pilotIds to schoolCodes:', err);
     }
@@ -163,6 +171,28 @@ export async function resolveAuthContext(
       accessibleSchoolCodes,
       isSuperAdmin,
       permissions,
+      role: isSuperAdmin ? 'super_admin' : role,
     },
   };
+}
+
+/**
+ * Invite a staff member (district admin or champion teacher) by email.
+ * Supabase sends the invitation; the person sets their own password. Returns the
+ * Supabase user id, or the existing user's id if they already have an account.
+ * Staff emails are adult accounts — allowed under MASTER-DOCUMENT §7.1 rule 7.
+ */
+export async function inviteStaffUser(email: string, meta: Record<string, string>): Promise<{ userId: string; alreadyExisted: boolean } | { error: string }> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return { error: 'Auth service not configured' };
+  const redirectTo = process.env.LB_DASHBOARD_URL;   // e.g. https://languagebridge.app/dashboard — Supabase site URL is used if unset
+  const { data, error } = await supabase.auth.admin.inviteUserByEmail(email, { data: meta, ...(redirectTo && { redirectTo }) });
+  if (data?.user) return { userId: data.user.id, alreadyExisted: false };
+  if (error && /already|registered|exists/i.test(error.message)) {
+    // Already has an account: find it (first page is enough at our scale) and just update access.
+    const { data: list } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    const existing = list?.users?.find((u) => (u.email ?? '').toLowerCase() === email.toLowerCase());
+    if (existing) return { userId: existing.id, alreadyExisted: true };
+  }
+  return { error: error?.message ?? 'Invite failed' };
 }

@@ -7,6 +7,7 @@ import { getAudioCacheMetadataContainer } from '../../shared/cosmos-client';
 import { requireFields, isValidLanguage, isValidStudentCode, validateTTSText, validateApiKey, checkRateLimit, errorResponse } from '../../shared/validators';
 import voiceConfig from '../../shared/voice-config.json';
 import { isValidVariant, resolveAlongChain } from '../../shared/variants';
+import { recordAzureCall } from '../../shared/metering';
 
 /**
  * tts-router
@@ -147,6 +148,7 @@ export async function ttsRouter(
       return error(500, 'INTERNAL_ERROR', 'TTS service not configured');
     }
 
+    const started = Date.now();
     try {
       const ssml = buildSSML(text, language, variant);
       const ttsResponse = await axios.post(
@@ -164,7 +166,9 @@ export async function ttsRouter(
       );
       audioBuffer = Buffer.from(ttsResponse.data);
       ttsSource = 'azure_live';
+      recordAzureCall(context, { service: 'tts', units: text.length, durationMs: Date.now() - started, status: ttsResponse.status, studentCode });
     } catch (err: unknown) {
+      recordAzureCall(context, { service: 'tts', units: text.length, durationMs: Date.now() - started, status: axios.isAxiosError(err) ? err.response?.status ?? 0 : 0, studentCode });
       if (axios.isAxiosError(err)) {
         const status = err.response?.status;
         const body = err.response?.data

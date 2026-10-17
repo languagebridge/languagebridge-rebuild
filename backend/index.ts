@@ -20,3 +20,5 @@ import './azure-functions/dashboard/index';
 import './azure-functions/speech-to-text/index';
 import './azure-functions/translate/index';
 import './azure-functions/flag-queue/index';
+import './azure-functions/ops/index';
+import './azure-functions/insights/index';

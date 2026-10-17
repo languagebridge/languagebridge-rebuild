@@ -111,7 +111,8 @@ export async function getSchools(
   try {
     const container = getPilotsContainer();
     const { resources } = await container.items
-      .query<PilotSchool>('SELECT c.schoolCode, c.schoolName, c.gradeBands FROM c')
+      // pilots also holds district and config records; only school records have a schoolCode
+      .query<PilotSchool>('SELECT c.schoolCode, c.schoolName, c.gradeBands FROM c WHERE IS_DEFINED(c.schoolCode)')
       .fetchAll();
 
     const response: OnboardingSchoolsResponse = {

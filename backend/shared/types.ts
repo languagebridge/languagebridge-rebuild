@@ -296,6 +296,7 @@ export type AuthResponse = {
   accessiblePilotIds: string[];
   isSuperAdmin: boolean;
   permissions: Array<'view_dashboard' | 'export_data' | 'manage_flags' | 'manage_users'>;
+  role?: AdminRole;           // super_admin | district_admin | champion
 };
 
 export type AuthErrorResponse = {
@@ -447,14 +448,80 @@ export type PilotDoc = {
   startDate: string;
 };
 
+export type AdminRole = 'super_admin' | 'district_admin' | 'champion';
+
 export type AdminUserDoc = {
   id: string;
-  email: string;
-  pilotIds: string[];
+  email: string;              // Adult staff account (teacher / district admin). Never a student.
+  pilotIds: string[];         // School license record ids this user can see
+  districtIds?: string[];     // District ids — every school in the district, including ones added later
   permissions: Array<'view_dashboard' | 'export_data' | 'manage_flags' | 'manage_users'>;
   isSuperAdmin: boolean;
+  role?: AdminRole;
+  displayName?: string | null;
+  invitedBy?: string;
+  invitedAt?: string;
   createdAt: string;
   lastLoginAt?: string;
+};
+
+// ============================================
+// DISTRICT ANALYTICS & OPS (docs/PRD-DISTRICT-ANALYTICS.md)
+// ============================================
+
+export type LicenseStatus = 'trial' | 'active' | 'expired' | 'suspended';
+export type PricingModel = 'free_pilot' | 'per_seat' | 'building' | 'custom';
+
+/**
+ * One school's license record, stored in `pilots` (id = school record id).
+ * company/PROVISIONING-AND-LICENSING.md §2. Seats USED are derived from
+ * enrollments, never stored here.
+ */
+export type SchoolLicenseDoc = {
+  id: string;                 // e.g. 'greenbriar'
+  type?: 'school';
+  schoolCode: string;         // analytics scope key
+  schoolName: string;
+  pilotId: string;            // district id — the partition key of sessions/analytics
+  gradeBands: GradeBand[];
+  isActive: boolean;
+  isDemo?: boolean;
+  seats?: number;             // EL-student seats purchased
+  tier?: 'Starter' | 'Growth' | 'District' | 'Enterprise' | 'Building' | 'Pilot' | 'Custom';
+  pricingModel?: PricingModel;
+  annualPriceUsd?: number;    // what this school's license brings in per year
+  termStart?: string;         // ISO date
+  termEnd?: string;
+  status?: LicenseStatus;
+  dpaRef?: string | null;
+  updatedAt?: string;
+};
+
+export type DistrictDoc = {
+  id: string;                 // 'district:<pilotId>'
+  type: 'district';
+  pilotId: string;            // e.g. 'PCSD-2026'
+  name: string;
+  state?: string | null;
+  contractAnnualUsd?: number | null;  // set when the district buys one contract instead of per-school licenses
+  isDemo?: boolean;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type HealthSeverity = 'info' | 'warning' | 'critical';
+
+/** A banner the dashboard shows to super-admins. Ids are stable so the UI can dismiss/snooze. */
+export type HealthBanner = {
+  id: string;                 // e.g. 'quota.translator', 'cosmos.throttling'
+  severity: HealthSeverity;
+  title: string;
+  detail: string;
+  metric?: string;
+  value?: number;
+  threshold?: number;
+  action?: string;
 };
 
 export type AudioCacheMetadataDoc = {

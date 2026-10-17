@@ -13,6 +13,7 @@ import { getLexiconContainer, getAnalyticsContainer, getLexiconMachineCacheConta
 import { requireFields, isValidLanguage, isValidStudentCode, validateApiKey, checkRateLimit } from '../../shared/validators';
 import { isValidVariant, variantChain, variantRank } from '../../shared/variants';
 import { resolveStudentScope } from '../../shared/enrollments';
+import { recordAzureCall } from '../../shared/metering';
 
 /**
  * lexicon-lookup
@@ -167,7 +168,7 @@ export async function lexiconLookup(
       let cognate: string | null = withCognate?.cognate ?? null;
       let provenance: LexiconProvenance = withCognate ? provenanceOf(withCognate) : 'machine';
       if (!cognate) {
-        cognate = await machineTranslation(entry.term, language, context);
+        cognate = await machineTranslation(entry.term, language, context, studentCode);
         provenance = 'machine';
       }
 
@@ -215,7 +216,7 @@ export async function lexiconLookup(
     }
 
     // ── 4b. Not in the Lexicon — machine cache, then Azure ─────────
-    const cognate = await machineTranslation(term, language, context);
+    const cognate = await machineTranslation(term, language, context, studentCode);
 
     // Log as missing for future curation (stream 2 of the production loop)
     logAnalytics(context, {
@@ -279,7 +280,7 @@ function machineCacheId(term: string, language: string): string {
  * never in the Lexicon. An echo of the input is returned as null — never shown
  * to a student as a translation, never stored.
  */
-async function machineTranslation(term: string, language: string, context: InvocationContext): Promise<string | null> {
+async function machineTranslation(term: string, language: string, context: InvocationContext, studentCode: string): Promise<string | null> {
   const id = machineCacheId(term, language);
   const cache = getLexiconMachineCacheContainer();
   try {
@@ -289,7 +290,7 @@ async function machineTranslation(term: string, language: string, context: Invoc
     // Missing doc or missing container — treat as a cache miss.
   }
 
-  const translated = await translateWithAzure(term, language, context);
+  const translated = await translateWithAzure(term, language, context, studentCode);
   if (!translated || translated.trim().toLowerCase() === term.trim().toLowerCase()) return null;
 
   if (isCacheableTranslation(term, language, translated)) {
@@ -339,7 +340,8 @@ export function rankEntries(entries: LexiconDoc[], subject: string | null, varia
 async function translateWithAzure(
   text: string,
   language: string,
-  context: InvocationContext
+  context: InvocationContext,
+  studentCode: string
 ): Promise<string | null> {
   const key = process.env.AZURE_TRANSLATOR_KEY;
   const region = process.env.AZURE_TRANSLATOR_REGION;
@@ -350,6 +352,7 @@ async function translateWithAzure(
   }
 
   const targetLang = LANGUAGE_TO_TRANSLATOR[language] ?? language;
+  const started = Date.now();
 
   try {
     const response = await axios.post(
@@ -365,9 +368,11 @@ async function translateWithAzure(
       }
     );
 
+    recordAzureCall(context, { service: 'translator', units: text.length, durationMs: Date.now() - started, status: response.status, studentCode });
     return response.data?.[0]?.translations?.[0]?.text ?? null;
   } catch (err) {
-    context.error('Azure Translator error:', err);
+    recordAzureCall(context, { service: 'translator', units: text.length, durationMs: Date.now() - started, status: axios.isAxiosError(err) ? err.response?.status ?? 0 : 0, studentCode });
+    context.error('Azure Translator error:', (err as Error)?.message);
     return null; // No translation rather than echoing English back to the student
   }
 }

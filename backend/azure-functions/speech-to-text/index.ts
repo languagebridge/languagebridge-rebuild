@@ -1,6 +1,7 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import axios from 'axios';
 import { isValidVariant, resolveAlongChain } from '../../shared/variants';
+import { recordAzureCall, wavSeconds } from '../../shared/metering';
 import {
   SpeechToTextRequest,
   SpeechToTextResponse,
@@ -136,6 +137,8 @@ export async function speechToText(
     return error(500, 'INTERNAL_ERROR', 'Speech service not configured');
   }
 
+  const started = Date.now();
+  const audioSeconds = wavSeconds(audioBuffer);
   try {
     const sttUrl = `https://${ttsRegion}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=${sttLanguageCode}&format=detailed`;
 
@@ -150,6 +153,7 @@ export async function speechToText(
       maxContentLength: 1024 * 1024, // 1MB response max
     });
 
+    recordAzureCall(context, { service: 'stt', units: audioSeconds, durationMs: Date.now() - started, status: response.status, studentCode });
     const data = response.data;
     if (data?.RecognitionStatus !== 'Success') {
       context.warn(`STT non-success status: ${data?.RecognitionStatus}`);
@@ -166,6 +170,7 @@ export async function speechToText(
     };
     return { status: 200, jsonBody: result };
   } catch (err) {
+    recordAzureCall(context, { service: 'stt', units: audioSeconds, durationMs: Date.now() - started, status: axios.isAxiosError(err) ? err.response?.status ?? 0 : 0, studentCode });
     if (axios.isAxiosError(err)) {
       const status = err.response?.status;
       context.error(`Azure STT failed — status: ${status}, message: ${err.message}`);
