@@ -57,7 +57,7 @@ Amharic · Arabic · Burmese · Dari · English · French · Nepali · Pashto ·
 |---|---|---|
 | Microsoft Azure | Cloud infra, Cosmos DB, Blob, Application Insights | SOC 2 Type II, ISO 27001 |
 | Microsoft Azure Cognitive Services | Translation, TTS, STT | SOC 2 Type II |
-| Supabase | Teacher/admin authentication (JWTs only — no student data) | SOC 2 Type II |
+| Supabase | Teacher/admin authentication, and relaying dashboard requests between languagebridge.app and the API (pseudonymous LanguageBridge codes and totals in transit; no student names exist; nothing student-related stored at Supabase) | SOC 2 Type II |
 | Stripe Connect | *(post-marketplace only)* interpreter identity + 1099 payments; no student data | PCI DSS L1, SOC 1, SOC 2 |
 
 > **Compliance posture, stated honestly:** LanguageBridge implements the **NIST Cybersecurity Framework v1.1** and maintains the supporting documents in `docs/compliance/`. LanguageBridge itself is **not** SOC 2 certified; the SOC 2 attestations above belong to the named subprocessors. Never imply LanguageBridge holds a certification it does not.

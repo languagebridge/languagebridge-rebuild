@@ -1,7 +1,8 @@
 import { app, HttpRequest, HttpResponseInit, InvocationContext } from '@azure/functions';
 import { SchoolLicenseDoc, DistrictDoc, AdminUserDoc, GradeBand, HealthBanner } from '../../shared/types';
 import { getPilotsContainer, getAnalyticsContainer, getSessionsContainer, getEnrollmentsContainer, getAdminUsersContainer } from '../../shared/cosmos-client';
-import { resolveAuthContext, AuthContext, inviteStaffUser } from '../../shared/auth-helpers';
+import { resolveAuthContext, AuthContext, inviteStaffUser, banStaffUser } from '../../shared/auth-helpers';
+import { recordAudit, AuditDoc, AUDIT_GLOBAL } from '../../shared/audit';
 import { checkRateLimit, errorResponse } from '../../shared/validators';
 import { AzurePrices, FREE_TIER, THRESHOLDS } from '../../shared/azure-quotas';
 import { loadPrices, PRICES_ID } from '../../shared/pricing';
@@ -21,6 +22,10 @@ import { healthBanners, accruedRevenue, meteredCostUsd, monthProgress, toDay, Se
  *   GET  /api/ops/districts               districts + school license records + staff
  *   PUT  /api/ops/districts               create/update a district and its schools
  *   POST /api/ops/invite                  invite a district admin or champion teacher by email
+ *   POST /api/ops/revoke                  remove a staff member's access (some schools, a district, or all)
+ *   GET  /api/ops/audit                   admin-action audit log (all districts)
+ *
+ * Every change made here is written to the audit log (shared/audit.ts).
  *
  * Privacy: nothing here returns a student name or identity — students exist only
  * as counts or pseudonymous LB codes. Costs and margin never leave this function.
@@ -35,6 +40,8 @@ const ROUTES: Array<[string, 'GET' | 'PUT' | 'POST', (r: HttpRequest, c: Invocat
   ['ops/districts', 'GET', listDistricts],
   ['ops/districts', 'PUT', upsertDistrict],
   ['ops/invite', 'POST', invite],
+  ['ops/revoke', 'POST', revoke],
+  ['ops/audit', 'GET', auditLog],
 ];
 
 for (const [route, method, fn] of ROUTES) {
@@ -87,6 +94,8 @@ async function putPricing(request: HttpRequest, _c: InvocationContext, user: Aut
   next.source = typeof body.source === 'string' ? body.source.slice(0, 200) : `Set by ${user.email}`;
   next.updatedAt = new Date().toISOString();
   await getPilotsContainer().items.upsert({ id: PRICES_ID, ...next });
+  await recordAudit(_c, { action: 'pricing.update', actorEmail: user.email, actorRole: 'super_admin', pilotId: null, target: 'azure_prices',
+    details: Object.fromEntries(numeric.filter((k) => body[k] !== undefined).map((k) => [k, Number(body[k])])) });
   return { status: 200, jsonBody: { prices: next } };
 }
 
@@ -126,7 +135,7 @@ async function listDistricts(): Promise<HttpResponseInit> {
 const GRADE_BANDS: GradeBand[] = ['K-2', '3-5', '6-8', '9-12'];
 const SCHOOL_CODE_RE = /^[A-Za-z0-9-]{2,40}$/;
 
-async function upsertDistrict(request: HttpRequest): Promise<HttpResponseInit> {
+async function upsertDistrict(request: HttpRequest, context: InvocationContext, user: AuthContext): Promise<HttpResponseInit> {
   const body = (await request.json().catch(() => null)) as { district?: Partial<DistrictDoc>; schools?: Array<Partial<SchoolLicenseDoc>> } | null;
   const d = body?.district;
   if (!d?.pilotId || !d.name) return error(400, 'MISSING_FIELDS', 'district.pilotId and district.name are required');
@@ -145,6 +154,8 @@ async function upsertDistrict(request: HttpRequest): Promise<HttpResponseInit> {
     createdAt: existing?.createdAt ?? now, updatedAt: now,
   };
   await pilots.items.upsert(district);
+  await recordAudit(context, { action: 'district.upsert', actorEmail: user.email, actorRole: 'super_admin', pilotId: d.pilotId, target: d.pilotId,
+    details: { name: district.name, contractAnnualUsd: district.contractAnnualUsd ?? null, created: !existing } });
 
   const saved: SchoolLicenseDoc[] = [];
   for (const s of body?.schools ?? []) {
@@ -170,6 +181,8 @@ async function upsertDistrict(request: HttpRequest): Promise<HttpResponseInit> {
       updatedAt: now,
     };
     await pilots.items.upsert(doc);
+    await recordAudit(context, { action: 'school.upsert', actorEmail: user.email, actorRole: 'super_admin', pilotId: d.pilotId, target: doc.schoolCode,
+      details: { seats: doc.seats ?? null, status: doc.status ?? null, annualPriceUsd: doc.annualPriceUsd ?? null, created: !prev } });
     saved.push(doc);
   }
   return { status: 200, jsonBody: { district, schools: saved } };
@@ -179,7 +192,7 @@ async function upsertDistrict(request: HttpRequest): Promise<HttpResponseInit> {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-async function invite(request: HttpRequest, _c: InvocationContext, user: AuthContext): Promise<HttpResponseInit> {
+async function invite(request: HttpRequest, context: InvocationContext, user: AuthContext): Promise<HttpResponseInit> {
   const body = (await request.json().catch(() => null)) as { email?: string; role?: string; districtId?: string; schoolIds?: string[]; displayName?: string } | null;
   const email = (body?.email ?? '').trim().toLowerCase();
   if (!EMAIL_RE.test(email)) return error(400, 'INVALID_EMAIL', 'A valid email is required');
@@ -216,7 +229,67 @@ async function invite(request: HttpRequest, _c: InvocationContext, user: AuthCon
     createdAt: prev?.createdAt ?? new Date().toISOString(),
   };
   await container.items.upsert(doc);
+  const affected = body.role === 'district_admin' ? [body.districtId!] : [...new Set(schools.filter((s) => pilotIds.includes(s.id)).map((s) => s.pilotId))];
+  for (const pilotId of affected) {
+    await recordAudit(context, { action: 'staff.invite', actorEmail: user.email, actorRole: 'super_admin', pilotId, target: email,
+      details: { role: body.role, schools: pilotIds.join(',') || null, alreadyHadAccount: invited.alreadyExisted } });
+  }
   return { status: 200, jsonBody: { invited: email, role: doc.role, alreadyHadAccount: invited.alreadyExisted, schools: doc.pilotIds, districts: doc.districtIds } };
+}
+
+// ── Revoke ──────────────────────────────────────────────────────────
+
+/**
+ * Remove access. Body: { email, schoolIds?: string[], districtIds?: string[], all?: true }.
+ * `all` (or removing the last school/district) strips every permission and bans
+ * the Supabase account, so a teacher who leaves the district loses access at once.
+ * Super-admin access (the LB_SUPERADMIN_EMAILS allowlist) can't be revoked here.
+ */
+export async function revoke(request: HttpRequest, context: InvocationContext, user: AuthContext): Promise<HttpResponseInit> {
+  const body = (await request.json().catch(() => null)) as { email?: string; schoolIds?: string[]; districtIds?: string[]; all?: boolean } | null;
+  const email = (body?.email ?? '').trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) return error(400, 'INVALID_EMAIL', 'A valid email is required');
+  if (!body?.all && !body?.schoolIds?.length && !body?.districtIds?.length) return error(400, 'MISSING_FIELDS', 'Give schoolIds, districtIds, or all: true');
+
+  const container = getAdminUsersContainer();
+  const { resources } = await container.items.query<AdminUserDoc>({ query: 'SELECT * FROM c WHERE c.email = @e', parameters: [{ name: '@e', value: email }] }).fetchAll();
+  const prev = resources[0];
+  if (!prev) return error(404, 'NOT_FOUND', 'No staff account with that email');
+  if (prev.isSuperAdmin) return error(400, 'IS_SUPER_ADMIN', 'Super-admin access is managed by LB_SUPERADMIN_EMAILS, not here');
+
+  const schools = await loadSchools();
+  const removeSchools = body.all ? prev.pilotIds ?? [] : body.schoolIds ?? [];
+  const removeDistricts = body.all ? prev.districtIds ?? [] : body.districtIds ?? [];
+  const pilotIds = (prev.pilotIds ?? []).filter((id) => !removeSchools.includes(id));
+  const districtIds = (prev.districtIds ?? []).filter((id) => !removeDistricts.includes(id));
+  const nothingLeft = pilotIds.length === 0 && districtIds.length === 0;
+
+  await container.items.upsert({ ...prev, pilotIds, districtIds, permissions: nothingLeft ? [] : prev.permissions, revokedAt: nothingLeft ? new Date().toISOString() : undefined });
+  const banned = nothingLeft ? await banStaffUser(prev.id) : false;
+
+  const affected = new Set<string>([
+    ...removeDistricts,
+    ...schools.filter((s) => removeSchools.includes(s.id)).map((s) => s.pilotId),
+  ]);
+  for (const pilotId of affected.size ? affected : new Set([AUDIT_GLOBAL])) {
+    await recordAudit(context, { action: 'staff.revoke', actorEmail: user.email, actorRole: 'super_admin', pilotId: pilotId === AUDIT_GLOBAL ? null : pilotId, target: email,
+      details: { schools: removeSchools.join(',') || null, districts: removeDistricts.join(',') || null, allAccessRemoved: nothingLeft, signInBlocked: banned } });
+  }
+  return { status: 200, jsonBody: { email, remainingSchools: pilotIds, remainingDistricts: districtIds, allAccessRemoved: nothingLeft, signInBlocked: banned } };
+}
+
+// ── Audit log ───────────────────────────────────────────────────────
+
+export async function auditLog(request: HttpRequest): Promise<HttpResponseInit> {
+  const pilotId = request.query.get('pilotId');
+  const action = request.query.get('action');
+  const limit = Math.min(Number(request.query.get('limit')) || 200, 1000);
+  const where = ["c.type = 'audit'"];
+  const parameters: Array<{ name: string; value: string | number }> = [{ name: '@limit', value: limit }];
+  if (pilotId) { where.push('c.pilotId = @p'); parameters.push({ name: '@p', value: pilotId }); }
+  if (action) { where.push('c.action = @a'); parameters.push({ name: '@a', value: action }); }
+  const { resources } = await getAnalyticsContainer().items.query<AuditDoc>({ query: `SELECT TOP @limit c.id, c.at, c.action, c.actorEmail, c.actorRole, c.pilotId, c.target, c.details FROM c WHERE ${where.join(' AND ')} ORDER BY c.at DESC`, parameters }).fetchAll();
+  return { status: 200, jsonBody: { entries: resources, count: resources.length } };
 }
 
 // ── Overview: revenue vs Azure cost ─────────────────────────────────

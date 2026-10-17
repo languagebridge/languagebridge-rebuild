@@ -4,10 +4,10 @@
 
 ## 0. Build instructions (do these in order)
 
-1. **Edge Function `lb-dashboard`** — create it with the code in **Appendix A**, unchanged. It reads two Supabase secrets: `LB_API_BASE` and `LB_DASHBOARD_ORIGIN` (§9). It holds no API key.
+1. **Edge Function `lb-dashboard`** — create it in the connected Supabase project with the code in **Appendix A**, unchanged. It reads two Supabase secrets: `LB_API_BASE` and `LB_DASHBOARD_ORIGIN` (§9). It holds no API key. **Do not host this proxy on Lovable's servers or as an app route** — it must be the Supabase Edge Function.
 2. **All backend calls** go through that function with the signed-in user's Supabase access token (`Authorization: Bearer <session.access_token>`). Never call `languagebridge-api.azurewebsites.net` from the browser. Never put any key in frontend code or `VITE_` variables.
 3. **Sign-in:** Supabase Auth (email + password). Build the "set your password" screen for invite links (`type=invite`) and password reset (`type=recovery`). After sign-in, call `GET lb-dashboard/auth-layer` and build navigation from `role` (§4).
-4. **Route `/dashboard`** with three areas: District insights (§5), My students (§6), LB Operations (§7) — shown per role.
+4. **Route `/dashboard`** with these areas, shown per role (§4): District insights (§5), Data & privacy (§5.1), Audit log (§5.2), My students (§6), LB Operations (§7).
 5. **Customization:** create the `dashboard_layouts` table with row-level security (SQL in §5) and save each user's widget layout and filters there.
 6. **Health banner bar** (§7.1) on every page for super-admins.
 7. **Brand and layout** per §8.
@@ -19,6 +19,8 @@ One dashboard at **languagebridge.app/dashboard** with three views, depending on
 | View | Who | Purpose |
 |---|---|---|
 | **District insights** | District admins, champion teachers, LB super-admins | Usage, seats, and the value LanguageBridge delivers — the renewal conversation |
+| **Data & privacy** | Every dashboard user | What LanguageBridge holds for their schools, retention, subprocessors, who has access (DPA clause 14) |
+| **Audit log** | District admins, LB super-admins | Every admin action affecting their district (DPA clause 14) |
 | **My students** | Champion teachers (and super-admins) | Activity per student, by LanguageBridge code only |
 | **LB Operations** | LanguageBridge super-admins only (today: admin@languagebridge.app) | System health banners, Azure free-tier usage, revenue vs Azure cost per district, add districts and schools, invite staff, pricing settings, flag queue |
 
@@ -55,7 +57,7 @@ Cosmos DB · Azure Monitor · Azure Cost Management
 ```
 
 - **Auth:** use the existing Supabase project that the backend's `SUPABASE_URL` points at (the same one the current languagebridge.app uses). The backend validates the Supabase JWT on every request.
-- **Proxy:** create the Supabase Edge Function `lb-dashboard` with the exact code in **Appendix A** (copy it as-is). The browser never calls Azure directly (the API has no browser CORS) and never holds any LanguageBridge key.
+- **Proxy:** create the Supabase Edge Function `lb-dashboard` with the exact code in **Appendix A** (copy it as-is). **It must be the Supabase Edge Function — do not host the proxy on Lovable's servers or anywhere else.** Supabase is already a LanguageBridge subprocessor; any other host that sees these requests becomes a new subprocessor, which our district contracts require announcing 30 days ahead. The browser never calls Azure directly (the API has no browser CORS) and never holds any LanguageBridge key.
 - **Calling pattern:**
   ```ts
   const { data: { session } } = await supabase.auth.getSession();
@@ -88,9 +90,9 @@ Cosmos DB · Azure Monitor · Azure Cost Management
 
 | Role | Nav items | School filter |
 |---|---|---|
-| `super_admin` | District insights · My students · LB Operations | Any school |
-| `district_admin` | District insights | Schools in `accessibleSchoolCodes` |
-| `champion` | District insights · My students | Schools in `accessibleSchoolCodes` |
+| `super_admin` | District insights · My students · Data & privacy · Audit log · LB Operations | Any school |
+| `district_admin` | District insights · Data & privacy · Audit log | Schools in `accessibleSchoolCodes` |
+| `champion` | District insights · My students · Data & privacy | Schools in `accessibleSchoolCodes` |
 | no `view_dashboard` | "Your account doesn't have dashboard access yet — contact LanguageBridge." | — |
 
 **Invites:** super-admins invite staff from LB Operations. Supabase emails the person an invite link; it lands on `LB_DASHBOARD_URL` (set to `https://languagebridge.app/dashboard`), where they set a password. Build the "set your password" screen for the invite and password-reset flows (Supabase `type=invite` / `type=recovery` links).
@@ -158,6 +160,36 @@ create policy "own layout" on dashboard_layouts for all using (auth.uid() = user
 ```
 
 **Export CSV:** one file per visible table/series (schools, weekly active, languages, top words), aggregate only.
+
+### 5.1 Data & privacy page (every role)
+
+`GET insights/data-inventory` → for the caller's schools:
+
+```json
+{
+  "schools": ["greenbriar"],
+  "studentIdentity": "Students are identified only by a random LanguageBridge code (e.g. LB-7K2M). No names, emails, student IDs, birthdates, addresses, photos or device IDs are collected.",
+  "categories": [
+    { "name": "Enrollments", "count": 22, "holds": "LanguageBridge code, school, grade band, home language, optional dialect, date enrolled", "retention": "Subscription term + 90 days, then deleted" },
+    { "name": "Usage events", "count": 4899, "firstAt": "2026-03-16T…", "lastAt": "2026-10-16T…", "holds": "…", "retention": "…" },
+    { "name": "Problem reports (flags)", "count": 6, "holds": "…", "retention": "…" },
+    { "name": "Talk to Teacher audio and text", "count": null, "holds": "Not retained — processed for transcription and translation, then discarded", "retention": "Not stored" },
+    { "name": "Staff accounts", "count": 3, "holds": "…", "retention": "Until access is removed" },
+    { "name": "Admin-action audit log", "count": null, "holds": "…", "retention": "7 years" }
+  ],
+  "staffWithAccess": [{ "email": "teacher@district.org", "role": "champion", "invitedAt": "…" }],
+  "languageBridgeAccess": "LanguageBridge super-administrators (admin@languagebridge.app) can see all districts to provide support. Every change they make is in the audit log.",
+  "subprocessors": [{ "name": "Microsoft Azure", "purpose": "…" }, { "name": "Microsoft Azure AI services", "purpose": "…" }, { "name": "Supabase", "purpose": "…" }],
+  "requests": { "contact": "justin@languagebridge.app", "parentalAccess": "…", "deletion": "…" }
+}
+```
+Show: the identity statement at the top in plain words; a table of categories (name · what it holds · how many · how long we keep it; `count: null` → "—"); "Who can see your data" (staff list + the LanguageBridge access sentence); subprocessors; and how to make a request. Read-only.
+
+### 5.2 Audit log page (district admins and super-admins)
+
+`GET insights/audit` → `{ "districts": ["PCSD-2026"], "entries": [{ "at": "…", "action": "staff.invite", "actorEmail": "admin@languagebridge.app", "actorRole": "super_admin", "pilotId": "PCSD-2026", "target": "teacher@district.org", "details": { "role": "champion" } }], "retention": "Kept 7 years (DPA clause 4)." }` — 403 for champions.
+
+Table: When · Who · What · Target · Details. Plain-language action names: `staff.invite` "Invited staff", `staff.revoke` "Removed staff access", `district.upsert` "Updated district", `school.upsert` "Updated school license", `pricing.update` "Changed pricing settings", `flag.action` "Handled a problem report", `data.view_student_list` "Viewed the student list". Filter by action and date; export CSV.
 
 ---
 
@@ -249,6 +281,8 @@ Show: totals strip (revenue · metered Azure cost · actual Azure bill · margin
 
 `GET ops/districts` → `{ "districts": [{ "pilotId", "district", "schools": [SchoolLicense…], "staff": [{ "email", "role", "displayName", "invitedAt" }] }] }`
 
+**Remove access** (button on each staff row, with a confirmation): `POST ops/revoke` with `{ "email": "…", "all": true }` — or only some access: `{ "email": "…", "schoolIds": ["greenbriar"] }` / `{ "email": "…", "districtIds": ["PCSD-2026"] }` → `{ "email", "remainingSchools": [], "remainingDistricts": [], "allAccessRemoved": true, "signInBlocked": true }`. Removing all access takes effect on the user's next request and blocks their sign-in. Super-admins can't be removed here (400).
+
 Create / edit with `PUT ops/districts`:
 ```json
 {
@@ -276,7 +310,11 @@ Form fields per school: code (letters/digits/dashes), name, grade bands, seats, 
 `GET ops/pricing` → `{ "prices": { "translatorPerMillionChars": 10, "ttsPerMillionChars": 15, "sttPerAudioHour": 1, "cosmosPer100RuHour": 0.012, "cosmosPerGbMonth": 0.25, "interpreterUsdPerHour": 45, "source": "…", "updatedAt": "…" }, "freeTier": { … } }`
 `PUT ops/pricing` with any subset of those numbers (0–1000). The interpreter rate drives the districts' "estimated interpreter value" widget.
 
-### 7.7 Flag queue
+### 7.7 Audit log (all districts)
+
+`GET ops/audit?pilotId=&action=&limit=` → `{ "entries": [AuditEntry…], "count": n }` (newest first, up to 1,000). Same table as §5.2 plus a District column and filters.
+
+### 7.8 Flag queue
 
 Existing endpoints: `GET flag-queue?language=&status=&flagType=&limit=`, `POST flag-queue/<id>/action` `{ language, action: in_review|resolved|dismissed|reopen, note?, entryId? }`. Table with filters; school codes appear only as a count.
 
@@ -300,7 +338,7 @@ Existing endpoints: `GET flag-queue?language=&status=&flagType=&limit=`, `POST f
    - `LB_API_BASE` = `https://languagebridge-api.azurewebsites.net/api`
    - `LB_DASHBOARD_ORIGIN` = `https://languagebridge.app`
 2. **Deploy** the Edge Function `lb-dashboard` (Appendix A).
-3. **Auth → URL configuration:** add `https://languagebridge.app/dashboard` to the redirect URLs. Email invites must be enabled and SMTP configured so invite emails arrive.
+3. **Auth → URL configuration:** add `https://languagebridge.app/dashboard` to the redirect URLs. Enable email invites and configure a custom SMTP provider (Supabase's built-in email only reaches members of the Supabase team).
 4. **Database:** create the `dashboard_layouts` table and policy from §5.
 5. **Sign-in accounts** are created by LanguageBridge super-admins through LB Operations → Invite staff. Do not build public sign-up.
 
@@ -318,6 +356,9 @@ Notes for testing: until LanguageBridge connects Azure monitoring, the Health pa
 6. A super-admin can add a district with schools and invite a champion; the invite email arrives and the new user sees the right school.
 7. Layout changes persist across sign-ins.
 8. No LanguageBridge API key, Azure key or service-role key appears anywhere in the frontend bundle.
+9. Every role sees the Data & privacy page; district admins see their district's audit log; champions get 403 on it.
+10. Removing a teacher's access (all) shows "Removed staff access" in the audit log, and that teacher's next request fails.
+11. Network tab: dashboard requests go only to the Supabase Edge Function `lb-dashboard` — never to Lovable-hosted API routes or azurewebsites.net.
 
 ---
 
@@ -332,6 +373,10 @@ File: `supabase/functions/lb-dashboard/index.ts`
 // backend. It forwards the signed-in user's Supabase access token; the backend
 // verifies it and decides what that user may see. This proxy holds NO API key and
 // makes NO access decisions — it only whitelists routes and passes the token on.
+//
+// Host it ONLY here (Supabase is already a LanguageBridge subprocessor). Hosting this
+// proxy anywhere else — e.g. on Lovable's servers — would add a new subprocessor,
+// which the district DPA requires announcing 30 days in advance.
 //
 // Deploy: supabase functions deploy lb-dashboard
 // Secrets: supabase secrets set LB_API_BASE=https://languagebridge-api.azurewebsites.net/api
@@ -350,6 +395,8 @@ const ALLOWED: Record<string, string[]> = {
   'auth-layer': ['GET'],
   'insights/summary': ['POST'],
   'insights/students': ['POST'],
+  'insights/audit': ['GET'],
+  'insights/data-inventory': ['GET'],
   'dashboard': ['POST'],
   'flag-queue': ['GET'],
   'ops/health': ['GET'],
@@ -357,6 +404,8 @@ const ALLOWED: Record<string, string[]> = {
   'ops/pricing': ['GET', 'PUT'],
   'ops/districts': ['GET', 'PUT'],
   'ops/invite': ['POST'],
+  'ops/revoke': ['POST'],
+  'ops/audit': ['GET'],
 };
 const FLAG_ACTION = /^flag-queue\/[a-f0-9]{64}\/action$/;   // POST
 

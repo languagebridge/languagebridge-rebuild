@@ -8,6 +8,7 @@ import {
 import { getFlagsContainer } from '../../shared/cosmos-client';
 import { resolveAuthContext } from '../../shared/auth-helpers';
 import { isValidLanguage, checkRateLimit, errorResponse } from '../../shared/validators';
+import { recordAudit } from '../../shared/audit';
 
 /**
  * flag-queue — internal admin view of flag candidates (flywheel Phase 1).
@@ -144,6 +145,9 @@ export async function actOnFlag(request: HttpRequest, context: InvocationContext
   }
 
   context.log(`Flag ${id.slice(0, 12)} → ${newStatus}`);
+  // Flags span districts, so the record is system-wide; target is the id prefix (never the flagged text).
+  await recordAudit(context, { action: 'flag.action', actorEmail: gate.user.email, actorRole: 'super_admin', pilotId: null, target: id.slice(0, 12),
+    details: { language: String(language), action, entryId } });
   return { status: 200, jsonBody: { id, status: newStatus, resolution } };
 }
 

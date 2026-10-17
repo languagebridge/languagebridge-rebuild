@@ -18,8 +18,19 @@ Branch: `feat/district-analytics` (built on `feat/lexicon-flywheel`). PRD for th
 - **License record** (`SchoolLicenseDoc`, `DistrictDoc`) in `pilots`; `getSchools` and auth now ignore non-school records; district admins scoped by `districtIds`; `role` on the auth context; `inviteStaffUser`.
 - 5-minute response cache for dashboard answers (`shared/response-cache.ts`).
 
+## Second pass (17 Oct) — DPA clause 14 gaps
+- **Audit log** (`shared/audit.ts`): district/school edits, staff invites and removals, pricing changes, flag actions, and every view of the per-student list are recorded (who, what, which district; never student data). Stored in `analytics` (type `audit`, partition = district) — no new container, to stay inside the Cosmos free tier. Kept 7 years per DPA clause 4.
+- **Remove access**: `POST ops/revoke` (some schools, a district, or all; all → permissions stripped + Supabase sign-in banned). Super-admins can't be removed here.
+- **District-facing**: `GET insights/audit` (district admins), `GET insights/data-inventory` (everyone: identity statement, live counts, retention per DPA, staff with access, subprocessors, request contact).
+- **Email alerts**: `azure-microtran-blocked-calls`, `azure-microspee-blocked-calls` (RG languagebridge-ce) → `lb-cosmos-alerts` → admin@languagebridge.app when Azure blocks any call.
+- **Subprocessors**: Supabase's description updated in `company/00-CANONICAL-FACTS.md` and `company/DPA-TEMPLATE.md` (it now relays dashboard requests); DPA checklist now says to notify LEAs within 30 days. Clause 14 marked "in development" — not live until the dashboard ships.
+- **Proxy hosting**: the spec now requires the Supabase Edge Function only; hosting it on Lovable would add a new subprocessor.
+- `deliverables/district-dashboard/build-spec.mjs` regenerates `LOVABLE-BUILD-SPEC.md` from the PRD + proxy.
+- Found: production `admin_users` is empty — admin@ works only via the allowlist; the API has **no `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`**, so every dashboard sign-in currently fails.
+
 ## Tested
-- Backend: 196 Jest tests (25 new: `ops-calc.test.ts`, `insights-ops.test.ts`); `tsc` clean; `func start` registers 22 routes.
+- Backend: 201 Jest tests (30 new: `ops-calc.test.ts`, `insights-ops.test.ts`); `tsc` clean; `func start` registers 26 routes.
+- Second-pass queries (audit, inventory) validated read-only on production: 7/7, 2–5 RU each.
 - Every new Cosmos query run read-only against production (13/13 valid; heaviest ~445 RU for a 7-month district summary).
 - End-to-end on an isolated test database with real Translator: **34/34** (flywheel + metering written correctly, counts only). Test database deleted afterwards.
 
@@ -29,6 +40,10 @@ Branch: `feat/district-analytics` (built on `feat/lexicon-flywheel`). PRD for th
 - The frontend (not built yet).
 
 ## To do
+- [ ] Set `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` on `languagebridge-api` (project `izllwaookbvebqutmnlo`) — blocker for every sign-in.
+- [ ] Custom SMTP in Supabase so invites reach teachers.
+- [ ] Notify LEAs with signed DPAs of the Supabase description change (clause 2, 30 days).
+- [ ] Termination deletion tooling (DPA: deletion within 90 days of contract end) — not built.
 - [ ] Managed identity + Monitoring Reader / Cost Management Reader + the `LB_*_RESOURCE_ID` settings (exact commands in the PRD §9).
 - [ ] Enter Greenbriar and the demo school as license records (`PUT ops/districts`) so revenue and seats show.
 - [ ] Nightly per-school rollups before districts beyond the pilots (dashboard queries scan raw events).

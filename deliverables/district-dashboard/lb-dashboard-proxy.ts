@@ -5,6 +5,10 @@
 // verifies it and decides what that user may see. This proxy holds NO API key and
 // makes NO access decisions — it only whitelists routes and passes the token on.
 //
+// Host it ONLY here (Supabase is already a LanguageBridge subprocessor). Hosting this
+// proxy anywhere else — e.g. on Lovable's servers — would add a new subprocessor,
+// which the district DPA requires announcing 30 days in advance.
+//
 // Deploy: supabase functions deploy lb-dashboard
 // Secrets: supabase secrets set LB_API_BASE=https://languagebridge-api.azurewebsites.net/api
 //          supabase secrets set LB_DASHBOARD_ORIGIN=https://languagebridge.app
@@ -22,6 +26,8 @@ const ALLOWED: Record<string, string[]> = {
   'auth-layer': ['GET'],
   'insights/summary': ['POST'],
   'insights/students': ['POST'],
+  'insights/audit': ['GET'],
+  'insights/data-inventory': ['GET'],
   'dashboard': ['POST'],
   'flag-queue': ['GET'],
   'ops/health': ['GET'],
@@ -29,6 +35,8 @@ const ALLOWED: Record<string, string[]> = {
   'ops/pricing': ['GET', 'PUT'],
   'ops/districts': ['GET', 'PUT'],
   'ops/invite': ['POST'],
+  'ops/revoke': ['POST'],
+  'ops/audit': ['GET'],
 };
 const FLAG_ACTION = /^flag-queue\/[a-f0-9]{64}\/action$/;   // POST
 

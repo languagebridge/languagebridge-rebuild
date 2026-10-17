@@ -134,8 +134,10 @@ Code: `backend/azure-functions/<folder>/index.ts`. Every function is registered 
 | `onboarding-enroll` | `/api/onboarding/enroll` | POST | `enroll` | App key | 100 per client address |
 | `onboarding-variants` | `/api/onboarding/variants` | GET | `getVariants` | App key | — |
 | `insights-summary` | `/api/insights/summary` | POST | `summary` | Supabase JWT + `view_dashboard`, scoped to the user's schools | 100 per user |
-| `insights-students` | `/api/insights/students` | POST | `students` | Supabase JWT; champion teachers and super-admins only | 100 per user |
-| `ops-*` | `/api/ops/health`, `overview`, `pricing`, `districts`, `invite` | GET/PUT/POST | `ops/index.ts` | Supabase JWT + super-admin | 60 per user |
+| `insights-students` | `/api/insights/students` | POST | `students` | Supabase JWT; champion teachers and super-admins only (each view is audit-logged) | 100 per user |
+| `insights-audit` | `/api/insights/audit` | GET | `districtAudit` | Supabase JWT; district admins and super-admins | 100 per user |
+| `insights-data-inventory` | `/api/insights/data-inventory` | GET | `dataInventory` | Supabase JWT + `view_dashboard` | 100 per user |
+| `ops-*` | `/api/ops/health`, `overview`, `pricing`, `districts`, `invite`, `revoke`, `audit` | GET/PUT/POST | `ops/index.ts` | Supabase JWT + super-admin; every change audit-logged | 60 per user |
 | `auth-layer` | `/api/auth-layer` | POST, GET | `authLayer` | Supabase JWT | — |
 | `dashboard` | `/api/dashboard` | POST | `dashboard` | Supabase JWT + `view_dashboard` | 100 per user |
 | `flag-queue-list` | `/api/flag-queue` | GET | `listFlagQueue` | Supabase JWT + super-admin | 100 per user |

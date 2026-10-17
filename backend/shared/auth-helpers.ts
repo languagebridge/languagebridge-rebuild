@@ -177,6 +177,18 @@ export async function resolveAuthContext(
 }
 
 /**
+ * Block a staff account from signing in (used when ALL of their access is revoked).
+ * Their admin_users record is already stripped of permissions, which is what the
+ * API checks on every request; the ban also stops them reaching the sign-in screen.
+ */
+export async function banStaffUser(userId: string): Promise<boolean> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return false;
+  const { error } = await supabase.auth.admin.updateUserById(userId, { ban_duration: '876000h' });
+  return !error;
+}
+
+/**
  * Invite a staff member (district admin or champion teacher) by email.
  * Supabase sends the invitation; the person sets their own password. Returns the
  * Supabase user id, or the existing user's id if they already have an account.

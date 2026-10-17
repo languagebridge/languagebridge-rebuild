@@ -1,26 +1,33 @@
 import { HttpRequest, InvocationContext } from '@azure/functions';
-import { summary, students } from '../../azure-functions/insights/index';
-import { withSuperAdmin } from '../../azure-functions/ops/index';
+import { summary, students, districtAudit, dataInventory } from '../../azure-functions/insights/index';
+import { withSuperAdmin, revoke } from '../../azure-functions/ops/index';
 import { clearResponseCache } from '../../shared/response-cache';
 
 const mockResolveAuth = jest.fn();
+const mockBan = jest.fn().mockResolvedValue(true);
+const created: Array<{ container: string; doc: Record<string, unknown> }> = [];
+const upserted: Array<{ container: string; doc: Record<string, unknown> }> = [];
 const queryResults: Record<string, unknown[]> = {};
 
 jest.mock('../../shared/auth-helpers', () => ({
   resolveAuthContext: (...a: unknown[]) => mockResolveAuth(...a),
   inviteStaffUser: jest.fn(),
+  banStaffUser: (...a: unknown[]) => mockBan(...a),
 }));
 
 // Every container answers a query with the rows registered for the first matching
 // keyword in its SQL — enough to drive the handlers without a database.
 const container = (name: string) => ({
   items: {
-    query: (spec: { query: string }) => ({
+    query: (spec: { query: string } | string) => ({
       fetchAll: async () => {
-        const hit = Object.keys(queryResults).find((k) => k.startsWith(`${name}:`) && spec.query.includes(k.split(':')[1]));
+        const sql = typeof spec === 'string' ? spec : spec.query;
+        const hit = Object.keys(queryResults).find((k) => k.startsWith(`${name}:`) && sql.includes(k.slice(name.length + 1)));
         return { resources: hit ? queryResults[hit] : [] };
       },
     }),
+    create: async (doc: Record<string, unknown>) => { created.push({ container: name, doc }); return { resource: doc }; },
+    upsert: async (doc: Record<string, unknown>) => { upserted.push({ container: name, doc }); return { resource: doc }; },
   },
   item: () => ({ read: async () => ({ resource: undefined }) }),
 });
@@ -43,6 +50,8 @@ beforeEach(() => {
   jest.clearAllMocks();
   clearResponseCache();
   for (const k of Object.keys(queryResults)) delete queryResults[k];
+  created.length = 0;
+  upserted.length = 0;
 });
 
 describe('insights/summary', () => {
@@ -117,5 +126,55 @@ describe('ops gate', () => {
     mockResolveAuth.mockResolvedValue(user({ isSuperAdmin: true, role: 'super_admin' }));
     const fn = jest.fn().mockResolvedValue({ status: 200 });
     expect((await withSuperAdmin(req({}), ctx(), fn)).status).toBe(200);
+  });
+});
+
+describe('audit trail and access removal', () => {
+  const audits = () => created.filter((c) => c.container === 'analytics' && c.doc.type === 'audit').map((c) => c.doc);
+
+  it('records when a champion views the per-student list (the event, not the data)', async () => {
+    mockResolveAuth.mockResolvedValue(user({ role: 'champion' }));
+    queryResults['pilots:c.pilotId FROM c WHERE c.schoolCode'] = [{ pilotId: 'PCSD-2026' }];
+    await students(req({ ...range, schoolCode: 'greenbriar' }), ctx());
+    expect(audits()).toEqual([expect.objectContaining({ action: 'data.view_student_list', actorEmail: 't@school.org', pilotId: 'PCSD-2026', target: 'greenbriar' })]);
+    expect(JSON.stringify(audits())).not.toMatch(/LB-/);
+  });
+
+  it('revoking all access strips permissions, blocks sign-in and is audited', async () => {
+    queryResults['admin_users:c.email = @e'] = [{ id: 'sb-1', email: 'leaver@district.org', role: 'champion', pilotIds: ['greenbriar'], districtIds: [], permissions: ['view_dashboard'], isSuperAdmin: false }];
+    queryResults['pilots:IS_DEFINED(c.schoolCode)'] = [{ id: 'greenbriar', schoolCode: 'greenbriar', pilotId: 'PCSD-2026' }];
+    const res = await revoke(req({ email: 'leaver@district.org', all: true }), ctx(), { email: 'admin@languagebridge.app' } as never);
+    expect(res.status).toBe(200);
+    expect(res.jsonBody).toMatchObject({ allAccessRemoved: true, signInBlocked: true, remainingSchools: [] });
+    expect(upserted[0].doc).toMatchObject({ permissions: [], pilotIds: [] });
+    expect(mockBan).toHaveBeenCalledWith('sb-1');
+    expect(audits()).toEqual([expect.objectContaining({ action: 'staff.revoke', target: 'leaver@district.org', pilotId: 'PCSD-2026' })]);
+  });
+
+  it('cannot revoke a super-admin here', async () => {
+    queryResults['admin_users:c.email = @e'] = [{ id: 'x', email: 'admin@languagebridge.app', isSuperAdmin: true }];
+    const res = await revoke(req({ email: 'admin@languagebridge.app', all: true }), ctx(), { email: 'admin@languagebridge.app' } as never);
+    expect(res.status).toBe(400);
+  });
+
+  it('shows the district audit log to district admins only', async () => {
+    mockResolveAuth.mockResolvedValue(user({ role: 'champion' }));
+    expect((await districtAudit(req(undefined), ctx())).status).toBe(403);
+    mockResolveAuth.mockResolvedValue(user({ role: 'district_admin' }));
+    queryResults["analytics:c.type = 'audit'"] = [{ action: 'staff.invite', actorEmail: 'admin@languagebridge.app' }];
+    const res = await districtAudit(req(undefined), ctx());
+    expect(res.status).toBe(200);
+    expect((res.jsonBody as Record<string, any>).entries).toHaveLength(1);
+  });
+
+  it('data inventory states identity, retention and subprocessors, never costs', async () => {
+    mockResolveAuth.mockResolvedValue(user());
+    const res = await dataInventory(req(undefined), ctx());
+    expect(res.status).toBe(200);
+    const body = res.jsonBody as Record<string, any>;
+    expect(body.studentIdentity).toMatch(/No names/);
+    expect(body.categories.map((c: { name: string }) => c.name)).toEqual(expect.arrayContaining(['Enrollments', 'Usage events', 'Talk to Teacher audio and text', 'Admin-action audit log']));
+    expect(body.subprocessors.map((x: { name: string }) => x.name)).toEqual(['Microsoft Azure', 'Microsoft Azure AI services', 'Supabase']);
+    expect(JSON.stringify(body)).not.toMatch(/azureCost|margin|revenue|Usd/);
   });
 });
