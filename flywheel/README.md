@@ -46,6 +46,29 @@ The publish step enforces the gate: two `approve` decisions from two different r
 
 **State of the live queue (16 Oct 2026):** 12 open flags — 4 empty legacy flags (from before `flagType` was required; dismiss them), 4 whole-passage flags (need `source_term`), 4 term flags. Several served entries are polluted machine cache (a French "les" stored as its own Somali translation; a whole French quiz question stored as a "term"); `lexicon-lookup` no longer caches echoes, but existing rows need cleanup.
 
+## Test the whole flywheel without touching production
+
+`flywheel/scripts/test-env/` runs the real backend locally against a throwaway Cosmos database. Last run, 16 Oct 2026: **30 of 30 checks passed**. It covers dialect enrollment, lookup merging, the machine cache, junk and PII rejection, flag scrubbing, the review gate, publishing, lookup serving the fix, the Dual Codex phrase, and the pilot ID on events.
+
+```bash
+D=languagebridge-flywheel-test; RG=languagebridge-rg; A=languagebridge-cosmos
+# 1. Throwaway database mirroring production's containers (~$0.75/day while it exists)
+az cosmosdb sql database create -g $RG -a $A -n $D --throughput 400
+for s in flags:/language lexicon:/language lexicon_machine_cache:/language enrollments:/schoolCode pilots:/id \
+         sessions:/pilotId analytics:/pilotId rate_limits:/partitionKey audio_cache_metadata:/language admin_users:/email; do
+  az cosmosdb sql container create -g $RG -a $A -d $D -n ${s%%:*} -p ${s#*:}; done
+# 2. Copy a small real slice of production into it (production is only read)
+node flywheel/scripts/test-env/seed-test-db.mjs --target $D
+# 3. Run the backend from a separate folder whose local.settings.json points at $D
+#    (COSMOS_DB_DATABASE=$D, LB_API_KEY=<any test key>, LB_LEXICON_OVERRIDES=on, Translator key), then:
+LB_TEST_API=http://localhost:7122/api LB_API_KEY=<test key> COSMOS_DB_ENDPOINT=… COSMOS_DB_KEY=… COSMOS_DB_DATABASE=$D \
+  node flywheel/scripts/test-env/e2e-local.mjs
+# 4. Delete it
+az cosmosdb sql database delete -g $RG -a $A -n $D --yes
+```
+
+Never point step 3 at `languagebridge-prod`. Both scripts refuse to run against it.
+
 ## Where the code is
 
 | Piece | File | Function / route |

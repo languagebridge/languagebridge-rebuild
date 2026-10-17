@@ -54,6 +54,11 @@ Branch: `feat/lexicon-flywheel`. Project home: `flywheel/` (start at `flywheel/R
 - Azure Monitor returned no request metrics for the account (only storage), so there is no alerting on throttling yet.
 - Baseline: 1,276 of 2,137 lookups (60%) answered by Azure before the cleanup.
 
+**End-to-end test (seventh pass)**
+- `flywheel/scripts/test-env/seed-test-db.mjs` + `e2e-local.mjs`: real backend under `func start`, isolated test database (`languagebridge-flywheel-test`, created then deleted), real Azure Translator. **30/30 checks passed**, stable on re-runs.
+- Found: Azure returns English unchanged for many Somali science words ("mitochondria", "photosynthesis", "cell"); lookup now shows that as "no translation" and stores nothing — the Somali gap the flywheel has to fill.
+- Branch pushed to GitHub as a backup (`origin/feat/lexicon-flywheel`), no pull request.
+
 **Docs** — MASTER-DOCUMENT §2, §5.1, §7.1 rule 4 (rewritten, pending Chris), §8, §11.3, §14, §16, §18; README; company overview moat paragraph.
 
 ## Tested
@@ -62,7 +67,7 @@ Branch: `feat/lexicon-flywheel`. Project home: `flywheel/` (start at `flywheel/R
 - Bootstrap script run offline: 319 candidates.
 
 ## Not tested
-- Nothing deployed; no request has hit live Cosmos or Azure.
+- Nothing deployed. The full API was exercised locally against a test database and real Azure Translator (30/30); not yet against production traffic.
 - Extension not loaded in Chrome (manual checklist in `flywheel/README.md`).
 - Dynamic dictionary markup not sent to the real Translator API.
 - `--live` mode of the bootstrap script not run.

@@ -28,7 +28,7 @@ Backend
 - ✅ Re-open on re-flag after `resolved`; admin statuses not overwritten
 - ✅ `lexicon-lookup`: never serves `deprecated`; subject is a preference not a filter; ranks human_verified > glossary > machine; returns `entry_id` + `provenance`; logs them on hits
 - ✅ Admin queue: `GET /api/flag-queue`, `POST /api/flag-queue/{id}/action` (super-admin only, school codes → count, `resolutionHistory`)
-- ✅ Tests: `backend/__tests__/unit/flywheel.test.ts` (22) + existing suite (122)
+- ✅ Tests: backend 171 (Jest), root 63 (Vitest); end-to-end 30/30 against a local host + test database (`flywheel/scripts/test-env/`)
 - ⬜ Verify `enrollments` partition key in live Cosmos (see DATA-MODEL.md) — school/grade on flags depend on it
 - ⬜ Composite index on `flags` for queue filters + `ORDER BY flagCount DESC` if Cosmos asks for one
 - ⬜ Deploy (remember `LB_SUPERADMIN_EMAILS` must be set or no one can use the queue)
