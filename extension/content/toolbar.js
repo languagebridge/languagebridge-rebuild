@@ -31,6 +31,9 @@ class LanguageBridgeToolbar {
   }
 
   async init() {
+    const { toolbar_captions } = await import(chrome.runtime.getURL('content/constants.js'));
+    this.toolbarCaptions = toolbar_captions;
+
     const settings = await chrome.storage.sync.get([
       'toolbarEnabled', 'defaultLanguage', 'speechRate'
     ]);
@@ -87,6 +90,16 @@ class LanguageBridgeToolbar {
     this.toolbar.className = 'lb-toolbar collapsed';
     const logoUrl = chrome.runtime.getURL('assets/icon48.png');
 
+    // Button text captions
+    const {
+      playPausetxt,
+      showWrittenTranslation_label,
+      talkToTeacher_txt,
+      changeLanguage_txt,
+      help_txt,
+      collapseToolbar_txt,
+    } = this.toolbarCaptions;
+
     this.toolbar.innerHTML = `
       <div class="lb-toolbar-minimal">
         <img src="${logoUrl}" alt="LanguageBridge" class="lb-toolbar-logo">
@@ -105,20 +118,20 @@ class LanguageBridgeToolbar {
               title="Highlight text, press Ctrl+C to copy, then Ctrl+V to paste here" />
           </div>
           <div class="lb-control-group">
-            <button id="lb-play-pause" class="lb-toolbar-btn" title="Play audio translation">
+            <button id="lb-play-pause" class="lb-toolbar-btn" data-tippy-content="${playPausetxt}" title="${playPausetxt}" aria-label="${playPausetxt}">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
             </button>
-            <button id="lb-show-translation" class="lb-toolbar-btn" title="Show written translation">
+            <button id="lb-show-translation" class="lb-toolbar-btn" data-tippy-content="${showWrittenTranslation_label}" title="${showWrittenTranslation_label}" aria-label="${showWrittenTranslation_label}">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 4h5v8l-2.5-1.5L6 12V4z"/></svg>
             </button>
           </div>
           <div class="lb-control-group">
-            <button id="lb-talk-teacher" class="lb-toolbar-btn lb-talk-btn" title="Talk to Teacher" aria-label="Talk to Teacher">
+            <button id="lb-talk-teacher" class="lb-toolbar-btn lb-talk-btn" data-tippy-content="${talkToTeacher_txt}" title="${talkToTeacher_txt}" aria-label="${talkToTeacher_txt}">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
             </button>
           </div>
           <div class="lb-control-group lb-lang-group">
-            <button id="lb-lang-selector" class="lb-toolbar-btn lb-lang-btn" title="Change language">
+            <button id="lb-lang-selector" class="lb-toolbar-btn lb-lang-btn" data-tippy-content="${changeLanguage_txt}" title="${changeLanguage_txt}" aria-label="${changeLanguage_txt}">
               <span id="lb-lang-display"></span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
             </button>
@@ -128,10 +141,11 @@ class LanguageBridgeToolbar {
             <span class="lb-status-dot"></span>
             <span class="lb-status-text">Active</span>
           </div>
-          <button id="lb-help-guide" class="lb-toolbar-btn lb-help-btn" title="Help" aria-label="Help">
+          <button id="lb-help-guide" class="lb-toolbar-btn lb-help-btn" data-tippy-content="${help_txt}"
+           title="${help_txt}" aria-label="${help_txt}">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/></svg>
           </button>
-          <button id="lb-collapse" class="lb-toolbar-btn lb-collapse-btn" title="Collapse toolbar">
+          <button id="lb-collapse" class="lb-toolbar-btn lb-collapse-btn" data-tippy-content="${collapseToolbar_txt}" title="${collapseToolbar_txt}" aria-label="${collapseToolbar_txt}">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/></svg>
           </button>
         </div>
@@ -139,6 +153,14 @@ class LanguageBridgeToolbar {
     `;
 
     document.body.appendChild(this.toolbar);
+
+    // Tooltip init
+    tippy(this.toolbar.querySelectorAll('[data-tippy-content]'), {
+    content: (el) => el.getAttribute('data-tippy-content'),
+    arrow: true,
+    zIndex: 9999,
+    appendTo: () => this.toolbar
+    });
 
     // Build language dropdown dynamically (safe for all Unicode)
     const dropdown = this.toolbar.querySelector('#lb-lang-dropdown');
