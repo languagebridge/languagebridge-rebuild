@@ -159,7 +159,8 @@ class LanguageBridgeToolbar {
     content: (el) => el.getAttribute('data-tippy-content'),
     arrow: true,
     zIndex: 9999,
-    appendTo: () => this.toolbar
+    appendTo: () => this.toolbar,
+    interactive: true
     });
 
     // Build language dropdown dynamically (safe for all Unicode)
