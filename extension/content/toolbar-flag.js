@@ -68,7 +68,7 @@ _TF.showHelp = function () {
 
   const card = document.createElement('div');
   card.style.cssText =
-    'background:#fff;color:#333;max-width:440px;width:90%;max-height:80vh;overflow-y:auto;' +
+    'background:#fff;color:#333;max-width:490px;width:90%;max-height:80vh;overflow-y:auto;' +
     'border-radius:18px;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,0.35);' +
     "font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;";
 

@@ -15,6 +15,8 @@
   "content_scripts": [{
     "matches": ["<all_urls>"],
     "js": [
+      "lib/popper.min.js",
+      "lib/tippy-bundle.umd.min.js",
       "utils/logger.js",
       "utils/help-content.js",
       "config.js",
@@ -80,6 +82,7 @@
   "web_accessible_resources": [{
     "resources": [
       "assets/*",
+      "content/constants.js",
       "content/*.css",
       "content/*.html"
     ],
